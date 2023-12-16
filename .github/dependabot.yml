@@ -10,3 +10,8 @@ updates:
 #   directory: "/src/otel-collector"
 #   schedule:
 #     interval: "weekly"
+
+- package-ecosystem: "bundler"
+  directory: "/"
+  schedule:
+    interval: "weekly"
