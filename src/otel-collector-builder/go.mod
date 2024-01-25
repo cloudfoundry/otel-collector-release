@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/otel-collector-release/src/otel-collector-builder
 
-go 1.20
+go 1.21
 
 require go.opentelemetry.io/collector/cmd/builder v0.91.0
 
