@@ -19,6 +19,9 @@ properties:
   ingress.grpc.port:
     description: "Port the collector is listening on to receive OTLP over gRPC"
     default: 9100
+  ingress.grpc.address:
+    description: "Address to listen on to receive OTLP over gRPC"
+    default: 127.0.0.1
   ingress.grpc.tls.ca_cert:
     description: "CA root required for key/cert verification in gRPC ingress"
   ingress.grpc.tls.cert:
@@ -38,4 +41,12 @@ properties:
       otlp:
         endpoint: otelcol:4317
       otlp/2:
+        endpoint: otelcol:4318
+  trace_exporters:
+    description: "Exporter configuration for aggregate trace egress"
+    default: {}
+    example: |
+      otlp/trace:
+        endpoint: otelcol:4317
+      otlp/trace2:
         endpoint: otelcol:4318

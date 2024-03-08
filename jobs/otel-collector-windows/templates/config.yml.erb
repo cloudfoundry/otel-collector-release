@@ -3,8 +3,22 @@ metric_exporters = p('metric_exporters')
 unless metric_exporters.respond_to?(:keys)
   metric_exporters = YAML::load(metric_exporters)
 end
-if metric_exporters.keys.any?{|k| k.include?('/cf-internal')}
-  raise 'Metric exporters cannot be defined under cf-internal namespace'
+
+trace_exporters = p('trace_exporters')
+unless trace_exporters.respond_to?(:keys)
+  trace_exporters = YAML::load(trace_exporters)
+end
+
+unless (trace_exporters.keys-metric_exporters.keys) == trace_exporters.keys
+  raise "Exporter names must be unique"
+end
+
+if (metric_exporters.keys + trace_exporters.keys).any?{|k| k.include?('/cf-internal')}
+  raise 'Exporters cannot be defined under cf-internal namespace'
+end
+
+if metric_exporters.any?{|k, v| k.start_with?('prometheus') && v['endpoint'] && v['endpoint'].end_with?(':8889')}
+  raise 'Cannot define prometheus exporter listening on port 8889 (reserved for BBS API port)'
 end
 
 config = {
@@ -12,7 +26,7 @@ config = {
     "otlp"=>{
       "protocols"=>{
         "grpc"=>{
-          "endpoint"=>"127.0.0.1:#{p('ingress.grpc.port')}",
+          "endpoint"=>"#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
           "tls"=>{
             "client_ca_file"=>"/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector-ca.crt",
              "cert_file"=>"/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector.crt",
@@ -23,7 +37,7 @@ config = {
       }
     }
   },
-  "exporters"=>metric_exporters,
+  "exporters"=>metric_exporters.merge(trace_exporters),
   "service"=>{
     "telemetry"=>{
       "metrics"=>{
@@ -31,9 +45,17 @@ config = {
         "address"=>"127.0.0.1:#{p('telemetry.metrics.port')}"
       }
     },
-    "pipelines"=>{"metrics"=>{"receivers"=>["otlp"], "exporters"=>metric_exporters.keys}}
+    "pipelines"=>{}
   }
 }
+
+if metric_exporters.any?
+  config['service']['pipelines']['metrics'] = {"receivers"=>["otlp"], "exporters"=>metric_exporters.keys}
+end
+
+if trace_exporters.any?
+  config['service']['pipelines']['traces'] = {"receivers"=>["otlp"], "exporters"=>trace_exporters.keys}
+end
 
 YAML::dump(config)
 %>

@@ -2,7 +2,7 @@
 
 require 'rspec'
 require 'bosh/template/test'
-require 'support/shared_examples_for_otel_collector.rb'
+require 'support/shared_examples_for_otel_collector'
 
 describe 'otel-collector' do
   let(:release) { Bosh::Template::Test::ReleaseDir.new(File.join(File.dirname(__FILE__), '../..')) }
