@@ -10,14 +10,12 @@ if metric_exporters.any?{|k, v| k.start_with?('prometheus') && v['endpoint'] && 
   raise 'Cannot define prometheus exporter listening on port 8889 (reserved for BBS API port)'
 end
 
-local_listening = p('ingress.grpc.local_only')
-
 config = {
   "receivers"=> {
     "otlp"=>{
       "protocols"=>{
         "grpc"=>{
-          "endpoint"=>local_listening ? "127.0.0.1:#{p('ingress.grpc.port')}" : ":#{p('ingress.grpc.port')}",
+          "endpoint"=>"#{p('ingress.grpc.listen_address')}:#{p('ingress.grpc.port')}",
           "tls"=>{
             "client_ca_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector-ca.crt",
              "cert_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.crt",

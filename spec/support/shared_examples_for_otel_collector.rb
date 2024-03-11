@@ -46,6 +46,21 @@ shared_examples_for 'common config.yml' do
           })
         end
 
+        context 'when ingress.grpc.listen_address is set to empty' do
+          let(:properties) { {'ingress' => {'grpc' => {'listen_address' => "", 'port' => 1234}}} }
+
+          it 'has an endpoint without an address' do
+            expect(otlpreceiver['protocols']['grpc']['endpoint']).to eq(':1234')
+          end
+        end
+
+        context 'when ingress.grpc.listen_address is defines' do
+          let(:properties) { {'ingress' => {'grpc' => {'listen_address' => "10.0.0.4", 'port' => 1234}}} }
+
+          it 'has an endpoint without an address' do
+            expect(otlpreceiver['protocols']['grpc']['endpoint']).to eq('10.0.0.4:1234')
+          end
+        end
         context 'when ingress.grpc.port is set' do
           let(:properties) { {'ingress' => {'grpc' => {'port' => 1234}}} }
 
