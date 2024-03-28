@@ -23,17 +23,19 @@ end
 
 config = {
   "receivers"=> {
-    "otlp"=>{
+    "loggregator"=>{
       "protocols"=>{
-        "grpc"=>{
-          "endpoint"=>"#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
-          "tls"=>{
-            "client_ca_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector-ca.crt",
-             "cert_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.crt",
-             "key_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.key",
-             "min_version"=>"1.3"
+        "v2"=>{
+          "grpc"=>{
+            "endpoint"=>"#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
+            "tls"=>{
+              "client_ca_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector-ca.crt",
+              "cert_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.crt",
+              "key_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.key",
+              "min_version"=>"1.3"
+            }
           }
-        }
+          }
       }
     }
   },
@@ -50,11 +52,11 @@ config = {
 }
 
 if metric_exporters.any?
-  config['service']['pipelines']['metrics'] = {"receivers"=>["otlp"], "exporters"=>metric_exporters.keys}
+  config['service']['pipelines']['metrics'] = {"receivers"=>["loggregator"], "exporters"=>metric_exporters.keys}
 end
 
 if trace_exporters.any?
-  config['service']['pipelines']['traces'] = {"receivers"=>["otlp"], "exporters"=>trace_exporters.keys}
+  config['service']['pipelines']['traces'] = {"receivers"=>["loggregator"], "exporters"=>trace_exporters.keys}
 end
 
 YAML::dump(config)
