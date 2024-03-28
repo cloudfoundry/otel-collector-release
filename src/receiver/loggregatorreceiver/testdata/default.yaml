@@ -1,0 +1,6 @@
+# The following entry initializes the default loggregator receiver. The full
+# name of this receiver is `loggregator` and can be referenced in pipelines by
+# 'loggregator'.
+protocols:
+  v1:
+  v2:
