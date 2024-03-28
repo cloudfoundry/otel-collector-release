@@ -11,3 +11,6 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.91.0
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.91.0
+  - gomod: code.cloudfoundry.org/otel-collector-release/src/receiver/loggregatorreceiver v0.0.0
+replaces:
+  - code.cloudfoundry.org/otel-collector-release/src/receiver/loggregatorreceiver => ../receiver/loggregatorreceiver

@@ -13,6 +13,7 @@ import (
 	fileexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	prometheusexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
+	loggregatorreceiver "code.cloudfoundry.org/otel-collector-release/src/receiver/loggregatorreceiver"
 )
 
 func components() (otelcol.Factories, error) {
@@ -27,6 +28,7 @@ func components() (otelcol.Factories, error) {
 
 	factories.Receivers, err = receiver.MakeFactoryMap(
 		otlpreceiver.NewFactory(),
+		loggregatorreceiver.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
