@@ -11,3 +11,5 @@ exporters:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v0.91.0
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.91.0
+replaces:
+  - golang.org/x/net => golang.org/x/net v0.24.0
