@@ -1,4 +1,4 @@
-name: 'Template specs'
+name: scripts
 
 on:
   push:
@@ -9,13 +9,12 @@ on:
     - main
 
 jobs:
-  test:
+  spec-test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.2'
+        ruby-version: '2.7'
         bundler-cache: true
-    - name: 'Run specs'
-      run: bundle exec rspec
+    - run: ./scripts/subtests/spec-test
