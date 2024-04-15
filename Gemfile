@@ -3,6 +3,6 @@
 source "https://rubygems.org"
 
 group :development, :test do
-  gem 'bosh-template', '2.2.1'
+  gem 'bosh-template', '2.4.0'
   gem 'rspec'
 end
