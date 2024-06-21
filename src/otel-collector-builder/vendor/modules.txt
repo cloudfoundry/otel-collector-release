@@ -40,7 +40,7 @@ github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag
-# go.opentelemetry.io/collector/cmd/builder v0.103.0
+# go.opentelemetry.io/collector/cmd/builder v0.103.1
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/cmd/builder
 go.opentelemetry.io/collector/cmd/builder/internal
