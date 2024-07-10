@@ -14,8 +14,8 @@ describe 'otel-collector-windows' do
 
   describe 'spec' do
     it 'has only the specified differences from the linux spec' do
-      windows_spec = YAML.load(File.read(File.join(release_dir, 'jobs', 'otel-collector-windows', 'spec')))
-      linux_spec = YAML.load(File.read(File.join(release_dir, 'jobs', 'otel-collector', 'spec')))
+      windows_spec = YAML.safe_load(File.read(File.join(release_dir, 'jobs', 'otel-collector-windows', 'spec')))
+      linux_spec = YAML.safe_load(File.read(File.join(release_dir, 'jobs', 'otel-collector', 'spec')))
 
       windows_spec['name'] = 'otel-collector'
       windows_spec['packages'] = ['otel-collector']

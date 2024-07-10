@@ -1,61 +1,76 @@
 <%=
-metric_exporters = p('metric_exporters')
-unless metric_exporters.respond_to?(:keys)
-  metric_exporters = YAML::load(metric_exporters)
+def config
+  @config ||= begin
+    cfg = p('config')
+    cfg = YAML.safe_load(cfg) unless cfg.respond_to?(:keys)
+    cfg
+  end
 end
 
-trace_exporters = p('trace_exporters')
-unless trace_exporters.respond_to?(:keys)
-  trace_exporters = YAML::load(trace_exporters)
+def check_for_no_exporters!
+  raise 'Exporter configuration must be provided' unless config['exporters']
 end
 
-unless (trace_exporters.keys-metric_exporters.keys) == trace_exporters.keys
-  raise "Exporter names must be unique"
+def check_for_no_service_config!
+  raise 'Service configuration must be provided' unless config['service']
 end
 
-if (metric_exporters.keys + trace_exporters.keys).any?{|k| k.include?('/cf-internal')}
-  raise 'Exporters cannot be defined under cf-internal namespace'
+def check_for_use_of_reserved_prefix!
+  %w[exporters processors].each do |component|
+    if config[component] && config[component].keys.any? { |k| k.include?('/cf-internal') }
+      raise "#{component.capitalize} cannot be defined under cf-internal namespace"
+    end
+  end
 end
 
-if metric_exporters.any?{|k, v| k.start_with?('prometheus') && v['endpoint'] && v['endpoint'].end_with?(':8889')}
-  raise 'Cannot define prometheus exporter listening on port 8889 (reserved for BBS API port)'
+def check_for_use_of_reserved_bbs_api_port!
+  if config['exporters'] && config['exporters'].any? do |k, v|
+       k.start_with?('prometheus/') && v['endpoint'] && v['endpoint'].end_with?(':8889')
+     end
+    raise 'Cannot define prometheus exporter listening on port 8889 (reserved for BBS API port)'
+  end
 end
 
-config = {
-  "receivers"=> {
-    "otlp"=>{
-      "protocols"=>{
-        "grpc"=>{
-          "endpoint"=>"#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
-          "tls"=>{
-            "client_ca_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector-ca.crt",
-             "cert_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.crt",
-             "key_file"=>"/var/vcap/jobs/otel-collector/config/certs/otel-collector.key",
-             "min_version"=>"1.3"
+def set_internal_receiver_as_only_receiver
+  config['receivers'] = {
+    'otlp/cf-internal-local' => {
+      'protocols' => {
+        'grpc' => {
+          'endpoint' => "#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
+          'tls' => {
+            'client_ca_file' => '/var/vcap/jobs/otel-collector/config/certs/otel-collector-ca.crt',
+            'cert_file' => '/var/vcap/jobs/otel-collector/config/certs/otel-collector.crt',
+            'key_file' => '/var/vcap/jobs/otel-collector/config/certs/otel-collector.key',
+            'min_version' => '1.3'
           }
         }
       }
     }
-  },
-  "exporters"=>metric_exporters.merge(trace_exporters),
-  "service"=>{
-    "telemetry"=>{
-      "metrics"=>{
-        "level"=>p('telemetry.metrics.level'),
-        "address"=>"127.0.0.1:#{p('telemetry.metrics.port')}"
-      }
-    },
-    "pipelines"=>{}
   }
-}
-
-if metric_exporters.any?
-  config['service']['pipelines']['metrics'] = {"receivers"=>["otlp"], "exporters"=>metric_exporters.keys}
 end
 
-if trace_exporters.any?
-  config['service']['pipelines']['traces'] = {"receivers"=>["otlp"], "exporters"=>trace_exporters.keys}
+def set_internal_receiver_on_all_pipelines
+  config['service']['pipelines'].each_value do |p|
+    p['receivers'] = ['otlp/cf-internal-local']
+  end
 end
 
-YAML::dump(config)
+def expose_internal_telemetry
+  config['service']['telemetry'] = {
+    'metrics' => {
+      'address' => "127.0.0.1:#{p('telemetry.metrics.port')}",
+      'level' => p('telemetry.metrics.level')
+    }
+  }
+end
+
+check_for_no_exporters!
+check_for_no_service_config!
+check_for_use_of_reserved_prefix!
+check_for_use_of_reserved_bbs_api_port!
+set_internal_receiver_as_only_receiver
+set_internal_receiver_on_all_pipelines
+expose_internal_telemetry
+
+YAML.dump(config)
 %>
