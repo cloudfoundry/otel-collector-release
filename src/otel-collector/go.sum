@@ -407,6 +407,8 @@ go.opentelemetry.io/collector/pdata/testdata v0.104.0 h1:BKTZ7hIyAX5DMPecrXkVB2e
 go.opentelemetry.io/collector/pdata/testdata v0.104.0/go.mod h1:3SnYKu8gLfxURJMWS/cFEUFs+jEKS6jvfqKXnOZsdkQ=
 go.opentelemetry.io/collector/processor v0.104.0 h1:KSvMDu4DWmK1/k2z2rOzMtTvAa00jnTabtPEK9WOSYI=
 go.opentelemetry.io/collector/processor v0.104.0/go.mod h1:qU2/xCCYdvVORkN6aq0H/WUWkvo505VGYg2eOwPvaTg=
+go.opentelemetry.io/collector/processor/batchprocessor v0.104.0 h1:6xXvHYkPjwM1zdzliDM2H/omTGgIOkY96JTCln7CFZQ=
+go.opentelemetry.io/collector/processor/batchprocessor v0.104.0/go.mod h1:f1VfVdiOlqtJDAvQy8YONEee19nJ3haxNeiMPy59w8M=
 go.opentelemetry.io/collector/receiver v0.104.0 h1:URL1ExkYYd+qbndm7CdGvI2mxzsv/pNfmwJ+1QSQ9/o=
 go.opentelemetry.io/collector/receiver v0.104.0/go.mod h1:+enTCZQLf6dRRANWvykXEzrlRw2JDppXJtoYWd/Dd54=
 go.opentelemetry.io/collector/receiver/otlpreceiver v0.104.0 h1:t9cACuSc7kY09guws7VyB/z9QnG7/zWLC1NQ29WH4+o=

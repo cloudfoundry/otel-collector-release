@@ -348,6 +348,10 @@ go.opentelemetry.io/collector/pdata/ptrace/ptraceotlp
 go.opentelemetry.io/collector/processor
 go.opentelemetry.io/collector/processor/processorhelper
 go.opentelemetry.io/collector/processor/processorhelper/internal/metadata
+# go.opentelemetry.io/collector/processor/batchprocessor v0.104.0
+## explicit; go 1.21.0
+go.opentelemetry.io/collector/processor/batchprocessor
+go.opentelemetry.io/collector/processor/batchprocessor/internal/metadata
 # go.opentelemetry.io/collector/receiver v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/receiver

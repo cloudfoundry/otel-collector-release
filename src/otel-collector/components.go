@@ -13,6 +13,7 @@ import (
 	fileexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	prometheusexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	prometheusremotewriteexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter"
+	batchprocessor "go.opentelemetry.io/collector/processor/batchprocessor"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 )
 
@@ -44,6 +45,7 @@ func components() (otelcol.Factories, error) {
 	}
 
 	factories.Processors, err = processor.MakeFactoryMap(
+		batchprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
