@@ -59,3 +59,19 @@ properties:
   telemetry.metrics.port:
     description: "Port to serve the collector's internal metrics"
     default: 14830
+  metric_exporters:
+    description: "Exporter configuration for aggregate metric egress. Deprecated, please use 'config' property."
+    default: {}
+    example: |
+      otlp:
+        endpoint: otelcol:4317
+      otlp/2:
+        endpoint: otelcol:4318
+  trace_exporters:
+    description: "Exporter configuration for aggregate trace egress. Deprecated, please use 'config' property."
+    default: {}
+    example: |
+      otlp/trace:
+        endpoint: otelcol:4317
+      otlp/trace2:
+        endpoint: otelcol:4318

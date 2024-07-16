@@ -285,5 +285,104 @@ shared_examples_for 'common config.yml' do
         end
       end
     end
+
+    context 'when disabled and no other config properties are provided' do
+      let(:properties) { { 'enabled' => false } }
+
+      it "doesn't raise an error" do
+        expect { rendered }.to_not raise_error
+      end
+    end
+
+    context 'when the older config properties are provided' do
+      let(:properties) do
+        {
+          'metric_exporters' => {
+            'otlp' => { 'endpoint' => 'otelcol:4317' },
+            'prometheus/tls' => {
+              'endpoint' => '1.2.3.4:1234',
+              'metric_expiration' => '60m'
+            }
+          },
+          'trace_exporters' => {
+            'otlp/traces' => { 'endpoint' => 'otelcol:4317' }
+          }
+        }
+      end
+
+      it 'uses the exporters provided' do
+        expect(rendered['exporters']).to eq(
+          {
+            'otlp' => { 'endpoint' => 'otelcol:4317' },
+            'prometheus/tls' => {
+              'endpoint' => '1.2.3.4:1234',
+              'metric_expiration' => '60m'
+            },
+            'otlp/traces' => { 'endpoint' => 'otelcol:4317' }
+          }
+        )
+      end
+
+      it 'generates pipelines that include the exporters' do
+        metrics_pipeline = rendered['service']['pipelines']['metrics']
+        expect(metrics_pipeline['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(metrics_pipeline['exporters']).to eq(['otlp', 'prometheus/tls'])
+
+        traces_pipeline = rendered['service']['pipelines']['traces']
+        expect(traces_pipeline['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(traces_pipeline['exporters']).to eq(['otlp/traces'])
+      end
+
+      context 'when only a metrics pipeline is defined' do
+        before do
+          properties.delete('trace_exporters')
+        end
+        it 'does not generate a traces pipeline' do
+          expect(rendered['service']['pipelines'].keys).to_not include 'traces'
+        end
+      end
+
+      context 'when only a traces pipeline is defined' do
+        before do
+          properties.delete('metric_exporters')
+        end
+        it 'does not generate a metrics pipeline' do
+          expect(rendered['service']['pipelines'].keys).to_not include 'metrics'
+        end
+      end
+
+      context 'when an exporter has a name collision' do
+        before do
+          properties['trace_exporters'] = { 'otlp' => { 'endpoint' => 'otelcol:4317' } }
+        end
+
+        it 'raises an error' do
+          expect { rendered }.to raise_error(/Exporter names must be unique/)
+        end
+      end
+
+      context 'when trace_exporters is a string and not a hash' do
+        before do
+          properties['trace_exporters'] = YAML.dump(properties['trace_exporters'])
+        end
+
+        it 'parses it as YAML' do
+          expect(rendered['service']['pipelines']['traces']).to eq({ 'exporters' => ['otlp/traces'],
+                                                                     'receivers' => ['otlp/cf-internal-local'] })
+        end
+      end
+
+      describe 'and a normal configuration is also provided' do
+        before do
+          properties['config'] = { 'some' => 'configuration' }
+        end
+
+        it 'raises an error' do
+          expect do
+            rendered
+          end.to raise_error(/Can not provide 'config' property when deprecated 'metric_exporters' or 'trace_exporters' properties are provided/)
+        end
+      end
+    end
   end
 end

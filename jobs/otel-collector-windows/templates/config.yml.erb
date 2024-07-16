@@ -1,10 +1,50 @@
 <%=
 def config
   @config ||= begin
-    cfg = p('config')
-    cfg = YAML.safe_load(cfg) unless cfg.respond_to?(:keys)
+    cfg = retrieve_property('config')
+    cfg = handle_old_properties(cfg) if cfg.empty?
     cfg
   end
+end
+
+def check_for_new_and_old_properties!
+  both_provided = !p('config').empty? && (!p('metric_exporters').empty? || !p('trace_exporters').empty?)
+  return unless both_provided
+
+  raise "Can not provide 'config' property when deprecated 'metric_exporters' or 'trace_exporters' properties are provided"
+end
+
+def retrieve_property(name)
+  if p(name).respond_to?(:keys)
+    p(name)
+  else
+    YAML.safe_load(p(name))
+  end
+end
+
+def handle_old_properties(cfg)
+  metric_exporters = retrieve_property('metric_exporters')
+  trace_exporters = retrieve_property('trace_exporters')
+  raise 'Exporter names must be unique' unless (trace_exporters.keys - metric_exporters.keys) == trace_exporters.keys
+
+  cfg['exporters'] = metric_exporters.merge(trace_exporters)
+  cfg['service'] = { 'pipelines' => {} }
+
+  if metric_exporters.any?
+    cfg['service']['pipelines']['metrics'] = {
+        'receivers' => ['otlp/cf-local'],
+        'exporters' => metric_exporters.keys
+      }
+  end
+
+  if trace_exporters.any?
+    cfg['service']['pipelines']['traces'] = {
+        'receivers' => ['otlp/cf-local'],
+        'exporters' => trace_exporters.keys
+      }
+  end
+
+  cfg
 end
 
 def check_for_no_exporters!
@@ -64,6 +104,7 @@ def expose_internal_telemetry
   }
 end
 
+check_for_new_and_old_properties!
 check_for_no_exporters!
 check_for_no_service_config!
 check_for_use_of_reserved_prefix!
