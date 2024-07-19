@@ -31,7 +31,11 @@ properties:
         otlp:
           endpoint: otelcol:4317
 
+      extensions:
+        zpages:
+
       service:
+        extensions: [zpages]
         pipelines:
           traces:
             receivers: [otlp/placeholder]

@@ -14,6 +14,7 @@ import (
 	fileexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter"
 	prometheusexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter"
 	prometheusremotewriteexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusremotewriteexporter"
+	zpagesextension "go.opentelemetry.io/collector/extension/zpagesextension"
 	batchprocessor "go.opentelemetry.io/collector/processor/batchprocessor"
 	memorylimiterprocessor "go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
@@ -24,6 +25,7 @@ func components() (otelcol.Factories, error) {
 	factories := otelcol.Factories{}
 
 	factories.Extensions, err = extension.MakeFactoryMap(
+		zpagesextension.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
