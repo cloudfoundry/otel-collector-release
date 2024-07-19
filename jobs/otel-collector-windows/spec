@@ -21,7 +21,7 @@ properties:
     default: {}
     example: |
       receivers:
-        otlp/placeholder:
+        otlp/placeholder: # no need to change, as receivers are filled in by the release
 
       processors:
         batch:
