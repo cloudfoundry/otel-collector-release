@@ -303,7 +303,13 @@ go.opentelemetry.io/collector/exporter/exporterhelper
 go.opentelemetry.io/collector/exporter/exporterhelper/internal/metadata
 go.opentelemetry.io/collector/exporter/exporterqueue
 go.opentelemetry.io/collector/exporter/internal/experr
+go.opentelemetry.io/collector/exporter/internal/otlptext
 go.opentelemetry.io/collector/exporter/internal/queue
+# go.opentelemetry.io/collector/exporter/debugexporter v0.104.0
+## explicit; go 1.21.0
+go.opentelemetry.io/collector/exporter/debugexporter
+go.opentelemetry.io/collector/exporter/debugexporter/internal/metadata
+go.opentelemetry.io/collector/exporter/debugexporter/internal/normal
 # go.opentelemetry.io/collector/exporter/otlpexporter v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/exporter/otlpexporter
