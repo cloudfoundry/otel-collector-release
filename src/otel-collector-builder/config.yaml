@@ -3,7 +3,7 @@ dist:
   name: cf-otel-collector
   description: Cloud Foundry OpenTelemetry Collector
   otelcol_version: 0.104.0
-  output_path: otel-collector
+  output_path: ../otel-collector
   version: 0.6.0
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.104.0

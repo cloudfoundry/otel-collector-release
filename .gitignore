@@ -6,3 +6,5 @@ config/dev.yml
 config/private.yml
 releases/*.tgz
 releases/**/*.tgz
+
+src/otel-collector/cf-otel-collector

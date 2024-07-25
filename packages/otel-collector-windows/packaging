@@ -10,17 +10,12 @@ if ((Get-Item $BOSH_INSTALL_TARGET).LinkType -ne "") {
   $BOSH_INSTALL_TARGET = (Get-Item $BOSH_INSTALL_TARGET).Target
 }
 
-Push-Location otel-collector-builder\vendor\go.opentelemetry.io\collector\cmd\builder\
-  go.exe install
+Push-Location otel-collector-builder\
+  go.exe run go.opentelemetry.io\collector\cmd\builder --config=config.yaml --skip-generate --skip-get-modules
   if ($LASTEXITCODE -ne 0) {
-    Write-Error "Error compiling builder"
+    Write-Error "Error building otel-collector"
   }
 Pop-Location
-
-& ${env:GOPATH}\bin\builder.exe --config otel-collector\config.yaml --skip-generate --skip-get-modules
-if ($LASTEXITCODE -ne 0) {
-  Write-Error "Error building otel-collector"
-}
 
 Copy-Item "otel-collector\cf-otel-collector" -Destination "${env:BOSH_INSTALL_TARGET}\otel-collector.exe"
 

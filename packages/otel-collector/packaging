@@ -5,10 +5,8 @@ source /var/vcap/packages/golang-1.21-linux/bosh/compile.env
 
 export CGO_ENABLED=0
 
-pushd otel-collector-builder/vendor/go.opentelemetry.io/collector/cmd/builder/
-  go install
+pushd otel-collector-builder
+  go run go.opentelemetry.io/collector/cmd/builder --config=config.yaml --skip-generate --skip-get-modules
 popd
-
-builder --config otel-collector/config.yaml --skip-generate --skip-get-modules
 
 cp "otel-collector/cf-otel-collector" "${BOSH_INSTALL_TARGET}/otel-collector"
