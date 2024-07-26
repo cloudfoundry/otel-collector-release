@@ -17,6 +17,14 @@ properties:
   enabled:
     description: "Enable OTel Collector"
     default: true
+  allow_list.exporters:
+    description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    default: []
+    example: ['otlp', 'prometheus', 'prometheusremotewrite']
+  allow_list.processors:
+    description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    default: []
+    example: ['batch']
   config:
     description: "Collector configuration"
     default: {}

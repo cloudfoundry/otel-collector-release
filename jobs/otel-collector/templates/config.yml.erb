@@ -15,7 +15,7 @@ def check_for_new_and_old_properties!
 end
 
 def retrieve_property(name)
-  if p(name).respond_to?(:keys)
+  if p(name).respond_to?(:each)
     p(name)
   else
     YAML.safe_load(p(name))
@@ -90,8 +90,8 @@ def set_internal_receiver_as_only_receiver
 end
 
 def set_internal_receiver_on_all_pipelines
-  config['service']['pipelines'].each_value do |p|
-    p['receivers'] = ['otlp/cf-internal-local']
+  config['service']['pipelines'].each_value do |pipeline|
+    pipeline['receivers'] = ['otlp/cf-internal-local']
   end
 end
 
@@ -104,11 +104,39 @@ def expose_internal_telemetry
   }
 end
 
+# Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_exporters
+  %w[otlp file prometheus prometheusremotewrite].sort
+end
+
+# Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_processors
+  %w[batch memory_limiter].sort
+end
+
+def check_for_use_of_valid_components!(component_kind, included_components, allowed_components)
+  user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
+  if allowed_components.empty?
+    allowed_components = included_components # Allow all if none are provided
+  end
+
+  unrecognized_user_components = user_components - included_components
+  raise "The following configured #{component_kind} are not included in this OpenTelemetry Collector distribution: #{unrecognized_user_components}. Available: #{included_components}." unless unrecognized_user_components.empty?
+
+  unrecognized_allowed_components = allowed_components - included_components
+  raise "The following #{component_kind} specified in the allow list are not included in this OpenTelemetry Collector distribution: #{unrecognized_allowed_components}. Available: #{included_components}." unless unrecognized_allowed_components.empty?
+
+  disallowed_components = user_components - allowed_components
+  raise "The following configured #{component_kind} are not allowed: #{disallowed_components}. Allowed: #{allowed_components}." unless disallowed_components.empty?
+end
+
 check_for_new_and_old_properties!
 check_for_no_exporters!
 check_for_no_service_config!
 check_for_use_of_reserved_prefix!
 check_for_use_of_reserved_bbs_api_port!
+check_for_use_of_valid_components!('processors', included_processors, retrieve_property('allow_list.processors'))
+check_for_use_of_valid_components!('exporters', included_exporters, retrieve_property('allow_list.exporters'))
 set_internal_receiver_as_only_receiver
 set_internal_receiver_on_all_pipelines
 expose_internal_telemetry

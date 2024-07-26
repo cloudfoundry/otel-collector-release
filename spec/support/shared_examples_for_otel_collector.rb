@@ -182,24 +182,111 @@ shared_examples_for 'common config.yml' do
     end
 
     describe 'processors' do
+      it 'list of available processors matches builder source of truth' do
+        config['processors']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        processor_gomods = builder_config.fetch('processors').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        processor_names = processor_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = processor_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
       it 'includes the configured processors in the config' do
         expect(rendered.keys).to include 'processors'
         expect(rendered['processors']).to eq(config['processors'])
       end
+
+      it 'includes the configured processors even if their names contain `/`' do
+        config['processors']['batch/bar'] = nil
+        expect(rendered.keys).to include 'processors'
+        expect(rendered['processors']).to eq(config['processors'])
+      end
+
       context 'when a processor uses the reserved namespace' do
         before do
           config['processors']['batch/cf-internal-foo'] = nil
         end
+
         it 'raises an error' do
           expect { rendered }.to raise_error(/Processors cannot be defined under cf-internal namespace/)
         end
       end
+
+      it 'errors when a configured processor is not allowed' do
+        properties['allow_list'] = {'processors' => ['memory_limiter']}
+        expect { rendered }.to raise_error(/The following configured processors are not allowed: \["batch"\]/)
+      end
+
+      it 'allows all processors with empty allow list' do
+        properties['allow_list'] = {'processors' => [] }
+        expect(rendered.keys).to include 'processors'
+        expect(rendered['processors']).to eq(config['processors'])
+      end
+
+      it 'errors when an unrecognized processor is in allow list' do
+        properties['allow_list'] = {'processors' => ['memory_limiter', 'unrecognized-processor']}
+        expect { rendered }.to raise_error(/The following processors specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-processor"\]/)
+      end
+
+      it 'errors when an unavailable processor is configured' do
+        config['processors']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured processors are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
+      end
     end
 
     describe 'exporters' do
+      it 'list of available exporters matches builder source of truth' do
+        config['exporters']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        exporter_gomods = builder_config.fetch('exporters').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        exporter_names = exporter_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = exporter_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
       it 'includes the configured exporters in the config' do
         expect(rendered.keys).to include 'exporters'
         expect(rendered['exporters']).to eq(config['exporters'])
+      end
+
+      it 'errors when a configured exporters is not allowed' do
+        properties['allow_list'] = {'exporters' => ['prometheus']}
+        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp"\]/)
+      end
+
+      it 'allows all exporters with empty allow list' do
+        properties['allow_list'] = {'exporters' => []}
+        expect(rendered.keys).to include 'exporters'
+        expect(rendered['exporters']).to eq(config['exporters'])
+      end
+
+      it 'includes the configured exporters even if their names contain `/`' do
+        config['exporters']['otlp/bar'] = nil
+        expect(rendered.keys).to include 'exporters'
+        expect(rendered['exporters']).to eq(config['exporters'])
+      end
+
+      context 'when unsupported exporter is provided' do
+        it 'raises unrecognized exporter error' do
+          properties['allow_list'] = {'exporters' => ['unrecognized-exporter']}
+          expect { rendered }.to raise_error(/The following exporters specified in the allow list are not included in this OpenTelemetry Collector distribution/)
+        end
+        it 'raises not allowed error' do
+          config['exporters']['another-unrecognized-exporter/bar'] = nil
+          expect { rendered }.to raise_error(/The following configured exporters are not included in this OpenTelemetry Collector distribution/)
+        end
       end
 
       context 'when there is a prometheus exporter listening on 8889' do

@@ -210,10 +210,13 @@ go.opencensus.io/trace/tracestate
 # go.opentelemetry.io/collector v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/client
+go.opentelemetry.io/collector/internal/cgroups
 go.opentelemetry.io/collector/internal/fanoutconsumer
 go.opentelemetry.io/collector/internal/featuregates
 go.opentelemetry.io/collector/internal/httphelper
+go.opentelemetry.io/collector/internal/iruntime
 go.opentelemetry.io/collector/internal/localhostgate
+go.opentelemetry.io/collector/internal/memorylimiter
 go.opentelemetry.io/collector/internal/obsreportconfig
 go.opentelemetry.io/collector/internal/obsreportconfig/obsmetrics
 go.opentelemetry.io/collector/internal/sharedcomponent
@@ -342,6 +345,10 @@ go.opentelemetry.io/collector/processor/processorhelper/internal/metadata
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/processor/batchprocessor
 go.opentelemetry.io/collector/processor/batchprocessor/internal/metadata
+# go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.104.0
+## explicit; go 1.21.0
+go.opentelemetry.io/collector/processor/memorylimiterprocessor
+go.opentelemetry.io/collector/processor/memorylimiterprocessor/internal/metadata
 # go.opentelemetry.io/collector/receiver v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/receiver
