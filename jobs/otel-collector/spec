@@ -25,6 +25,9 @@ properties:
     description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     default: []
     example: ['batch']
+  limits.memory:
+    description: "Memory limit to apply to this process. It is formatted as a number and then a single character for units."
+    example: 1G
   config:
     description: "Collector configuration"
     default: {}
