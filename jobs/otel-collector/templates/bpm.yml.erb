@@ -1,4 +1,15 @@
-processes:
-- name: otel-collector
-  executable: /var/vcap/packages/otel-collector/otel-collector
-  args: ["--config", "/var/vcap/jobs/otel-collector/config/config.yml"]
+<%
+    process = {
+      'name' => 'otel-collector',
+      'executable' => '/var/vcap/packages/otel-collector/otel-collector',
+      'args' => ['--config', '/var/vcap/jobs/otel-collector/config/config.yml']
+    }
+
+    if_p('limits.memory') {
+      process['limits'] = { 'memory' => p('limits.memory') }
+    }
+
+    bpm = { 'processes' => [process] }
+%>
+
+<%= YAML.dump(bpm) %>
