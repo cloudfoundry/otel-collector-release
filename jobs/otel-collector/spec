@@ -25,6 +25,9 @@ properties:
     description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     default: []
     example: ['batch']
+  limits.memory_mib:
+    description: "Memory limit to apply to this process, in mebibytes."
+    default: 512
   config:
     description: "Collector configuration"
     default: {}

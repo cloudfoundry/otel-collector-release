@@ -3,6 +3,7 @@
 require 'rspec'
 require 'bosh/template/test'
 require 'support/shared_examples_for_otel_collector'
+require 'json'
 
 describe 'otel-collector-windows' do
   let(:release_dir) { File.join(File.dirname(__FILE__), '../..') }
@@ -33,6 +34,40 @@ describe 'otel-collector-windows' do
       windows_config.gsub!('/var/vcap/jobs/otel-collector-windows/', '/var/vcap/jobs/otel-collector/')
 
       expect(windows_config).to eq(linux_config)
+    end
+  end
+
+  describe 'monit' do
+    let(:spec) { job.instance_variable_get(:@spec) }
+    let(:job_path) { job.instance_variable_get(:@job_path) }
+    let(:template) { Bosh::Template::Test::Template.new(spec, File.join(job_path, 'monit')) }
+    let(:properties) { { 'limits' => { 'memory_mib' => '512' } } }
+    let(:rendered) { JSON.load(template.render(properties)) }
+
+    describe 'limits' do
+      describe 'memory' do
+        context 'when not provided' do
+          before do
+            properties['limits'].delete('memory_mib')
+          end
+
+          it 'uses the default job values in bpm' do
+            expect(rendered['processes'][0]['limits']['memory']).to eq('512MiB')
+            expect(rendered['processes'][0]['env']['GOMEMLIMIT']).to eq('409MiB')
+          end
+        end
+
+        context 'when a custom memory limit is provided' do
+          before do
+            properties['limits']['memory_mib'] = '1000'
+          end
+
+          it 'sets the bpm memory limit and GOMEMLIMIT' do
+            expect(rendered['processes'][0]['limits']['memory']).to eq('1000MiB')
+            expect(rendered['processes'][0]['env']['GOMEMLIMIT']).to eq('800MiB')
+          end
+        end
+      end
     end
   end
 end
