@@ -155,7 +155,7 @@ end
 
 # Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_exporters
-  %w[otlp file prometheus prometheusremotewrite nop].sort
+  %w[otlp file prometheus prometheusremotewrite nop splunk_hec].sort
 end
 
 # Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
