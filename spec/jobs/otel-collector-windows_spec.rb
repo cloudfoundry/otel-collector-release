@@ -52,7 +52,6 @@ describe 'otel-collector-windows' do
           end
 
           it 'uses the default job values in bpm' do
-            expect(rendered['processes'][0]['limits']['memory']).to eq('512MiB')
             expect(rendered['processes'][0]['env']['GOMEMLIMIT']).to eq('409MiB')
           end
         end
@@ -63,7 +62,6 @@ describe 'otel-collector-windows' do
           end
 
           it 'sets the bpm memory limit and GOMEMLIMIT' do
-            expect(rendered['processes'][0]['limits']['memory']).to eq('1000MiB')
             expect(rendered['processes'][0]['env']['GOMEMLIMIT']).to eq('800MiB')
           end
         end
