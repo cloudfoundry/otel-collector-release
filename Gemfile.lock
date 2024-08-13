@@ -26,3 +26,6 @@ DEPENDENCIES
   bosh-template (= 2.2.1)
   rspec
 
+RUBY VERSION
+   ruby 2.7.8p225
+
