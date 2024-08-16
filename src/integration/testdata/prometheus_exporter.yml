@@ -1,0 +1,31 @@
+---
+
+receivers:
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:{{.IngressOTLPPort}}
+        tls:
+          key_pem: "{{.KeyPem}}"
+          cert_pem: "{{.CertPem}}"
+
+processors:
+  batch:
+
+exporters:
+  prometheus:
+    endpoint: "127.0.0.1:{{.Port}}"
+    tls:
+      ca_pem: "{{.CaPem}}"
+      key_pem: "{{.KeyPem}}"
+      cert_pem: "{{.CertPem}}"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp/test]
+      processors: [batch]
+      exporters: [prometheus]
+  telemetry:
+    metrics:
+      address: "127.0.0.1:{{.MetricsPort}}"
