@@ -471,5 +471,108 @@ shared_examples_for 'common config.yml' do
         end
       end
     end
+
+    describe 'secret interpolation' do
+      let(:config) do
+        {
+          'exporters' => {
+            'otlp' => {
+              'endpoint' => 'otelcol:4317',
+              'tls' => {
+                'cert_pem' => '{{ .testsecret.cert }}',
+                'key_pem' => '{{ .testsecret.key }}',
+                'ca_pem' => '{{ .testsecret.ca }}'
+              },
+              'headers' => {
+                'auth' => '{{ .anothersecret.secret }}'
+              }
+            }
+          },
+          'service' => {
+            'pipelines' => {
+              'traces' => {
+                'exporters' => ['otlp']
+              },
+              'metrics' => {
+                'exporters' => ['otlp']
+              }
+            }
+          }
+        }
+      end
+      let(:properties) do
+        {
+          'config' => YAML.dump(config),
+          'secrets' => [
+            {
+              'name' => 'testsecret',
+              'cert' => 'foo',
+              'key' => 'bar',
+              'ca' => 'baz'
+            },
+            {
+              'name' => 'anothersecret',
+              'secret' => 'foobarbaz'
+            }
+          ]
+        }
+      end
+
+      it 'interpolates the config and renders it successfully' do
+        expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq('foo')
+        expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
+        expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
+        expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+      end
+
+      context 'when no secrets exist for template variables' do
+        before do
+          properties['secrets'][0]['key'] = ''
+          properties['secrets'][0]['ca'] = nil
+          properties['secrets'].delete_at(1)
+        end
+
+        it 'raises an error' do
+          expect { rendered }.to raise_error(/The following template variables are missing secrets: \['{{ .testsecret.key }}', '{{ .testsecret.ca }}', '{{ .anothersecret.secret }}'\]/)
+        end
+      end
+
+      context 'when no template variables exist for a secret' do
+        before do
+          config['exporters']['otlp'].delete('headers')
+        end
+
+        it 'raises an error' do
+          expect { rendered }.to raise_error(/The following secrets are unused: \['anothersecret.secret'\]/)
+        end
+      end
+
+      context 'when a template variable uses differing amounts of space separation' do
+        before do
+          config['exporters']['otlp']['tls']['cert_pem'] = '{{.testsecret.cert}}'
+          config['exporters']['otlp']['tls']['key_pem'] = '{{        .testsecret.key}}'
+          config['exporters']['otlp']['tls']['ca_pem'] = '{{   .testsecret.ca     }}'
+        end
+
+        it 'interpolates the config and renders it successfully' do
+          expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq('foo')
+          expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
+          expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
+          expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+        end
+      end
+
+      context 'when template variables are not formatted correctly' do
+        before do
+          config['exporters']['otlp']['tls']['cert_pem'] = '{{testsecret.cert}}'
+          config['exporters']['otlp']['tls']['key_pem'] = '{{ .testsecret }}'
+          config['exporters']['otlp']['tls']['ca_pem'] = "{{\n .testsecret.ca \n}}"
+        end
+
+        it 'does not match secrets to those variables' do
+          expect { rendered }.to raise_error(/The following secrets are unused: \['testsecret.cert', 'testsecret.key', 'testsecret.ca'\]/)
+        end
+      end
+    end
   end
 end
