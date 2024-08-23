@@ -1,10 +1,37 @@
 <%=
 def config
   @config ||= begin
-    cfg = retrieve_property('config')
+    cfg = retrieve_config
     cfg = handle_old_properties(cfg) if cfg.empty?
     cfg
   end
+end
+
+def retrieve_config
+  cfg = p('config')
+
+  return cfg if cfg.respond_to?(:each)
+
+  unused_secrets = []
+  p('secrets').each do |secret|
+    %w[cert key ca secret].each do |type|
+      next if secret[type].nil? || secret[type].empty?
+      old_cfg = cfg.dup
+      cfg.gsub!(/{{[^\S\r\n]*\.#{secret["name"]}\.#{type}[^\S\r\n]*}}/, secret[type])
+      unused_secrets.push "#{secret['name']}.#{type}" if old_cfg.eql? cfg
+    end
+  end
+
+  raise "The following secrets are unused: ['#{unused_secrets.join('\', \'')}']" if unused_secrets.any?
+
+  puts cfg
+  missing_secrets = []
+  cfg.scan(/{{[^\S\r\n]*\.\w+\.\w+[^\S\r\n]*}}/) do |m|
+    missing_secrets.push m
+  end
+  raise "The following template variables are missing secrets: ['#{missing_secrets.join('\', \'')}']" if missing_secrets.any?
+
+  YAML.safe_load(cfg)
 end
 
 def check_for_new_and_old_properties!
