@@ -69,6 +69,9 @@ properties:
   telemetry.metrics.port:
     description: "Port to serve the collector's internal metrics"
     default: 14830
+  secrets:
+    description: "Variables to interpolate into the configuration"
+    default: []
   metric_exporters:
     description: "Exporter configuration for aggregate metric egress. Deprecated, please use 'config' property."
     default: {}
