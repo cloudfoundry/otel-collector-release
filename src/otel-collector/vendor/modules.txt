@@ -1,5 +1,9 @@
 # cloud.google.com/go/compute/metadata v0.3.0
 ## explicit; go 1.19
+# github.com/alecthomas/participle/v2 v2.1.1
+## explicit; go 1.18
+github.com/alecthomas/participle/v2
+github.com/alecthomas/participle/v2/lexer
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
@@ -9,6 +13,24 @@ github.com/cenkalti/backoff/v4
 # github.com/cespare/xxhash/v2 v2.3.0
 ## explicit; go 1.11
 github.com/cespare/xxhash/v2
+# github.com/expr-lang/expr v1.16.9
+## explicit; go 1.18
+github.com/expr-lang/expr
+github.com/expr-lang/expr/ast
+github.com/expr-lang/expr/builtin
+github.com/expr-lang/expr/checker
+github.com/expr-lang/expr/compiler
+github.com/expr-lang/expr/conf
+github.com/expr-lang/expr/file
+github.com/expr-lang/expr/internal/deref
+github.com/expr-lang/expr/optimizer
+github.com/expr-lang/expr/parser
+github.com/expr-lang/expr/parser/lexer
+github.com/expr-lang/expr/parser/operator
+github.com/expr-lang/expr/parser/utils
+github.com/expr-lang/expr/patcher
+github.com/expr-lang/expr/vm
+github.com/expr-lang/expr/vm/runtime
 # github.com/felixge/httpsnoop v1.0.4
 ## explicit; go 1.13
 github.com/felixge/httpsnoop
@@ -29,6 +51,16 @@ github.com/go-ole/go-ole/oleutil
 # github.com/go-viper/mapstructure/v2 v2.0.0-alpha.1
 ## explicit; go 1.18
 github.com/go-viper/mapstructure/v2
+# github.com/gobwas/glob v0.2.3
+## explicit
+github.com/gobwas/glob
+github.com/gobwas/glob/compiler
+github.com/gobwas/glob/match
+github.com/gobwas/glob/syntax
+github.com/gobwas/glob/syntax/ast
+github.com/gobwas/glob/syntax/lexer
+github.com/gobwas/glob/util/runes
+github.com/gobwas/glob/util/strings
 # github.com/gogo/protobuf v1.3.2
 ## explicit; go 1.15
 github.com/gogo/protobuf/gogoproto
@@ -56,8 +88,12 @@ github.com/grpc-ecosystem/grpc-gateway/v2/utilities
 github.com/hashicorp/go-version
 # github.com/hashicorp/golang-lru/v2 v2.0.7
 ## explicit; go 1.18
+github.com/hashicorp/golang-lru/v2
 github.com/hashicorp/golang-lru/v2/internal
 github.com/hashicorp/golang-lru/v2/simplelru
+# github.com/iancoleman/strcase v0.3.0
+## explicit; go 1.16
+github.com/iancoleman/strcase
 # github.com/inconshreveable/mousetrap v1.1.0
 ## explicit; go 1.18
 github.com/inconshreveable/mousetrap
@@ -121,7 +157,27 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexpo
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter/internal/metadata
 # github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.104.0
 ## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/attraction
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/parseutils
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/timeutils
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/timeutils/internal/ctimefmt
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/traceutil
+# github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/expr
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterconfig
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterexpr
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterlog
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filtermatcher
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filtermetric
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterottl
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset/regexp
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterset/strict
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter/filterspan
+# github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/pdatautil
 # github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent v0.104.0
 ## explicit; go 1.21.0
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/sharedcomponent
@@ -131,6 +187,23 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/splunk
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.104.0
 ## explicit; go 1.21.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr
+# github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/internal
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/internal/logging
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottldatapoint
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspan
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlspanevent
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/internal/ottlcommon
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs
+# github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.104.0
 ## explicit; go 1.21.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry
@@ -140,6 +213,26 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometh
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheusremotewrite v0.104.0
 ## explicit; go 1.21.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheusremotewrite
+# github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor/internal/metadata
+# github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor/internal/metadata
+# github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourceprocessor/internal/metadata
+# github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.104.0
+## explicit; go 1.21.0
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/common
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/logs
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/metadata
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/metrics
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/traces
 # github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c
 ## explicit; go 1.14
 github.com/power-devops/perfstat
@@ -537,9 +630,11 @@ go.uber.org/zap/zapcore
 go.uber.org/zap/zapgrpc
 # golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 ## explicit; go 1.20
+golang.org/x/exp/constraints
 golang.org/x/exp/maps
 # golang.org/x/net v0.26.0
 ## explicit; go 1.18
+golang.org/x/net/context
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
