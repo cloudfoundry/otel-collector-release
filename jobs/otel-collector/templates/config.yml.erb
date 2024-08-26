@@ -160,7 +160,7 @@ end
 
 # Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_processors
-  %w[batch memory_limiter].sort
+  %w[batch memory_limiter transform filter].sort
 end
 
 def check_for_use_of_valid_components!(component_kind, included_components, allowed_components)

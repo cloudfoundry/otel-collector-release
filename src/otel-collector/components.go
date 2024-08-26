@@ -17,6 +17,8 @@ import (
 	splunkhecexporter "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexporter"
 	batchprocessor "go.opentelemetry.io/collector/processor/batchprocessor"
 	memorylimiterprocessor "go.opentelemetry.io/collector/processor/memorylimiterprocessor"
+	transformprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+	filterprocessor "github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	otlpreceiver "go.opentelemetry.io/collector/receiver/otlpreceiver"
 )
 
@@ -52,6 +54,8 @@ func components() (otelcol.Factories, error) {
 	factories.Processors, err = processor.MakeFactoryMap(
 		batchprocessor.NewFactory(),
 		memorylimiterprocessor.NewFactory(),
+		transformprocessor.NewFactory(),
+		filterprocessor.NewFactory(),
 	)
 	if err != nil {
 		return otelcol.Factories{}, err
