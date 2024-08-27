@@ -21,15 +21,13 @@ def retrieve_config
       unused_secrets.push "#{secret['name']}.#{type}" if old_cfg.eql? cfg
     end
   end
+  raise "The following secrets are unused: ['#{unused_secrets.join("', '")}']" if unused_secrets.any?
 
-  raise "The following secrets are unused: ['#{unused_secrets.join('\', \'')}']" if unused_secrets.any?
-
-  puts cfg
   missing_secrets = []
   cfg.scan(/{{[^\S\r\n]*\.\w+\.\w+[^\S\r\n]*}}/) do |m|
     missing_secrets.push m
   end
-  raise "The following template variables are missing secrets: ['#{missing_secrets.join('\', \'')}']" if missing_secrets.any?
+  raise "The following template variables are missing secrets: ['#{missing_secrets.join("', '")}']" if missing_secrets.any?
 
   YAML.safe_load(cfg)
 end
