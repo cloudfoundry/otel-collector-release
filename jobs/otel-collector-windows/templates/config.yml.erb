@@ -17,7 +17,7 @@ def retrieve_config
     %w[cert key ca secret].each do |type|
       next if secret[type].nil? || secret[type].empty?
       old_cfg = cfg.dup
-      cfg.gsub!(/{{[^\S\r\n]*\.#{secret["name"]}\.#{type}[^\S\r\n]*}}/, secret[type])
+      cfg.gsub!(/{{[^\S\r\n]*\.#{secret["name"]}\.#{type}[^\S\r\n]*}}/, secret[type].gsub("\n", '\n'))
       unused_secrets.push "#{secret['name']}.#{type}" if old_cfg.eql? cfg
     end
   end
