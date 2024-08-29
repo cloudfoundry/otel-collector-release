@@ -120,6 +120,19 @@ def set_internal_receiver_on_all_pipelines
   end
 end
 
+def add_nop_pipelines
+  ['traces', 'metrics', 'logs'].each do |signal|
+    unless config['service']['pipelines'].keys.any? { |k| k.start_with?(signal) }
+      config['service']['pipelines'][signal] = {
+        'receivers' => nil,
+        'processors' => nil,
+        'exporters' => ['nop']
+      }
+      config['exporters']['nop'] = nil
+    end
+  end
+end
+
 def expose_internal_telemetry
   config['service']['telemetry'] = {
     'metrics' => {
@@ -131,7 +144,7 @@ end
 
 # Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_exporters
-  %w[otlp file prometheus prometheusremotewrite].sort
+  %w[otlp file prometheus prometheusremotewrite nop].sort
 end
 
 # Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
@@ -163,6 +176,7 @@ check_for_use_of_reserved_bbs_api_port!
 check_for_use_of_valid_components!('processors', included_processors, retrieve_property('allow_list.processors'))
 check_for_use_of_valid_components!('exporters', included_exporters, retrieve_property('allow_list.exporters'))
 set_internal_receiver_as_only_receiver
+add_nop_pipelines
 set_internal_receiver_on_all_pipelines
 expose_internal_telemetry
 

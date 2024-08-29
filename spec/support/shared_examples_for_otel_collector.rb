@@ -36,6 +36,11 @@ shared_examples_for 'common config.yml' do
               'receivers' => ['otlp/placeholder'],
               'processors' => ['batch'],
               'exporters' => ['otlp']
+            },
+            'logs' => {
+              'receivers' => ['otlp/placeholder'],
+              'processors' => ['batch'],
+              'exporters' => ['otlp']
             }
           }
         }
@@ -52,6 +57,7 @@ shared_examples_for 'common config.yml' do
         cfg.delete('receivers')
         cfg['service']['pipelines']['metrics'].delete('receivers')
         cfg['service']['pipelines']['traces'].delete('receivers')
+        cfg['service']['pipelines']['logs'].delete('receivers')
         cfg
       end
 
@@ -75,6 +81,97 @@ shared_examples_for 'common config.yml' do
 
       it 'renders successfully' do
         expect(rendered.keys).to contain_exactly('receivers', 'exporters', 'service')
+      end
+    end
+
+    describe 'adding nop pipelines so forwarder agent doesnt log errors for unaccepted signals' do
+      describe "traces" do
+        context "when there is no traces pipeline" do
+          before do
+            config['service']['pipelines'].delete('traces')
+          end
+
+          it "adds a noop metrics pipeline" do
+            expect(rendered['service']['pipelines']['traces']).to eq(
+              'receivers' => ['otlp/cf-internal-local'],
+              'processors' => nil,
+              'exporters' => ['nop'])
+
+            expect(rendered['exporters'].keys).to include('nop')
+          end
+        end
+
+        context "when there is already a traces pipeline" do
+          before do
+            config['service']['pipelines'].delete('traces')
+            config['service']['pipelines']['traces/foo'] = {
+              'traces' => {
+                'receivers' => ['otlp/placeholder'],
+                'processors' => ['batch'],
+                'exporters' => ['otlp']
+              }
+            }
+          end
+
+          it "not does add a nop traces pipeline" do
+            expect(rendered['service']['pipelines']['traces']).to eq(nil)
+
+            expect(rendered['exporters'].keys).not_to include('nop')
+          end
+        end
+      end
+
+      describe "logs" do
+        context "when there is no logs pipeline" do
+          before do
+            config['service']['pipelines'].delete('logs')
+          end
+
+          it "adds a noop logs pipeline" do
+            expect(rendered['service']['pipelines']['logs']).to eq(
+              'receivers' => ['otlp/cf-internal-local'],
+              'processors' => nil,
+              'exporters' => ['nop'])
+
+            expect(rendered['exporters'].keys).to include('nop')
+          end
+        end
+
+        context "when there is already a logs pipeline" do
+          before do
+            config['service']['pipelines'].delete('logs')
+            config['service']['pipelines']['logs/bar'] = {
+              'traces' => {
+                'receivers' => ['otlp/placeholder'],
+                'processors' => ['batch'],
+                'exporters' => ['otlp']
+              }
+            }
+          end
+
+          it "not does add a nop traces pipeline" do
+            expect(rendered['service']['pipelines']['logs']).to eq(nil)
+
+            expect(rendered['exporters'].keys).not_to include('nop')
+          end
+        end
+      end
+
+      describe "metrics" do
+        context "when there is no metrics pipeline" do
+          before do
+            config['service']['pipelines'].delete('metrics')
+          end
+
+          it "adds a noop metrics pipeline" do
+            expect(rendered['service']['pipelines']['metrics']).to eq(
+              'receivers' => ['otlp/cf-internal-local'],
+              'processors' => nil,
+              'exporters' => ['nop'])
+
+            expect(rendered['exporters'].keys).to include('nop')
+          end
+        end
       end
     end
 
@@ -405,7 +502,8 @@ shared_examples_for 'common config.yml' do
               'endpoint' => '1.2.3.4:1234',
               'metric_expiration' => '60m'
             },
-            'otlp/traces' => { 'endpoint' => 'otelcol:4317' }
+            'otlp/traces' => { 'endpoint' => 'otelcol:4317' },
+            'nop' => nil
           }
         )
       end
@@ -424,8 +522,8 @@ shared_examples_for 'common config.yml' do
         before do
           properties.delete('trace_exporters')
         end
-        it 'does not generate a traces pipeline' do
-          expect(rendered['service']['pipelines'].keys).to_not include 'traces'
+        it 'includes a nop traces pipeline' do
+          expect(rendered['service']['pipelines']['traces']['exporters']).to eq(['nop'])
         end
       end
 
@@ -433,8 +531,8 @@ shared_examples_for 'common config.yml' do
         before do
           properties.delete('metric_exporters')
         end
-        it 'does not generate a metrics pipeline' do
-          expect(rendered['service']['pipelines'].keys).to_not include 'metrics'
+        it 'includes a nop metrics pipeline' do
+          expect(rendered['service']['pipelines']['metrics']['exporters']).to eq(['nop'])
         end
       end
 

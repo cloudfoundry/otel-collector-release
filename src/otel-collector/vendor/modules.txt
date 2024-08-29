@@ -285,6 +285,7 @@ go.opentelemetry.io/collector/connector
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/consumer
 go.opentelemetry.io/collector/consumer/consumererror
+go.opentelemetry.io/collector/consumer/consumertest
 # go.opentelemetry.io/collector/exporter v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/exporter
@@ -294,6 +295,10 @@ go.opentelemetry.io/collector/exporter/exporterhelper/internal/metadata
 go.opentelemetry.io/collector/exporter/exporterqueue
 go.opentelemetry.io/collector/exporter/internal/experr
 go.opentelemetry.io/collector/exporter/internal/queue
+# go.opentelemetry.io/collector/exporter/nopexporter v0.104.0
+## explicit; go 1.21.0
+go.opentelemetry.io/collector/exporter/nopexporter
+go.opentelemetry.io/collector/exporter/nopexporter/internal/metadata
 # go.opentelemetry.io/collector/exporter/otlpexporter v0.104.0
 ## explicit; go 1.21.0
 go.opentelemetry.io/collector/exporter/otlpexporter
