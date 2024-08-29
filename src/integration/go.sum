@@ -409,6 +409,8 @@ go.opentelemetry.io/collector/consumer v0.104.0 h1:Z1ZjapFp5mUcbkGEL96ljpqLIUMhR
 go.opentelemetry.io/collector/consumer v0.104.0/go.mod h1:60zcIb0W9GW0z9uJCv6NmjpSbCfBOeRUyrtEwqK6Hzo=
 go.opentelemetry.io/collector/exporter v0.104.0 h1:C2HmnfBa05IQ2T+p9T7K7gXVxjrBLd+JxEtAWo7JNbg=
 go.opentelemetry.io/collector/exporter v0.104.0/go.mod h1:Rx0oB0E4Ccg1JuAnEWwhtrq1ygRBkfx4mco1DpR3WaQ=
+go.opentelemetry.io/collector/exporter/nopexporter v0.104.0 h1:33JeCQiJbvhSXFqQ34R4ole/wD4iHtF5LYp2GziYVnY=
+go.opentelemetry.io/collector/exporter/nopexporter v0.104.0/go.mod h1:73afhI8uc5NKAl9pMJlgQQ46Ck9e7nQ2zZGXHHSzuwo=
 go.opentelemetry.io/collector/exporter/otlpexporter v0.104.0 h1:EFOdhnc2yGhqou0Tud1HsM7fsgWo/H3tdQhYYytDprQ=
 go.opentelemetry.io/collector/exporter/otlpexporter v0.104.0/go.mod h1:fAF7Q3Xh0OkxYWUycdrNNDXkyz3nhHIRKDkez0aQ6zg=
 go.opentelemetry.io/collector/extension v0.104.0 h1:bftkgFMKya/QIwK+bOxEAPVs/TvTez+s1mlaiUznJkA=

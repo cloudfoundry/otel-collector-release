@@ -14,3 +14,7 @@ pushd "${release_dir}/src/otel-collector"
   go mod vendor
 popd
 
+pushd "${release_dir}/src/integration"
+  go mod tidy
+  go mod vendor
+popd
