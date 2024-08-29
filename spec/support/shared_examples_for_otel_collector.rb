@@ -658,8 +658,11 @@ HqBTRxft
           properties['secrets'].delete_at(1)
         end
 
-        it 'raises an error' do
-          expect { rendered }.to raise_error(/The following template variables are missing secrets: \['{{ .testsecret.key }}', '{{ .testsecret.ca }}', '{{ .anothersecret.secret }}'\]/)
+        it 'does not interpolate those template variables' do
+          expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
+          expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('{{ .testsecret.key }}')
+          expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('{{ .testsecret.ca }}')
+          expect(rendered['exporters']['otlp']['headers']['auth']).to eq('{{ .anothersecret.secret }}')
         end
       end
 
@@ -673,7 +676,7 @@ HqBTRxft
         end
       end
 
-      context 'when a template variable uses differing amounts of space separation' do
+      context 'when template variables uses differing amounts of space separation' do
         before do
           config['exporters']['otlp']['tls']['cert_pem'] = '{{.testsecret.cert}}'
           config['exporters']['otlp']['tls']['key_pem'] = '{{        .testsecret.key}}'

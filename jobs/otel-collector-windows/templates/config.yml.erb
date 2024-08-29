@@ -1,35 +1,50 @@
 <%=
 def config
   @config ||= begin
-    cfg = retrieve_config
+    cfg = retrieve_property('config')
+    secrets = retrieve_property('secrets').to_h { |x| [x['name'], { 'cert' => x['cert'], 'key' => x['key'], 'ca' => x['ca'], 'secret' => x['secret'] }] }
+    used_secrets = {}
+    cfg = interpolate_secrets(cfg, secrets, used_secrets)
+    check_for_unused_secrets!(secrets, used_secrets)
     cfg = handle_old_properties(cfg) if cfg.empty?
     cfg
   end
 end
 
-def retrieve_config
-  cfg = p('config')
-
-  return cfg if cfg.respond_to?(:each)
-
-  unused_secrets = []
-  p('secrets').each do |secret|
-    %w[cert key ca secret].each do |type|
-      next if secret[type].nil? || secret[type].empty?
-      old_cfg = cfg.dup
-      cfg.gsub!(/{{[^\S\r\n]*\.#{secret["name"]}\.#{type}[^\S\r\n]*}}/, secret[type].gsub("\n", '\n'))
-      unused_secrets.push "#{secret['name']}.#{type}" if old_cfg.eql? cfg
+def interpolate_secrets(cfg, secrets, used_secrets)
+  if cfg.is_a? String
+    match = cfg.match(/{{[^\S\r\n]*\.(\w+)\.(\w+)[^\S\r\n]*}}/)
+    unless match.nil?
+      secret_name = match[1]
+      secret_type = match[2]
+      secret_value = secrets.dig(secret_name, secret_type)
+      unless secret_value.nil? || secret_value.empty?
+        cfg = secret_value
+        used_secrets["#{secret_name}.#{secret_type}"] = true
+      end
     end
   end
-  raise "The following secrets are unused: ['#{unused_secrets.join("', '")}']" if unused_secrets.any?
 
-  missing_secrets = []
-  cfg.scan(/{{[^\S\r\n]*\.\w+\.\w+[^\S\r\n]*}}/) do |m|
-    missing_secrets.push m
+  if cfg.is_a? Array
+    cfg.map! { |elem| interpolate_secrets(elem, secrets, used_secrets) }
   end
-  raise "The following template variables are missing secrets: ['#{missing_secrets.join("', '")}']" if missing_secrets.any?
 
-  YAML.safe_load(cfg)
+  if cfg.is_a? Hash
+    cfg.keys.each { |key| cfg[key] = interpolate_secrets(cfg[key], secrets, used_secrets) }
+  end
+
+  cfg
+end
+
+def check_for_unused_secrets!(secrets, used_secrets)
+  unused_secrets = []
+  secrets.each do |name, hash|
+    hash.each do |type, value|
+      search_str = "#{name}.#{type}"
+      unused_secrets.push search_str unless value.nil? || value.empty? || !used_secrets[search_str].nil?
+    end
+  end
+  raise "The following secrets are unused: ['#{unused_secrets.join("', '")}']" unless unused_secrets.empty?
 end
 
 def check_for_new_and_old_properties!
