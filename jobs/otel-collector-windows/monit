@@ -1,18 +1,22 @@
-<%
+<%=
   process = {
     "name" => "otel-collector",
     "executable" => "/var/vcap/packages/otel-collector-windows/otel-collector.exe",
     "args" => ["--config", "/var/vcap/jobs/otel-collector-windows/config/config.yml"],
-    "env" => {"NO_WINDOWS_SERVICE" => "1"}
+    "env" => {
+      "NO_WINDOWS_SERVICE" => "1",
+      'GOMEMLIMIT'         => "#{(p('limits.memory_mib').to_i * 0.80).floor}MiB"
+    }
   }
 
-  memory_mib = p('limits.memory_mib')
-  process['env']['GOMEMLIMIT'] = "#{(memory_mib.to_i * 0.80).floor}MiB"
-
+  if_p('limits.cpu') do |cpu|
+    process['env']['GOMAXPROCS'] = p('limits.cpu').to_i
+  end
+  
   monit = { "processes" => [] }
   if p('enabled')
     monit["processes"] = [process]
   end
-%>
 
-<%= JSON.pretty_generate(monit) %>
+  JSON.pretty_generate(monit)
+%>

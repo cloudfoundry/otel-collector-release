@@ -66,6 +66,28 @@ describe 'otel-collector-windows' do
           end
         end
       end
+
+      describe 'cpu' do
+        context 'when not provided' do
+          before do
+            properties['limits'].delete('cpu')
+          end
+
+          it 'does not set GOMAXPROCS' do
+            expect(rendered['processes'][0]['env']).not_to have_key('GOMAXPROCS')
+          end
+        end
+
+        context 'when a custom cpu limit is provided' do
+          before do
+            properties['limits']['cpu'] = 2
+          end
+
+          it 'sets GOMAXPROCS' do
+            expect(rendered['processes'][0]['env']['GOMAXPROCS']).to eq(2)
+          end
+        end
+      end
     end
   end
 end

@@ -28,6 +28,8 @@ properties:
   limits.memory_mib:
     description: "Memory limit to apply to this process, in mebibytes."
     default: 512
+  limits.cpu:
+    description: "Controls how many CPU cores this process can use simultaneously."
   config:
     description: "Collector configuration"
     default: {}

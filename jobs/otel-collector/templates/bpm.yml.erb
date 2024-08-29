@@ -1,15 +1,19 @@
-<%
-    process = {
-      'name' => 'otel-collector',
-      'executable' => '/var/vcap/packages/otel-collector/otel-collector',
-      'args' => ['--config', '/var/vcap/jobs/otel-collector/config/config.yml']
+<%=
+  bpm = {
+    'processes' => [
+        {
+          'name' => 'otel-collector',
+          'executable' => '/var/vcap/packages/otel-collector/otel-collector',
+          'args' => ['--config', '/var/vcap/jobs/otel-collector/config/config.yml'],
+          'env' => { 'GOMEMLIMIT' => "#{(p('limits.memory_mib').to_i * 0.80).floor}MiB" },
+          'limits' => { 'memory' => "#{p('limits.memory_mib')}MiB" }
+        }
+      ]
     }
 
-    memory_mib = p('limits.memory_mib')
-    process['limits'] = { 'memory' => "#{memory_mib}MiB" }
-    process['env'] = { 'GOMEMLIMIT' => "#{(memory_mib.to_i * 0.80).floor}MiB" }
-
-    bpm = { 'processes' => [process] }
+    if_p('limits.cpu') do |cpu|
+      bpm['processes'][0]['env']['GOMAXPROCS'] = cpu.to_i 
+    end
+    
+    YAML.dump(bpm) 
 %>
-
-<%= YAML.dump(bpm) %>
