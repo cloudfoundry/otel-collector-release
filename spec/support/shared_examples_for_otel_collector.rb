@@ -584,6 +584,11 @@ shared_examples_for 'common config.yml' do
               'headers' => {
                 'auth' => '{{ .anothersecret.secret }}'
               }
+            },
+            'prometheus/test' => {
+              'tags' => [
+                '{{ .anothersecret.secret }}'
+              ]
             }
           },
           'service' => {
@@ -649,6 +654,7 @@ HqBTRxft
         expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
         expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
         expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+        expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('foobarbaz')
       end
 
       context 'when no secrets exist for template variables' do
@@ -663,12 +669,14 @@ HqBTRxft
           expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('{{ .testsecret.key }}')
           expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('{{ .testsecret.ca }}')
           expect(rendered['exporters']['otlp']['headers']['auth']).to eq('{{ .anothersecret.secret }}')
+          expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('{{ .anothersecret.secret }}')
         end
       end
 
       context 'when no template variables exist for a secret' do
         before do
           config['exporters']['otlp'].delete('headers')
+          config['exporters'].delete('prometheus/test')
         end
 
         it 'raises an error' do
@@ -688,6 +696,7 @@ HqBTRxft
           expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
           expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
           expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+          expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('foobarbaz')
         end
       end
 
@@ -700,6 +709,22 @@ HqBTRxft
 
         it 'does not match secrets to those variables' do
           expect { rendered }.to raise_error(/The following secrets are unused: \['testsecret.cert', 'testsecret.key', 'testsecret.ca'\]/)
+        end
+      end
+
+      context 'when template variables are not quoted' do
+        before do
+          properties['config'] = '
+exporters:
+  otlp/other:
+    endpoint: otelcol:4317
+    headers:
+      auth: {{ .test.secret }}'
+          properties['secrets'] = [{'name' => 'test', 'secret' => 'mysecret'}]
+        end
+
+        it 'does not match secrets to those variables' do
+          expect { rendered }.to raise_error(/The following secrets are unused: \['test.secret'\]/)
         end
       end
     end
