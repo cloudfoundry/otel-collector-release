@@ -4,14 +4,14 @@ def config
     cfg = retrieve_property('config')
     secrets = retrieve_property('secrets').to_h { |x| [x['name'], { 'cert' => x['cert'], 'key' => x['key'], 'ca' => x['ca'], 'secret' => x['secret'] }] }
     used_secrets = {}
-    cfg = interpolate_secrets(cfg, secrets, used_secrets)
+    interpolate_secrets!(cfg, secrets, used_secrets)
     check_for_unused_secrets!(secrets, used_secrets)
     cfg = handle_old_properties(cfg) if cfg.empty?
     cfg
   end
 end
 
-def interpolate_secrets(cfg, secrets, used_secrets)
+def interpolate_secrets!(cfg, secrets, used_secrets)
   if cfg.is_a? String
     match = cfg.match(/{{[^\S\r\n]*\.(\w+)\.(\w+)[^\S\r\n]*}}/)
     unless match.nil?
@@ -23,14 +23,10 @@ def interpolate_secrets(cfg, secrets, used_secrets)
         used_secrets["#{secret_name}.#{secret_type}"] = true
       end
     end
-  end
-
-  if cfg.is_a? Array
-    cfg.map! { |elem| interpolate_secrets(elem, secrets, used_secrets) }
-  end
-
-  if cfg.is_a? Hash
-    cfg.keys.each { |key| cfg[key] = interpolate_secrets(cfg[key], secrets, used_secrets) }
+  elsif cfg.is_a? Array
+    cfg.map! { |elem| interpolate_secrets!(elem, secrets, used_secrets) }
+  elsif cfg.is_a? Hash
+    cfg.keys.each { |key| cfg[key] = interpolate_secrets!(cfg[key], secrets, used_secrets) }
   end
 
   cfg
