@@ -18,3 +18,11 @@ jobs:
         ruby-version: '2.7'
         bundler-cache: true
     - run: ./scripts/subtests/spec-test
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: "src/integration/go.mod"
+      - run: ./scripts/subtests/integration-test
