@@ -6,8 +6,9 @@ package file
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -16,6 +17,11 @@ import (
 // File implements a File provider.
 type File struct {
 	path string
+	w    *fsnotify.Watcher
+
+	// Using Go 1.18 atomic functions for backwards compatibility.
+	isWatching  uint32
+	isUnwatched uint32
 }
 
 // Provider returns a file provider.
@@ -25,7 +31,7 @@ func Provider(path string) *File {
 
 // ReadBytes reads the contents of a file on disk and returns the bytes.
 func (f *File) ReadBytes() ([]byte, error) {
-	return ioutil.ReadFile(f.path)
+	return os.ReadFile(f.path)
 }
 
 // Read is not supported by the file provider.
@@ -36,6 +42,11 @@ func (f *File) Read() (map[string]interface{}, error) {
 // Watch watches the file and triggers a callback when it changes. It is a
 // blocking function that internally spawns a goroutine to watch for changes.
 func (f *File) Watch(cb func(event interface{}, err error)) error {
+	// If a watcher already exists, return an error.
+	if atomic.LoadUint32(&f.isWatching) == 1 {
+		return errors.New("file is already being watched")
+	}
+
 	// Resolve symlinks and save the original path so that changes to symlinks
 	// can be detected.
 	realPath, err := filepath.EvalSymlinks(f.path)
@@ -48,10 +59,12 @@ func (f *File) Watch(cb func(event interface{}, err error)) error {
 	// the whole parent directory to pick up all events such as symlink changes.
 	fDir, _ := filepath.Split(f.path)
 
-	w, err := fsnotify.NewWatcher()
+	f.w, err = fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
+
+	atomic.StoreUint32(&f.isWatching, 1)
 
 	var (
 		lastEvent     string
@@ -62,9 +75,13 @@ func (f *File) Watch(cb func(event interface{}, err error)) error {
 	loop:
 		for {
 			select {
-			case event, ok := <-w.Events:
+			case event, ok := <-f.w.Events:
 				if !ok {
-					cb(nil, errors.New("fsnotify watch channel closed"))
+					// Only throw an error if it was not an explicit unwatch.
+					if atomic.LoadUint32(&f.isUnwatched) == 0 {
+						cb(nil, errors.New("fsnotify watch channel closed"))
+					}
+
 					break loop
 				}
 
@@ -78,18 +95,6 @@ func (f *File) Watch(cb func(event interface{}, err error)) error {
 
 				evFile := filepath.Clean(event.Name)
 
-				// Since the event is triggered on a directory, is this
-				// one on the file being watched?
-				if evFile != realPath && evFile != f.path {
-					continue
-				}
-
-				// The file was removed.
-				if event.Op&fsnotify.Remove != 0 {
-					cb(nil, fmt.Errorf("file %s was removed", event.Name))
-					break loop
-				}
-
 				// Resolve symlink to get the real path, in case the symlink's
 				// target has changed.
 				curPath, err := filepath.EvalSymlinks(f.path)
@@ -97,20 +102,35 @@ func (f *File) Watch(cb func(event interface{}, err error)) error {
 					cb(nil, err)
 					break loop
 				}
-				realPath = filepath.Clean(curPath)
+				curPath = filepath.Clean(curPath)
 
-				// Finally, we only care about create and write.
-				if event.Op&(fsnotify.Write|fsnotify.Create) == 0 {
-					continue
+				onWatchedFile := evFile == realPath || evFile == f.path
+
+				// Since the event is triggered on a directory, is this
+				// a create or write on the file being watched?
+				//
+				// Or has the real path of the file being watched changed?
+				//
+				// If either of the above are true, trigger the callback.
+				if event.Has(fsnotify.Create|fsnotify.Write) && (onWatchedFile ||
+					(curPath != "" && curPath != realPath)) {
+					realPath = curPath
+
+					// Trigger event.
+					cb(nil, nil)
+				} else if onWatchedFile && event.Has(fsnotify.Remove) {
+					cb(nil, fmt.Errorf("file %s was removed", event.Name))
+					break loop
 				}
 
-				// Trigger event.
-				cb(nil, nil)
-
 			// There's an error.
-			case err, ok := <-w.Errors:
+			case err, ok := <-f.w.Errors:
 				if !ok {
-					cb(nil, errors.New("fsnotify err channel closed"))
+					// Only throw an error if it was not an explicit unwatch.
+					if atomic.LoadUint32(&f.isUnwatched) == 0 {
+						cb(nil, errors.New("fsnotify err channel closed"))
+					}
+
 					break loop
 				}
 
@@ -120,9 +140,17 @@ func (f *File) Watch(cb func(event interface{}, err error)) error {
 			}
 		}
 
-		w.Close()
+		atomic.StoreUint32(&f.isWatching, 0)
+		atomic.StoreUint32(&f.isUnwatched, 0)
+		f.w.Close()
 	}()
 
 	// Watch the directory for changes.
-	return w.Add(fDir)
+	return f.w.Add(fDir)
+}
+
+// Unwatch stops watching the files and closes fsnotify watcher.
+func (f *File) Unwatch() error {
+	atomic.StoreUint32(&f.isUnwatched, 1)
+	return f.w.Close()
 }

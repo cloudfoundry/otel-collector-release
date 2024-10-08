@@ -3,7 +3,7 @@ set -euxo pipefail
 
 release_dir="$(dirname "$0")/.."
 
-rm -r "${release_dir}/src/otel-collector"
+rm -rf "${release_dir}/src/otel-collector"
 
 pushd "${release_dir}/src/otel-collector-builder"
   go run go.opentelemetry.io/collector/cmd/builder --skip-compilation --config=config.yaml

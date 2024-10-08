@@ -6,17 +6,20 @@ import (
 	"context"
 	"errors"
 
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtelemetry"
 )
 
+// Deprecated: [v0.108.0] use LeveledMeter instead.
 func Meter(settings component.TelemetrySettings) metric.Meter {
 	return settings.MeterProvider.Meter("go.opentelemetry.io/collector/processor/batchprocessor")
+}
+
+func LeveledMeter(settings component.TelemetrySettings, level configtelemetry.Level) metric.Meter {
+	return settings.LeveledMeterProvider(level).Meter("go.opentelemetry.io/collector/processor/batchprocessor")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
@@ -31,81 +34,74 @@ type TelemetryBuilder struct {
 	ProcessorBatchBatchSendSizeBytes         metric.Int64Histogram
 	ProcessorBatchBatchSizeTriggerSend       metric.Int64Counter
 	ProcessorBatchMetadataCardinality        metric.Int64ObservableUpDownCounter
-	observeProcessorBatchMetadataCardinality func() int64
+	observeProcessorBatchMetadataCardinality func(context.Context, metric.Observer) error
 	ProcessorBatchTimeoutTriggerSend         metric.Int64Counter
-	level                                    configtelemetry.Level
-	attributeSet                             attribute.Set
+	meters                                   map[configtelemetry.Level]metric.Meter
 }
 
-// telemetryBuilderOption applies changes to default builder.
-type telemetryBuilderOption func(*TelemetryBuilder)
-
-// WithLevel sets the current telemetry level for the component.
-func WithLevel(lvl configtelemetry.Level) telemetryBuilderOption {
-	return func(builder *TelemetryBuilder) {
-		builder.level = lvl
-	}
+// TelemetryBuilderOption applies changes to default builder.
+type TelemetryBuilderOption interface {
+	apply(*TelemetryBuilder)
 }
 
-// WithAttributeSet applies a set of attributes for asynchronous instruments.
-func WithAttributeSet(set attribute.Set) telemetryBuilderOption {
-	return func(builder *TelemetryBuilder) {
-		builder.attributeSet = set
-	}
+type telemetryBuilderOptionFunc func(mb *TelemetryBuilder)
+
+func (tbof telemetryBuilderOptionFunc) apply(mb *TelemetryBuilder) {
+	tbof(mb)
 }
 
 // WithProcessorBatchMetadataCardinalityCallback sets callback for observable ProcessorBatchMetadataCardinality metric.
-func WithProcessorBatchMetadataCardinalityCallback(cb func() int64) telemetryBuilderOption {
-	return func(builder *TelemetryBuilder) {
-		builder.observeProcessorBatchMetadataCardinality = cb
-	}
+func WithProcessorBatchMetadataCardinalityCallback(cb func() int64, opts ...metric.ObserveOption) TelemetryBuilderOption {
+	return telemetryBuilderOptionFunc(func(builder *TelemetryBuilder) {
+		builder.observeProcessorBatchMetadataCardinality = func(_ context.Context, o metric.Observer) error {
+			o.ObserveInt64(builder.ProcessorBatchMetadataCardinality, cb(), opts...)
+			return nil
+		}
+	})
 }
 
 // NewTelemetryBuilder provides a struct with methods to update all internal telemetry
 // for a component
-func NewTelemetryBuilder(settings component.TelemetrySettings, options ...telemetryBuilderOption) (*TelemetryBuilder, error) {
-	builder := TelemetryBuilder{level: configtelemetry.LevelBasic}
+func NewTelemetryBuilder(settings component.TelemetrySettings, options ...TelemetryBuilderOption) (*TelemetryBuilder, error) {
+	builder := TelemetryBuilder{meters: map[configtelemetry.Level]metric.Meter{}}
 	for _, op := range options {
-		op(&builder)
+		op.apply(&builder)
 	}
+	builder.meters[configtelemetry.LevelBasic] = LeveledMeter(settings, configtelemetry.LevelBasic)
+	builder.meters[configtelemetry.LevelDetailed] = LeveledMeter(settings, configtelemetry.LevelDetailed)
 	var err, errs error
-	if builder.level >= configtelemetry.LevelNormal {
-		builder.meter = Meter(settings)
-	} else {
-		builder.meter = noop.Meter{}
-	}
-	builder.ProcessorBatchBatchSendSize, err = builder.meter.Int64Histogram(
-		"processor_batch_batch_send_size",
+	builder.ProcessorBatchBatchSendSize, err = builder.meters[configtelemetry.LevelBasic].Int64Histogram(
+		"otelcol_processor_batch_batch_send_size",
 		metric.WithDescription("Number of units in the batch"),
-		metric.WithUnit("1"), metric.WithExplicitBucketBoundaries([]float64{10, 25, 50, 75, 100, 250, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000, 50000, 100000}...),
+		metric.WithUnit("{units}"),
+		metric.WithExplicitBucketBoundaries([]float64{10, 25, 50, 75, 100, 250, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000, 50000, 100000}...),
 	)
 	errs = errors.Join(errs, err)
-	builder.ProcessorBatchBatchSendSizeBytes, err = builder.meter.Int64Histogram(
-		"processor_batch_batch_send_size_bytes",
+	builder.ProcessorBatchBatchSendSizeBytes, err = builder.meters[configtelemetry.LevelDetailed].Int64Histogram(
+		"otelcol_processor_batch_batch_send_size_bytes",
 		metric.WithDescription("Number of bytes in batch that was sent"),
-		metric.WithUnit("By"), metric.WithExplicitBucketBoundaries([]float64{10, 25, 50, 75, 100, 250, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1e+06, 2e+06, 3e+06, 4e+06, 5e+06, 6e+06, 7e+06, 8e+06, 9e+06}...),
+		metric.WithUnit("By"),
+		metric.WithExplicitBucketBoundaries([]float64{10, 25, 50, 75, 100, 250, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 30000, 50000, 100000, 200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1e+06, 2e+06, 3e+06, 4e+06, 5e+06, 6e+06, 7e+06, 8e+06, 9e+06}...),
 	)
 	errs = errors.Join(errs, err)
-	builder.ProcessorBatchBatchSizeTriggerSend, err = builder.meter.Int64Counter(
-		"processor_batch_batch_size_trigger_send",
+	builder.ProcessorBatchBatchSizeTriggerSend, err = builder.meters[configtelemetry.LevelBasic].Int64Counter(
+		"otelcol_processor_batch_batch_size_trigger_send",
 		metric.WithDescription("Number of times the batch was sent due to a size trigger"),
-		metric.WithUnit("1"),
+		metric.WithUnit("{times}"),
 	)
 	errs = errors.Join(errs, err)
-	builder.ProcessorBatchMetadataCardinality, err = builder.meter.Int64ObservableUpDownCounter(
-		"processor_batch_metadata_cardinality",
+	builder.ProcessorBatchMetadataCardinality, err = builder.meters[configtelemetry.LevelBasic].Int64ObservableUpDownCounter(
+		"otelcol_processor_batch_metadata_cardinality",
 		metric.WithDescription("Number of distinct metadata value combinations being processed"),
-		metric.WithUnit("1"),
-		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(builder.observeProcessorBatchMetadataCardinality(), metric.WithAttributeSet(builder.attributeSet))
-			return nil
-		}),
+		metric.WithUnit("{combinations}"),
 	)
 	errs = errors.Join(errs, err)
-	builder.ProcessorBatchTimeoutTriggerSend, err = builder.meter.Int64Counter(
-		"processor_batch_timeout_trigger_send",
+	_, err = builder.meters[configtelemetry.LevelBasic].RegisterCallback(builder.observeProcessorBatchMetadataCardinality, builder.ProcessorBatchMetadataCardinality)
+	errs = errors.Join(errs, err)
+	builder.ProcessorBatchTimeoutTriggerSend, err = builder.meters[configtelemetry.LevelBasic].Int64Counter(
+		"otelcol_processor_batch_timeout_trigger_send",
 		metric.WithDescription("Number of times the batch was sent due to a timeout trigger"),
-		metric.WithUnit("1"),
+		metric.WithUnit("{times}"),
 	)
 	errs = errors.Join(errs, err)
 	return &builder, errs
