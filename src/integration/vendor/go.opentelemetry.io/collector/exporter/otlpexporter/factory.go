@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/collector/config/configretry"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/exporter"
+	"go.opentelemetry.io/collector/exporter/exporterbatcher"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 	"go.opentelemetry.io/collector/exporter/otlpexporter/internal/metadata"
 )
@@ -29,10 +30,14 @@ func NewFactory() exporter.Factory {
 }
 
 func createDefaultConfig() component.Config {
+	batcherCfg := exporterbatcher.NewDefaultConfig()
+	batcherCfg.Enabled = false
+
 	return &Config{
-		TimeoutSettings: exporterhelper.NewDefaultTimeoutSettings(),
-		RetryConfig:     configretry.NewDefaultBackOffConfig(),
-		QueueConfig:     exporterhelper.NewDefaultQueueSettings(),
+		TimeoutConfig: exporterhelper.NewDefaultTimeoutConfig(),
+		RetryConfig:   configretry.NewDefaultBackOffConfig(),
+		QueueConfig:   exporterhelper.NewDefaultQueueConfig(),
+		BatcherConfig: batcherCfg,
 		ClientConfig: configgrpc.ClientConfig{
 			Headers: map[string]configopaque.String{},
 			// Default to gzip compression
@@ -53,11 +58,13 @@ func createTracesExporter(
 	return exporterhelper.NewTracesExporter(ctx, set, cfg,
 		oce.pushTraces,
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
-		exporterhelper.WithTimeout(oCfg.TimeoutSettings),
+		exporterhelper.WithTimeout(oCfg.TimeoutConfig),
 		exporterhelper.WithRetry(oCfg.RetryConfig),
 		exporterhelper.WithQueue(oCfg.QueueConfig),
+		exporterhelper.WithBatcher(oCfg.BatcherConfig),
 		exporterhelper.WithStart(oce.start),
-		exporterhelper.WithShutdown(oce.shutdown))
+		exporterhelper.WithShutdown(oce.shutdown),
+	)
 }
 
 func createMetricsExporter(
@@ -70,9 +77,10 @@ func createMetricsExporter(
 	return exporterhelper.NewMetricsExporter(ctx, set, cfg,
 		oce.pushMetrics,
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
-		exporterhelper.WithTimeout(oCfg.TimeoutSettings),
+		exporterhelper.WithTimeout(oCfg.TimeoutConfig),
 		exporterhelper.WithRetry(oCfg.RetryConfig),
 		exporterhelper.WithQueue(oCfg.QueueConfig),
+		exporterhelper.WithBatcher(oCfg.BatcherConfig),
 		exporterhelper.WithStart(oce.start),
 		exporterhelper.WithShutdown(oce.shutdown),
 	)
@@ -88,9 +96,10 @@ func createLogsExporter(
 	return exporterhelper.NewLogsExporter(ctx, set, cfg,
 		oce.pushLogs,
 		exporterhelper.WithCapabilities(consumer.Capabilities{MutatesData: false}),
-		exporterhelper.WithTimeout(oCfg.TimeoutSettings),
+		exporterhelper.WithTimeout(oCfg.TimeoutConfig),
 		exporterhelper.WithRetry(oCfg.RetryConfig),
 		exporterhelper.WithQueue(oCfg.QueueConfig),
+		exporterhelper.WithBatcher(oCfg.BatcherConfig),
 		exporterhelper.WithStart(oce.start),
 		exporterhelper.WithShutdown(oce.shutdown),
 	)

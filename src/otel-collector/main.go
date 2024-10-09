@@ -8,12 +8,8 @@ import (
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
-	"go.opentelemetry.io/collector/confmap/converter/expandconverter"
 	envprovider "go.opentelemetry.io/collector/confmap/provider/envprovider"
 	fileprovider "go.opentelemetry.io/collector/confmap/provider/fileprovider"
-	httpprovider "go.opentelemetry.io/collector/confmap/provider/httpprovider"
-	httpsprovider "go.opentelemetry.io/collector/confmap/provider/httpsprovider"
-	yamlprovider "go.opentelemetry.io/collector/confmap/provider/yamlprovider"
 	"go.opentelemetry.io/collector/otelcol"
 )
 
@@ -32,12 +28,6 @@ func main() {
 				ProviderFactories: []confmap.ProviderFactory{
 					envprovider.NewFactory(),
 					fileprovider.NewFactory(),
-					httpprovider.NewFactory(),
-					httpsprovider.NewFactory(),
-					yamlprovider.NewFactory(),
-				},
-				ConverterFactories: []confmap.ConverterFactory{
-					expandconverter.NewFactory(),
 				},
 			},
 		},
