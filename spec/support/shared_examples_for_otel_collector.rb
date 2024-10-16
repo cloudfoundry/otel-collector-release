@@ -320,10 +320,9 @@ shared_examples_for 'common config.yml' do
         expect { rendered }.to raise_error(/The following configured processors are not allowed: \["batch"\]/)
       end
 
-      it 'allows all processors with empty allow list' do
+      it 'allows no processors with empty allow list' do
         properties['allow_list'] = {'processors' => [] }
-        expect(rendered.keys).to include 'processors'
-        expect(rendered['processors']).to eq(config['processors'])
+        expect { rendered }.to raise_error(/The following configured processors are not allowed: \["batch"\]/)
       end
 
       it 'errors when an unrecognized processor is in allow list' do
@@ -363,10 +362,9 @@ shared_examples_for 'common config.yml' do
         expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp"\]/)
       end
 
-      it 'allows all exporters with empty allow list' do
+      it 'allows no exporters with empty allow list' do
         properties['allow_list'] = {'exporters' => []}
-        expect(rendered.keys).to include 'exporters'
-        expect(rendered['exporters']).to eq(config['exporters'])
+        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp"\]/)
       end
 
       it 'includes the configured exporters even if their names contain `/`' do
