@@ -282,6 +282,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.111.0/go.mod h1:/wQcdBlTw9I5OlZ48+GwxYosan8WqvbGregUaRZKByM=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.111.0 h1:Vamhtax5LuA6kSkU3vcKLgrPk1RTqv/ldCfG/a6JYII=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.111.0/go.mod h1:VZtwmcnw9vGLBeQeclSixVCmgvs7ToLglSwrQYBh6zE=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.111.0 h1:m/u2iRttl/nEjp0EZ9w371LLAqogw0tDn+wPU6D7ArY=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.111.0/go.mod h1:mmkCl306sRZYt/7uNmjvuRRvbe/xUDSDm8fEAGSSMKI=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.111.0 h1:QhEwQTGTXitMPbmyloNfLVz1r9YzZ8izJUJivI8obzs=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.111.0/go.mod h1:I7nEkR7TDPFw162jYtPJZVevkniQfQ0FLIFuu2RGK3A=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.111.0 h1:Hh3Lt6GIw/jMfCSJ5XjBoZRmjZ1pbJJu6Xi7WrDTUi0=

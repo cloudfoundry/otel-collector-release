@@ -51,6 +51,9 @@ properties:
   allow_list.exporters:
     description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['otlp', 'prometheus', 'prometheusremotewrite']
+  allow_list.extensions:
+    description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    example: ['pprof']
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1

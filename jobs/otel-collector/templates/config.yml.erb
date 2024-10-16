@@ -163,6 +163,11 @@ def included_processors
   %w[batch memory_limiter transform filter].sort
 end
 
+# Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_extensions
+  %w[pprof].sort
+end
+
 def check_for_use_of_valid_components!(component_kind, included_components)
   user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
 
@@ -187,11 +192,15 @@ check_for_use_of_reserved_prefix!
 check_for_use_of_reserved_bbs_api_port!
 check_for_use_of_valid_components!('processors', included_processors)
 check_for_use_of_valid_components!('exporters', included_exporters)
+check_for_use_of_valid_components!('extensions', included_extensions)
 if_p('allow_list.processors') do |prop|
   check_for_use_of_allowed_components!('processors', included_processors, prop)
 end
 if_p('allow_list.exporters') do |prop|
   check_for_use_of_allowed_components!('exporters', included_exporters, prop)
+end
+if_p('allow_list.extensions') do |prop|
+  check_for_use_of_allowed_components!('extensions', included_extensions, prop)
 end
 set_internal_receiver_as_only_receiver
 add_nop_pipelines

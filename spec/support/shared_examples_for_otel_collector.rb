@@ -22,10 +22,9 @@ shared_examples_for 'common config.yml' do
         },
         'extensions' => {
           'pprof' => nil,
-          'zpages' => nil
         },
         'service' => {
-          'extensions' => %w[pprof zpages],
+          'extensions' => %w[pprof],
           'pipelines' => {
             'traces' => {
               'receivers' => ['otlp/placeholder'],
@@ -410,11 +409,45 @@ shared_examples_for 'common config.yml' do
     end
 
     describe 'extensions' do
-      context 'when extensions are specified' do
-        it 'includes the configured extensions in the config' do
-          expect(rendered.keys).to include 'extensions'
-          expect(rendered['extensions']).to eq(config['extensions'])
+      it 'list of available extensions matches builder source of truth' do
+        config['extensions']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        extension_gomods = builder_config.fetch('extensions').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        extension_names = extension_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
         end
+        formatted_names = extension_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
+      it 'includes the configured extensions in the config' do
+        expect(rendered.keys).to include 'extensions'
+        expect(rendered['extensions']).to eq(config['extensions'])
+      end
+
+      # TODO: re-enable this test when we have more than one extension
+      # it 'errors when a configured extension is not allowed' do
+      #   properties['allow_list'] = {'extensions' => ['zpages']}
+      #   expect { rendered }.to raise_error(/The following configured extensions are not allowed: \["pprof"\]/)
+      # end
+
+      it 'allows no extensions with empty allow list' do
+        properties['allow_list'] = {'extensions' => []}
+        expect { rendered }.to raise_error(/The following configured extensions are not allowed: \["pprof"\]/)
+      end
+
+      it 'errors when an unrecognized extension is in allow list' do
+        properties['allow_list'] = {'extensions' => ['pprof', 'unrecognized-extension']}
+        expect { rendered }.to raise_error(/The following extensions specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-extension"\]/)
+      end
+
+      it 'errors when an unavailable extension is configured' do
+        config['extensions']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured extensions are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
       end
     end
 
