@@ -13,7 +13,7 @@ end
 
 def interpolate_secrets!(cfg, secrets, used_secrets)
   if cfg.is_a? String
-    match = cfg.match(/{{[^\S\r\n]*\.(\w+)\.(\w+)[^\S\r\n]*}}/)
+    match = cfg.match(/{{[^\S\r\n]*\.([\w\-]+)\.([\w\-]+)[^\S\r\n]*}}/)
     unless match.nil?
       secret_name = match[1]
       secret_type = match[2]
