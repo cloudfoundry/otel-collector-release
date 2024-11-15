@@ -176,6 +176,11 @@ def check_for_use_of_valid_components!(component_kind, included_components)
 end
 
 def check_for_use_of_allowed_components!(component_kind, included_components, allowed_components)
+  if allowed_components.is_a? String
+    return if allowed_components.empty?
+    allowed_components = YAML.safe_load(allowed_components)
+  end
+
   user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
 
   unrecognized_allowed_components = allowed_components - included_components
