@@ -1,7 +1,7 @@
 dist:
   module: code.cloudfoundry.org/otel-collector-release/src/otel-collector
-  name: cf-otel-collector
-  description: Cloud Foundry OpenTelemetry Collector
+  name: otelcol-cf
+  description: OpenTelemetry Collector for CloudFoundry
   otelcol_version: 0.129.0
   output_path: ../otel-collector
   version: 0.11.4
