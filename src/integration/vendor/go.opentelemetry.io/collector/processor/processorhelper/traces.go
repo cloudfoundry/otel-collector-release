@@ -55,6 +55,7 @@ func NewTraces(
 		td, errFunc = tracesFunc(ctx, td)
 		span.AddEvent("End processing.", eventOptions)
 		if errFunc != nil {
+			obs.recordInOut(ctx, spansIn, 0)
 			if errors.Is(errFunc, ErrSkipProcessingData) {
 				return nil
 			}
@@ -64,7 +65,6 @@ func NewTraces(
 		obs.recordInOut(ctx, spansIn, spansOut)
 		return nextConsumer.ConsumeTraces(ctx, td)
 	}, bs.consumerOptions...)
-
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +75,3 @@ func NewTraces(
 		Traces:       traceConsumer,
 	}, nil
 }
-
-// Deprecated: [v0.111.0] use NewTraces.
-var NewTracesProcessor = NewTraces
