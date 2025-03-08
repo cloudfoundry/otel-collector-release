@@ -106,9 +106,8 @@ func (c *Certificate) CheckAuthority() error {
 // Only certificate of authority could call this function successfully.
 // Current implementation allows one CA and direct hosts only,
 // so the organization is always this:
-//
-//	       CA
-//	host1 host2 host3
+//         CA
+//  host1 host2 host3
 func (c *Certificate) VerifyHost(hostCert *Certificate, name string) error {
 	if err := c.CheckAuthority(); err != nil {
 		return err

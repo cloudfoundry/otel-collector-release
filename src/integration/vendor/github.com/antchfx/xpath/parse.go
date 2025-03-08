@@ -228,9 +228,8 @@ Loop:
 }
 
 // RelationalExpr ::= AdditiveExpr	| RelationalExpr '<' AdditiveExpr | RelationalExpr '>' AdditiveExpr
-//
-//	| RelationalExpr '<=' AdditiveExpr
-//	| RelationalExpr '>=' AdditiveExpr
+//					| RelationalExpr '<=' AdditiveExpr
+//					| RelationalExpr '>=' AdditiveExpr
 func (p *parser) parseRelationalExpr(n node) node {
 	opnd := p.parseAdditiveExpr(n)
 Loop:
@@ -275,8 +274,7 @@ Loop:
 }
 
 // MultiplicativeExpr ::= UnaryExpr	| MultiplicativeExpr MultiplyOperator(*) UnaryExpr
-//
-//	| MultiplicativeExpr 'div' UnaryExpr | MultiplicativeExpr 'mod' UnaryExpr
+//						| MultiplicativeExpr 'div' UnaryExpr | MultiplicativeExpr 'mod' UnaryExpr
 func (p *parser) parseMultiplicativeExpr(n node) node {
 	opnd := p.parseUnaryExpr(n)
 Loop:
@@ -310,7 +308,7 @@ func (p *parser) parseUnaryExpr(n node) node {
 	return opnd
 }
 
-// UnionExpr ::= PathExpr | UnionExpr '|' PathExpr
+// 	UnionExpr ::= PathExpr | UnionExpr '|' PathExpr
 func (p *parser) parseUnionExpr(n node) node {
 	opnd := p.parsePathExpr(n)
 Loop:
@@ -354,7 +352,7 @@ func (p *parser) parseFilterExpr(n node) node {
 	return opnd
 }
 
-// Predicate ::=  '[' PredicateExpr ']'
+// 	Predicate ::=  '[' PredicateExpr ']'
 func (p *parser) parsePredicate(n node) node {
 	p.skipItem(itemLBracket)
 	opnd := p.parseExpression(n)
@@ -449,7 +447,7 @@ func (p *parser) parseSequence(n node) (opnd node) {
 	return opnd
 }
 
-// NodeTest ::= NameTest | nodeType '(' ')' | 'processing-instruction' '(' Literal ')'
+// 	NodeTest ::= NameTest | nodeType '(' ')' | 'processing-instruction' '(' Literal ')'
 func (p *parser) parseNodeTest(n node, axeTyp string) (opnd node) {
 	switch p.r.typ {
 	case itemName:
