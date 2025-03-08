@@ -22,6 +22,14 @@ exporters:
 
 service:
   pipelines:
+    logs:
+      receivers: [otlp/test]
+      processors: [batch]
+      exporters: [otlp, file]
+    traces:
+      receivers: [otlp/test]
+      processors: [batch]
+      exporters: [otlp, file]
     metrics:
       receivers: [otlp/test]
       processors: [batch]
