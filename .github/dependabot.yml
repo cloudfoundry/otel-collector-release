@@ -11,6 +11,11 @@ updates:
 #   schedule:
 #     interval: "weekly"
 
+- package-ecosystem: "gomod"
+  directory: "/src/integration"
+  schedule:
+    interval: "weekly"
+
 - package-ecosystem: "bundler"
   directory: "/"
   schedule:
