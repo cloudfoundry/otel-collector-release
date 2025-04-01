@@ -1,7 +1,6 @@
 module code.cloudfoundry.org/otel-collector-release/src/integration
 
 go 1.23.0
-
 require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
 	code.cloudfoundry.org/tlsconfig v0.1.0
@@ -10,7 +9,7 @@ require (
 	github.com/onsi/gomega v1.34.1
 	go.opentelemetry.io/proto/otlp v1.3.1
 	google.golang.org/grpc v1.67.1
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
