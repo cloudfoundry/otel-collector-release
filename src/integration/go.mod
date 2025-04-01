@@ -2,15 +2,17 @@ module code.cloudfoundry.org/otel-collector-release/src/integration
 
 go 1.23.0
 
+toolchain go1.24.1
+
 require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
-	code.cloudfoundry.org/tlsconfig v0.1.0
+	code.cloudfoundry.org/tlsconfig v0.23.0
 	github.com/google/go-cmp v0.6.0
 	github.com/onsi/ginkgo/v2 v2.20.0
 	github.com/onsi/gomega v1.34.1
 	go.opentelemetry.io/proto/otlp v1.3.1
-	google.golang.org/grpc v1.67.1
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/grpc v1.71.0
+	google.golang.org/protobuf v1.36.6
 )
 
 require (
@@ -91,7 +93,7 @@ require (
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/square/certstrap v1.3.0 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tidwall/gjson v1.10.2 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -101,6 +103,7 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ua-parser/uap-go v0.0.0-20240611065828-3a4781585db6 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector v0.111.0 // indirect
 	go.opentelemetry.io/collector/client v1.17.0 // indirect
 	go.opentelemetry.io/collector/component v0.111.0 // indirect
@@ -150,10 +153,10 @@ require (
 	go.opentelemetry.io/collector/semconv v0.111.0 // indirect
 	go.opentelemetry.io/collector/service v0.111.0 // indirect
 	go.opentelemetry.io/contrib/config v0.10.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.55.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.30.0 // indirect
-	go.opentelemetry.io/otel v1.30.0 // indirect
+	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.6.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.30.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.30.0 // indirect
@@ -165,23 +168,23 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.30.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.30.0 // indirect
 	go.opentelemetry.io/otel/log v0.6.0 // indirect
-	go.opentelemetry.io/otel/metric v1.30.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.30.0 // indirect
+	go.opentelemetry.io/otel/metric v1.34.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.6.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.30.0 // indirect
-	go.opentelemetry.io/otel/trace v1.30.0 // indirect
-	go.step.sm/crypto v0.51.1 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.34.0 // indirect
+	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	go.step.sm/crypto v0.60.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
-	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	gonum.org/v1/gonum v0.15.1 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
