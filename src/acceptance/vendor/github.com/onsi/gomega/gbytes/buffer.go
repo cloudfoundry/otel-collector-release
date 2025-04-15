@@ -28,7 +28,7 @@ type Buffer struct {
 	contents     []byte
 	readCursor   uint64
 	lock         *sync.Mutex
-	detectCloser chan interface{}
+	detectCloser chan any
 	closed       bool
 }
 
@@ -184,7 +184,7 @@ You should always call CancelDetects after using Detect.  This will close any ch
 
 Finally, you can pass detect a format string followed by variadic arguments.  This will construct the regexp using fmt.Sprintf.
 */
-func (b *Buffer) Detect(desired string, args ...interface{}) chan bool {
+func (b *Buffer) Detect(desired string, args ...any) chan bool {
 	formattedRegexp := desired
 	if len(args) > 0 {
 		formattedRegexp = fmt.Sprintf(desired, args...)
@@ -195,7 +195,7 @@ func (b *Buffer) Detect(desired string, args ...interface{}) chan bool {
 	defer b.lock.Unlock()
 
 	if b.detectCloser == nil {
-		b.detectCloser = make(chan interface{})
+		b.detectCloser = make(chan any)
 	}
 
 	closer := b.detectCloser

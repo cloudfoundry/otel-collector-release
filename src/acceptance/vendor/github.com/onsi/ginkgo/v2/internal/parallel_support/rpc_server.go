@@ -58,7 +58,7 @@ func (server *RPCServer) Address() string {
 	return server.listener.Addr().String()
 }
 
-func (server *RPCServer) GetSuiteDone() chan interface{} {
+func (server *RPCServer) GetSuiteDone() chan any {
 	return server.handler.done
 }
 
