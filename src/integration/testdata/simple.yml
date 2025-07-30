@@ -36,4 +36,9 @@ service:
       exporters: [otlp, file]
   telemetry:
     metrics:
-      address: "127.0.0.1:{{.MetricsPort}}"
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: "https://127.0.0.1:{{.MetricsPort}}"

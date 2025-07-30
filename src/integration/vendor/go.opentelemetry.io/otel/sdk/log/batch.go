@@ -19,6 +19,7 @@ const (
 	dfltExpInterval     = time.Second
 	dfltExpTimeout      = 30 * time.Second
 	dfltExpMaxBatchSize = 512
+	dfltExpBufferSize   = 1
 
 	envarMaxQSize        = "OTEL_BLRP_MAX_QUEUE_SIZE"
 	envarExpInterval     = "OTEL_BLRP_SCHEDULE_DELAY"
@@ -119,8 +120,7 @@ func NewBatchProcessor(exporter Exporter, opts ...BatchProcessorOption) *BatchPr
 	exporter = newChunkExporter(exporter, cfg.expMaxBatchSize.Value)
 
 	b := &BatchProcessor{
-		// TODO: explore making the size of this configurable.
-		exporter: newBufferExporter(exporter, 1),
+		exporter: newBufferExporter(exporter, cfg.expBufferSize.Value),
 
 		q:           newQueue(cfg.maxQSize.Value),
 		batchSize:   cfg.expMaxBatchSize.Value,
@@ -156,13 +156,20 @@ func (b *BatchProcessor) poll(interval time.Duration) (done chan struct{}) {
 				global.Warn("dropped log records", "dropped", d)
 			}
 
-			qLen := b.q.TryDequeue(buf, func(r []Record) bool {
-				ok := b.exporter.EnqueueExport(r)
-				if ok {
-					buf = slices.Clone(buf)
-				}
-				return ok
-			})
+			var qLen int
+			// Don't copy data from queue unless exporter can accept more, it is very expensive.
+			if b.exporter.Ready() {
+				qLen = b.q.TryDequeue(buf, func(r []Record) bool {
+					ok := b.exporter.EnqueueExport(r)
+					if ok {
+						buf = slices.Clone(buf)
+					}
+					return ok
+				})
+			} else {
+				qLen = b.q.Len()
+			}
+
 			if qLen >= b.batchSize {
 				// There is another full batch ready. Immediately trigger
 				// another export attempt.
@@ -272,6 +279,13 @@ func newQueue(size int) *queue {
 	}
 }
 
+func (q *queue) Len() int {
+	q.Lock()
+	defer q.Unlock()
+
+	return q.len
+}
+
 // Dropped returns the number of Records dropped during enqueueing since the
 // last time Dropped was called.
 func (q *queue) Dropped() uint64 {
@@ -349,6 +363,7 @@ type batchConfig struct {
 	expInterval     setting[time.Duration]
 	expTimeout      setting[time.Duration]
 	expMaxBatchSize setting[int]
+	expBufferSize   setting[int]
 }
 
 func newBatchConfig(options []BatchProcessorOption) batchConfig {
@@ -381,6 +396,10 @@ func newBatchConfig(options []BatchProcessorOption) batchConfig {
 		clearLessThanOne[int](),
 		clampMax[int](c.maxQSize.Value),
 		fallback[int](dfltExpMaxBatchSize),
+	)
+	c.expBufferSize = c.expBufferSize.Resolve(
+		clearLessThanOne[int](),
+		fallback[int](dfltExpBufferSize),
 	)
 
 	return c
@@ -455,6 +474,18 @@ func WithExportTimeout(d time.Duration) BatchProcessorOption {
 func WithExportMaxBatchSize(size int) BatchProcessorOption {
 	return batchOptionFunc(func(cfg batchConfig) batchConfig {
 		cfg.expMaxBatchSize = newSetting(size)
+		return cfg
+	})
+}
+
+// WithExportBufferSize sets the batch buffer size.
+// Batches will be temporarily kept in a memory buffer until they are exported.
+//
+// By default, a value of 1 will be used.
+// The default value is also used when the provided value is less than one.
+func WithExportBufferSize(size int) BatchProcessorOption {
+	return batchOptionFunc(func(cfg batchConfig) batchConfig {
+		cfg.expBufferSize = newSetting(size)
 		return cfg
 	})
 }

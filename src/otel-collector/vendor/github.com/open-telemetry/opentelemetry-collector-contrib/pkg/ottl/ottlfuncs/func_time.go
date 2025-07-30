@@ -5,7 +5,7 @@ package ottlfuncs // import "github.com/open-telemetry/opentelemetry-collector-c
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/timeutils"
@@ -22,11 +22,12 @@ type TimeArguments[K any] struct {
 func NewTimeFactory[K any]() ottl.Factory[K] {
 	return ottl.NewFactory("Time", &TimeArguments[K]{}, createTimeFunction[K])
 }
+
 func createTimeFunction[K any](_ ottl.FunctionContext, oArgs ottl.Arguments) (ottl.ExprFunc[K], error) {
 	args, ok := oArgs.(*TimeArguments[K])
 
 	if !ok {
-		return nil, fmt.Errorf("TimeFactory args must be of type *TimeArguments[K]")
+		return nil, errors.New("TimeFactory args must be of type *TimeArguments[K]")
 	}
 
 	return Time(args.Time, args.Format, args.Location, args.Locale)
@@ -34,7 +35,7 @@ func createTimeFunction[K any](_ ottl.FunctionContext, oArgs ottl.Arguments) (ot
 
 func Time[K any](inputTime ottl.StringGetter[K], format string, location ottl.Optional[string], locale ottl.Optional[string]) (ottl.ExprFunc[K], error) {
 	if format == "" {
-		return nil, fmt.Errorf("format cannot be nil")
+		return nil, errors.New("format cannot be nil")
 	}
 	gotimeFormat, err := timeutils.StrptimeToGotime(format)
 	if err != nil {
@@ -61,13 +62,15 @@ func Time[K any](inputTime ottl.StringGetter[K], format string, location ottl.Op
 		inputTimeLocale = &l
 	}
 
+	ctimeSubstitutes := timeutils.GetStrptimeNativeSubstitutes(format)
+
 	return func(ctx context.Context, tCtx K) (any, error) {
 		t, err := inputTime.Get(ctx, tCtx)
 		if err != nil {
 			return nil, err
 		}
 		if t == "" {
-			return nil, fmt.Errorf("time cannot be nil")
+			return nil, errors.New("time cannot be nil")
 		}
 		var timestamp time.Time
 		if inputTimeLocale != nil {
@@ -76,6 +79,10 @@ func Time[K any](inputTime ottl.StringGetter[K], format string, location ottl.Op
 			timestamp, err = timeutils.ParseGotime(gotimeFormat, t, loc)
 		}
 		if err != nil {
+			var timeErr *time.ParseError
+			if errors.As(err, &timeErr) {
+				return nil, timeutils.ToStrptimeParseError(timeErr, format, ctimeSubstitutes)
+			}
 			return nil, err
 		}
 		return timestamp, nil

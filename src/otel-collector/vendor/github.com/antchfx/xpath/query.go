@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"reflect"
+	"strconv"
 )
 
 // The return type of the XPath expression.
@@ -850,6 +851,9 @@ func (f *functionQuery) Evaluate(t iterator) interface{} {
 }
 
 func (f *functionQuery) Clone() query {
+	if f.Input == nil {
+		return &functionQuery{Func: f.Func}
+	}
 	return &functionQuery{Input: f.Input.Clone(), Func: f.Func}
 }
 
@@ -1187,18 +1191,18 @@ func (u *unionQuery) Properties() queryProp {
 	return queryProps.Merge
 }
 
-type lastQuery struct {
+type lastFuncQuery struct {
 	buffer  []NodeNavigator
 	counted bool
 
 	Input query
 }
 
-func (q *lastQuery) Select(t iterator) NodeNavigator {
+func (q *lastFuncQuery) Select(t iterator) NodeNavigator {
 	return nil
 }
 
-func (q *lastQuery) Evaluate(t iterator) interface{} {
+func (q *lastFuncQuery) Evaluate(t iterator) interface{} {
 	if !q.counted {
 		for {
 			node := q.Input.Select(t)
@@ -1212,15 +1216,15 @@ func (q *lastQuery) Evaluate(t iterator) interface{} {
 	return float64(len(q.buffer))
 }
 
-func (q *lastQuery) Clone() query {
-	return &lastQuery{Input: q.Input.Clone()}
+func (q *lastFuncQuery) Clone() query {
+	return &lastFuncQuery{Input: q.Input.Clone()}
 }
 
-func (q *lastQuery) ValueType() resultType {
+func (q *lastFuncQuery) ValueType() resultType {
 	return xpathResultType.Number
 }
 
-func (q *lastQuery) Properties() queryProp {
+func (q *lastFuncQuery) Properties() queryProp {
 	return queryProps.Merge
 }
 
@@ -1361,19 +1365,23 @@ func getHashCode(n NodeNavigator) uint64 {
 	var sb bytes.Buffer
 	switch n.NodeType() {
 	case AttributeNode, TextNode, CommentNode:
-		sb.WriteString(fmt.Sprintf("%s=%s", n.LocalName(), n.Value()))
+		sb.WriteString(n.LocalName())
+		sb.WriteByte('=')
+		sb.WriteString(n.Value())
 		// https://github.com/antchfx/htmlquery/issues/25
 		d := 1
 		for n.MoveToPrevious() {
 			d++
 		}
-		sb.WriteString(fmt.Sprintf("-%d", d))
+		sb.WriteByte('-')
+		sb.WriteString(strconv.Itoa(d))
 		for n.MoveToParent() {
 			d = 1
 			for n.MoveToPrevious() {
 				d++
 			}
-			sb.WriteString(fmt.Sprintf("-%d", d))
+			sb.WriteByte('-')
+			sb.WriteString(strconv.Itoa(d))
 		}
 	case ElementNode:
 		sb.WriteString(n.Prefix() + n.LocalName())
@@ -1381,14 +1389,16 @@ func getHashCode(n NodeNavigator) uint64 {
 		for n.MoveToPrevious() {
 			d++
 		}
-		sb.WriteString(fmt.Sprintf("-%d", d))
+		sb.WriteByte('-')
+		sb.WriteString(strconv.Itoa(d))
 
 		for n.MoveToParent() {
 			d = 1
 			for n.MoveToPrevious() {
 				d++
 			}
-			sb.WriteString(fmt.Sprintf("-%d", d))
+			sb.WriteByte('-')
+			sb.WriteString(strconv.Itoa(d))
 		}
 	}
 	h := fnv.New64a()

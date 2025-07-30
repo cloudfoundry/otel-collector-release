@@ -63,6 +63,8 @@ type CheckConsumeContractParams struct {
 	// GenerateCount specifies the number of times to call the generator.Generate()
 	// for each test scenario.
 	GenerateCount int
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // CheckConsumeContract checks the contract between the receiver and its next consumer. For the contract
@@ -113,11 +115,11 @@ func checkConsumeContractScenario(params CheckConsumeContractParams, decisionFun
 	var err error
 	switch params.Signal {
 	case pipeline.SignalLogs:
-		receiver, err = params.Factory.CreateLogs(ctx, NewNopSettings(), params.Config, consumer)
+		receiver, err = params.Factory.CreateLogs(ctx, NewNopSettings(params.Factory.Type()), params.Config, consumer)
 	case pipeline.SignalTraces:
-		receiver, err = params.Factory.CreateTraces(ctx, NewNopSettings(), params.Config, consumer)
+		receiver, err = params.Factory.CreateTraces(ctx, NewNopSettings(params.Factory.Type()), params.Config, consumer)
 	case pipeline.SignalMetrics:
-		receiver, err = params.Factory.CreateMetrics(ctx, NewNopSettings(), params.Config, consumer)
+		receiver, err = params.Factory.CreateMetrics(ctx, NewNopSettings(params.Factory.Type()), params.Config, consumer)
 	default:
 		require.FailNow(params.T, "must specify a valid DataType to test for")
 	}
@@ -271,8 +273,10 @@ func (ds idSet) union(other idSet) (union idSet, duplicates []UniqueIDAttrVal) {
 // between the receiver and it next consumer.
 type consumeDecisionFunc func(ids idSet) error
 
-var errNonPermanent = errors.New("non permanent error")
-var errPermanent = errors.New("permanent error")
+var (
+	errNonPermanent = errors.New("non permanent error")
+	errPermanent    = errors.New("permanent error")
+)
 
 // randomNonPermanentErrorConsumeDecision is a decision function that succeeds approximately
 // half of the time and fails with a non-permanent error the rest of the time.

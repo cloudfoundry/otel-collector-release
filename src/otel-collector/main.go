@@ -31,6 +31,12 @@ func main() {
 				},
 			},
 		},
+		ProviderModules: map[string]string{
+			envprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/envprovider v1.36.1",
+			fileprovider.NewFactory().Create(confmap.ProviderSettings{}).Scheme(): "go.opentelemetry.io/collector/confmap/provider/fileprovider v1.36.1",
+    	},
+		ConverterModules: []string{
+		},
 	}
 
 	if err := run(set); err != nil {

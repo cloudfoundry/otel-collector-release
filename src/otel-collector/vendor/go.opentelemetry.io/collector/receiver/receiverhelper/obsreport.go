@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pipeline"
 	"go.opentelemetry.io/collector/receiver"
-	"go.opentelemetry.io/collector/receiver/internal"
+	"go.opentelemetry.io/collector/receiver/receiverhelper/internal"
 	"go.opentelemetry.io/collector/receiver/receiverhelper/internal/metadata"
 )
 
@@ -27,7 +27,7 @@ type ObsReport struct {
 	longLivedCtx   bool
 	tracer         trace.Tracer
 
-	otelAttrs        []attribute.KeyValue
+	otelAttrs        metric.MeasurementOption
 	telemetryBuilder *metadata.TelemetryBuilder
 }
 
@@ -42,6 +42,9 @@ type ObsReportSettings struct {
 	// operations without a corresponding new context per operation.
 	LongLivedCtx           bool
 	ReceiverCreateSettings receiver.Settings
+
+	// prevent unkeyed literal initialization
+	_ struct{}
 }
 
 // NewObsReport creates a new ObsReport.
@@ -55,15 +58,15 @@ func newReceiver(cfg ObsReportSettings) (*ObsReport, error) {
 		return nil, err
 	}
 	return &ObsReport{
-		spanNamePrefix: internal.ReceiverPrefix + cfg.ReceiverID.String(),
+		spanNamePrefix: internal.ReceiverKey + internal.SpanNameSep + cfg.ReceiverID.String(),
 		transport:      cfg.Transport,
 		longLivedCtx:   cfg.LongLivedCtx,
 		tracer:         cfg.ReceiverCreateSettings.TracerProvider.Tracer(cfg.ReceiverID.String()),
 
-		otelAttrs: []attribute.KeyValue{
+		otelAttrs: metric.WithAttributeSet(attribute.NewSet(
 			attribute.String(internal.ReceiverKey, cfg.ReceiverID.String()),
 			attribute.String(internal.TransportKey, cfg.Transport),
-		},
+		)),
 		telemetryBuilder: telemetryBuilder,
 	}, nil
 }
@@ -207,6 +210,6 @@ func (rec *ObsReport) recordMetrics(receiverCtx context.Context, signal pipeline
 		refusedMeasure = rec.telemetryBuilder.ReceiverRefusedLogRecords
 	}
 
-	acceptedMeasure.Add(receiverCtx, int64(numAccepted), metric.WithAttributes(rec.otelAttrs...))
-	refusedMeasure.Add(receiverCtx, int64(numRefused), metric.WithAttributes(rec.otelAttrs...))
+	acceptedMeasure.Add(receiverCtx, int64(numAccepted), rec.otelAttrs)
+	refusedMeasure.Add(receiverCtx, int64(numRefused), rec.otelAttrs)
 }

@@ -2,10 +2,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*
-Package log provides the OpenTelemetry Logs Bridge API.
+Package log provides the OpenTelemetry Logs API.
 
-This package is intended to be a bridge between existing logging libraries and
-OpenTelemetry. It is not designed to be a logging API itself.
+This API is separate from its implementation so the instrumentation built from
+it is reusable. See [go.opentelemetry.io/otel/sdk/log] for the official
+OpenTelemetry implementation of this API.
+
+The log package provides the OpenTelemetry Logs API, which serves as a standard
+interface for generating and managing log records within the OpenTelemetry ecosystem.
+This package allows users to emit LogRecords, enabling structured, context-rich logging
+that can be easily integrated with observability tools. It ensures that log data is captured
+in a way that is consistent with OpenTelemetry's data model.
+
+This package can be used to create bridges between existing logging libraries and OpenTelemetry.
+Log bridges allow integrating the existing logging setups with OpenTelemetry.
+Log bridges can be found in the [registry].
 
 # API Implementations
 
@@ -68,5 +79,7 @@ It is strongly recommended that authors only embed
 go.opentelemetry.io/otel/log/noop if they choose this default behavior. That
 implementation is the only one OpenTelemetry authors can guarantee will fully
 implement all the API interfaces when a user updates their API.
+
+[registry]: https://opentelemetry.io/ecosystem/registry/?language=go&component=log-bridge
 */
 package log // import "go.opentelemetry.io/otel/log"

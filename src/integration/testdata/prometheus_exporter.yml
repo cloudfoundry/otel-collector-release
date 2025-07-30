@@ -28,4 +28,9 @@ service:
       exporters: [prometheus]
   telemetry:
     metrics:
-      address: "127.0.0.1:{{.MetricsPort}}"
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: "127.0.0.1"
+                port: {{.MetricsPort}}
