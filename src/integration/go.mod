@@ -157,6 +157,7 @@ require (
 	go.opentelemetry.io/collector/consumer/consumertest v0.129.0 // indirect
 	go.opentelemetry.io/collector/consumer/xconsumer v0.129.0 // indirect
 	go.opentelemetry.io/collector/exporter v0.129.0 // indirect
+	go.opentelemetry.io/collector/exporter/debugexporter v0.129.0 // indirect
 	go.opentelemetry.io/collector/exporter/exporterhelper/xexporterhelper v0.129.0 // indirect
 	go.opentelemetry.io/collector/exporter/exportertest v0.129.0 // indirect
 	go.opentelemetry.io/collector/exporter/nopexporter v0.129.0 // indirect
