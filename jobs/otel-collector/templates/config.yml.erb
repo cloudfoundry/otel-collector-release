@@ -6,7 +6,7 @@ def config
     used_secrets = {}
     interpolate_secrets!(cfg, secrets, used_secrets)
     check_for_unused_secrets!(secrets, used_secrets)
-    cfg = handle_old_properties(cfg) if cfg.empty?
+    cfg = handle_old_properties(cfg) if cfg.empty? && p('prom_exporter_config').empty?
     cfg
   end
 end
@@ -44,7 +44,7 @@ def check_for_unused_secrets!(secrets, used_secrets)
 end
 
 def check_for_new_and_old_properties!
-  both_provided = !p('config').empty? && (!p('metric_exporters').empty? || !p('trace_exporters').empty?)
+  both_provided = (!p('config').empty? || !p('prom_exporter_config').empty?) && (!p('metric_exporters').empty? || !p('trace_exporters').empty?)
   return unless both_provided
 
   raise "Can not provide 'config' property when deprecated 'metric_exporters' or 'trace_exporters' properties are provided"
@@ -190,7 +190,81 @@ def check_for_use_of_allowed_components!(component_kind, included_components, al
   raise "The following configured #{component_kind} are not allowed: #{disallowed_components}. Allowed: #{allowed_components}." unless disallowed_components.empty?
 end
 
+def set_default_prom_exporter!
+  prom_exporter_config = retrieve_property('prom_exporter_config')
+
+  name, content = prom_exporter_config.first
+
+  # Validate the prometheus exporter name
+  unless name.split('/')[0] == "prometheus"
+    raise "Prometheus exporter name must be prefixed with 'prometheus', got: #{name}"
+  end
+
+  # Validate the prometheus exporter endpoint
+  endpoint = content['endpoint']
+  if endpoint.nil?
+    raise "Prometheus exporter configuration is missing required 'endpoint' field"
+  end
+
+  # Extract the port from the endpoint
+  if endpoint.include?(":")
+    port = ":" + endpoint.split(":").last
+  else
+    raise("Endpoint #{endpoint} does not contain a port")
+  end
+
+  # Check if same port endpoint is already configured
+  exporter_names = []
+  if config['exporters'] && config['exporters'].any?
+    config['exporters'].each do |exporter_name, exporter_config|
+      if exporter_name.split('/')[0] == "prometheus"
+        if exporter_config['endpoint'] && exporter_config['endpoint'].end_with?(port)
+          puts("Prometheus exporter already exists: #{exporter_name}, port: #{port}")
+          return
+        else
+          exporter_names.push(exporter_name)
+        end
+      end
+    end
+  end
+  name = get_unique_exporter_name(exporter_names, name)
+
+  # Add tls if configured
+  tls = {}
+  tls['ca_pem'] = p('prom_exporter_tls.ca_pem') unless p('prom_exporter_tls.ca_pem').nil? || p('prom_exporter_tls.ca_pem').empty?
+  tls['cert_pem'] = p('prom_exporter_tls.cert_pem') unless p('prom_exporter_tls.cert_pem').nil? || p('prom_exporter_tls.cert_pem').empty?
+  tls['key_pem'] = p('prom_exporter_tls.key_pem') unless p('prom_exporter_tls.key_pem').nil? || p('prom_exporter_tls.key_pem').empty?
+
+  if tls.size == 3
+    content['tls'] = tls
+  end
+
+  # Add the new prometheus exporter
+  config['exporters'] ||= {}
+  config['exporters'][name] = content
+
+  # Add the new prometheus exporter to the metrics pipeline
+  config['service'] ||= {}
+  config['service']['pipelines'] ||= {}
+  config['service']['pipelines']['metrics'] ||= {}
+  config['service']['pipelines']['metrics']['exporters'] ||= []
+  config['service']['pipelines']['metrics']['exporters'].push(name)
+end
+
+# If the exporter name already exists, append a suffix to the name
+def get_unique_exporter_name(exporter_names, name)
+  if exporter_names.include?(name)
+    puts("Exporter name #{name} already exists, appending suffix")
+    name = name + "_1"
+    return get_unique_exporter_name(exporter_names, name)
+  end
+  name
+end
+
 check_for_new_and_old_properties!
+if !p('prom_exporter_config').empty?
+  set_default_prom_exporter!
+end
 check_for_no_exporters!
 check_for_no_service_config!
 check_for_use_of_reserved_prefix!
