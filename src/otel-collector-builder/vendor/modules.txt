@@ -2,7 +2,7 @@
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
 github.com/fsnotify/fsnotify/internal
-# github.com/go-viper/mapstructure/v2 v2.2.1
+# github.com/go-viper/mapstructure/v2 v2.3.0
 ## explicit; go 1.18
 github.com/go-viper/mapstructure/v2
 github.com/go-viper/mapstructure/v2/internal/errors
@@ -15,16 +15,16 @@ github.com/knadh/koanf/maps
 # github.com/knadh/koanf/parsers/yaml v1.1.0
 ## explicit; go 1.23.0
 github.com/knadh/koanf/parsers/yaml
-# github.com/knadh/koanf/providers/env v1.1.0
+# github.com/knadh/koanf/providers/env/v2 v2.0.0
 ## explicit; go 1.23.0
-github.com/knadh/koanf/providers/env
+github.com/knadh/koanf/providers/env/v2
 # github.com/knadh/koanf/providers/file v1.2.0
 ## explicit; go 1.23.0
 github.com/knadh/koanf/providers/file
 # github.com/knadh/koanf/providers/fs v1.0.0
 ## explicit; go 1.23.0
 github.com/knadh/koanf/providers/fs
-# github.com/knadh/koanf/v2 v2.2.1
+# github.com/knadh/koanf/v2 v2.2.2
 ## explicit; go 1.23.0
 github.com/knadh/koanf/v2
 # github.com/mitchellh/copystructure v1.2.0
@@ -38,10 +38,10 @@ github.com/mitchellh/reflectwalk
 # github.com/spf13/cobra v1.9.1
 ## explicit; go 1.15
 github.com/spf13/cobra
-# github.com/spf13/pflag v1.0.6
+# github.com/spf13/pflag v1.0.7
 ## explicit; go 1.12
 github.com/spf13/pflag
-# go.opentelemetry.io/collector/cmd/builder v0.129.0
+# go.opentelemetry.io/collector/cmd/builder v0.131.0
 ## explicit; go 1.23.0
 go.opentelemetry.io/collector/cmd/builder
 go.opentelemetry.io/collector/cmd/builder/internal
@@ -64,7 +64,7 @@ go.uber.org/zap/zapcore
 # go.yaml.in/yaml/v3 v3.0.3
 ## explicit; go 1.22
 go.yaml.in/yaml/v3
-# golang.org/x/mod v0.25.0
+# golang.org/x/mod v0.26.0
 ## explicit; go 1.23.0
 golang.org/x/mod/internal/lazyregexp
 golang.org/x/mod/modfile
