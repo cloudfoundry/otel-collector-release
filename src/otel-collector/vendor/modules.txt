@@ -754,6 +754,12 @@ go.opentelemetry.io/collector/exporter/exporterhelper/internal/request
 go.opentelemetry.io/collector/exporter/exporterhelper/internal/sender
 go.opentelemetry.io/collector/exporter/exporterhelper/internal/sizer
 go.opentelemetry.io/collector/exporter/internal/experr
+# go.opentelemetry.io/collector/exporter/debugexporter v0.131.0
+## explicit; go 1.23.0
+go.opentelemetry.io/collector/exporter/debugexporter
+go.opentelemetry.io/collector/exporter/debugexporter/internal/metadata
+go.opentelemetry.io/collector/exporter/debugexporter/internal/normal
+go.opentelemetry.io/collector/exporter/debugexporter/internal/otlptext
 # go.opentelemetry.io/collector/exporter/exporterhelper/xexporterhelper v0.131.0
 ## explicit; go 1.23.0
 go.opentelemetry.io/collector/exporter/exporterhelper/xexporterhelper
