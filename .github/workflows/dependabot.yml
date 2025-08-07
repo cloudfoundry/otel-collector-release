@@ -1,0 +1,33 @@
+name: Update OTEL Builder Dependencies
+on:
+  push:
+    branches:
+      - dependabot/go_modules/src/otel-collector-builder/**
+  pull_request:
+    branches:
+      - dependabot/go_modules/src/otel-collector-builder/**
+
+jobs:
+  run:
+    name: Update the 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "^1.13.1"
+      
+      - run: go version
+              
+      - name: Update the OTEL builder version inside the configuration
+        run: pushd ios && pod install --verbose && popd
+
+      - name: Build the new OTEL collector version
+        shell: bash
+        run: ./scripts/
+        
+      - uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: Adjust the OTEL builder version
+          branch: ${{ github.head_ref }}
