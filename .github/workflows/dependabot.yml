@@ -8,8 +8,16 @@ on:
       - dependabot/go_modules/src/otel-collector-builder/**
 
 jobs:
-  run:
-    name: Update the
+  post-hook:
+    # Only proceed if this is a Dependabot‐created PR
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    # Allow the job to approve and merge the PR
+    permissions:
+      contents: write
+      pull-requests: write
+    name: Update the OTEL collector
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +44,16 @@ jobs:
       - name: Run the Integrationtest
         shell: bash
         run: scripts/subtests/integration-test
-
-      - uses: stefanzweifel/git-auto-commit-action@v6
+        
+      - name: Commit files
+        run: |
+          git config --local user.email "support@github.com"
+          git config --local user.name "dependabot[bot]"
+          git commit -a -m "Adjust the OTEL builder version"
+      
+      - name: Push changes
+        uses: ad-m/github-push-action@master
         with:
-          commit_message: Adjust the OTEL builder version
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
+      
