@@ -26,8 +26,6 @@ jobs:
         with:
           go-version-file: src/otel-collector/go.mod
 
-      - run: go version
-
       - name: Update the OTEL builder version inside the configuration
         run: |
           extract_version() {
