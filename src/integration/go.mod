@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.38.0
 	go.opentelemetry.io/proto/otlp v1.7.0
 	google.golang.org/grpc v1.74.2
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.7
 )
 
 require (
