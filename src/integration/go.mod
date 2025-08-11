@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.30.0
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.37.0
+	github.com/onsi/gomega v1.38.0
 	go.opentelemetry.io/proto/otlp v1.7.0
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
