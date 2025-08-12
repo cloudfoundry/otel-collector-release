@@ -76,6 +76,19 @@ properties:
   secrets:
     description: "Variables to interpolate into the configuration"
     default: []
+  prom_exporter_config:
+    description: "Prometheus exporter to be added to the collector config"
+    default: {}
+    example: |
+      prometheus/test:
+        endpoint: ":12345"
+        add_metric_suffixes: false
+  prom_exporter_tls.ca_pem:
+    description: "CA root required for key/cert verification for prometheus exporter"
+  prom_exporter_tls.cert_pem:
+    description: "TLS server certificate for prometheus exporter"
+  prom_exporter_tls.key_pem:
+    description: "TLS server key for prometheus exporter"
   metric_exporters:
     description: "Exporter configuration for aggregate metric egress. Deprecated, please use 'config' property."
     default: {}
