@@ -11,7 +11,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.25.1
 	github.com/onsi/gomega v1.38.1
 	go.opentelemetry.io/proto/otlp v1.7.1
-	google.golang.org/grpc v1.74.2
+	google.golang.org/grpc v1.75.0
 	google.golang.org/protobuf v1.36.7
 )
 
