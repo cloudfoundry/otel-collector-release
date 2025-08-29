@@ -1,8 +1,6 @@
 module code.cloudfoundry.org/otel-collector-release/src/integration
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.0
 
 require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
