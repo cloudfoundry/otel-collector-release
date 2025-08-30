@@ -17,6 +17,6 @@ Push-Location otel-collector-builder\
   }
 Pop-Location
 
-Copy-Item "otel-collector\cf-otel-collector" -Destination "${env:BOSH_INSTALL_TARGET}\otel-collector.exe"
+Copy-Item "otel-collector\otelcol-cf" -Destination "${env:BOSH_INSTALL_TARGET}\otel-collector.exe"
 
 Exit 0

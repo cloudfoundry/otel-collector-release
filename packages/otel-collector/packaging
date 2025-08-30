@@ -9,4 +9,4 @@ pushd otel-collector-builder
   go run go.opentelemetry.io/collector/cmd/builder --config=config.yaml --skip-generate --skip-get-modules
 popd
 
-cp "otel-collector/cf-otel-collector" "${BOSH_INSTALL_TARGET}/otel-collector"
+cp "otel-collector/otelcol-cf" "${BOSH_INSTALL_TARGET}/otel-collector"

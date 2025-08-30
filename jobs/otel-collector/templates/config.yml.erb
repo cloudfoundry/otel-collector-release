@@ -147,7 +147,7 @@ end
 def expose_internal_telemetry
   config['service']['telemetry'] = {
     'metrics' => {
-      'address' => "127.0.0.1:#{p('telemetry.metrics.port')}",
+      'readers' => ['pull' => {'exporter' => {'prometheus' => {'host' => '127.0.0.1', 'port' => p("telemetry.metrics.port")}}}],
       'level' => p('telemetry.metrics.level')
     }
   }

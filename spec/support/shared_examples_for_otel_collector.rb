@@ -453,7 +453,8 @@ shared_examples_for 'common config.yml' do
 
     describe 'internal telemetry' do
       it 'exposes telemetry at the default port' do
-        expect(rendered['service']['telemetry']['metrics']['address']).to eq('127.0.0.1:14830')
+        expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['host']).to eq('127.0.0.1')
+        expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['port']).to eq(14830)
       end
       it 'provides basic level metrics by default' do
         expect(rendered['service']['telemetry']['metrics']['level']).to eq('basic')
@@ -462,7 +463,8 @@ shared_examples_for 'common config.yml' do
       context 'when the port is specified' do
         let(:properties) { { 'config' => config, 'telemetry' => { 'metrics' => { 'port' => 14_831 } } } }
         it 'exposes telemetry at the specified port' do
-          expect(rendered['service']['telemetry']['metrics']['address']).to eq('127.0.0.1:14831')
+          expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['host']).to eq('127.0.0.1')
+          expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['port']).to eq(14_831)
         end
       end
 
