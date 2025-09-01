@@ -2,11 +2,11 @@ module code.cloudfoundry.org/otel-collector-release/src/otel-collector-builder
 
 go 1.25.0
 
-require go.opentelemetry.io/collector/cmd/builder v0.132.0
+require go.opentelemetry.io/collector/cmd/builder v0.134.0
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/knadh/koanf/maps v0.1.2 // indirect
 	github.com/knadh/koanf/parsers/yaml v1.1.0 // indirect
