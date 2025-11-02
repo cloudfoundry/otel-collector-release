@@ -68,14 +68,12 @@ def handle_old_properties(cfg)
 
   if metric_exporters.any?
     cfg['service']['pipelines']['metrics'] = {
-        'receivers' => ['otlp/cf-local'],
         'exporters' => metric_exporters.keys
       }
   end
 
   if trace_exporters.any?
     cfg['service']['pipelines']['traces'] = {
-        'receivers' => ['otlp/cf-local'],
         'exporters' => trace_exporters.keys
       }
   end
@@ -107,18 +105,17 @@ def check_for_use_of_reserved_bbs_api_port!
   end
 end
 
-def set_internal_receiver_as_only_receiver
-  config['receivers'] = {
-    'otlp/cf-internal-local' => {
-      'protocols' => {
-        'grpc' => {
-          'endpoint' => "#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
-          'tls' => {
-            'client_ca_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector-ca.crt',
-            'cert_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector.crt',
-            'key_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector.key',
-            'min_version' => '1.3'
-          }
+def set_internal_receiver
+  config['receivers'] ||= {}
+  config['receivers']['otlp/cf-internal-local'] = {
+    'protocols' => {
+      'grpc' => {
+        'endpoint' => "#{p('ingress.grpc.address')}:#{p('ingress.grpc.port')}",
+        'tls' => {
+          'client_ca_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector-ca.crt',
+          'cert_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector.crt',
+          'key_file' => '/var/vcap/jobs/otel-collector-windows/config/certs/otel-collector.key',
+          'min_version' => '1.3'
         }
       }
     }
@@ -127,7 +124,8 @@ end
 
 def set_internal_receiver_on_all_pipelines
   config['service']['pipelines'].each_value do |pipeline|
-    pipeline['receivers'] = ['otlp/cf-internal-local']
+    pipeline['receivers'] ||= []
+    pipeline['receivers'] << 'otlp/cf-internal-local'
   end
 end
 
@@ -153,6 +151,11 @@ def expose_internal_telemetry
   }
 end
 
+# Hardcoded list of receivers included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_receivers
+  %w[otlp prometheus].sort
+end
+
 # Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_exporters
   %w[debug otlp file prometheus prometheusremotewrite nop splunk_hec datadog kafka syslog otlphttp].sort
@@ -165,7 +168,7 @@ end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_extensions
-  %w[pprof].sort
+  %w[pprof healthcheckv2].sort
 end
 
 def check_for_use_of_valid_components!(component_kind, included_components)
@@ -195,9 +198,13 @@ check_for_no_exporters!
 check_for_no_service_config!
 check_for_use_of_reserved_prefix!
 check_for_use_of_reserved_bbs_api_port!
+check_for_use_of_valid_components!('receivers', included_receivers)
 check_for_use_of_valid_components!('processors', included_processors)
 check_for_use_of_valid_components!('exporters', included_exporters)
 check_for_use_of_valid_components!('extensions', included_extensions)
+if_p('allow_list.receivers') do |prop|
+  check_for_use_of_allowed_components!('receivers', included_receivers, prop)
+end
 if_p('allow_list.processors') do |prop|
   check_for_use_of_allowed_components!('processors', included_processors, prop)
 end
@@ -207,7 +214,7 @@ end
 if_p('allow_list.extensions') do |prop|
   check_for_use_of_allowed_components!('extensions', included_extensions, prop)
 end
-set_internal_receiver_as_only_receiver
+set_internal_receiver
 add_nop_pipelines
 set_internal_receiver_on_all_pipelines
 expose_internal_telemetry

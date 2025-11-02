@@ -177,8 +177,8 @@ shared_examples_for 'common config.yml' do
     context 'receivers' do
       let(:receivers) { rendered['receivers'] }
 
-      it 'removes any receiver that the operator provided to keep the config well-formed' do
-        expect(receivers.keys).to_not include 'otlp/placeholder'
+      it 'keeps any receiver that the operator provided' do
+        expect(receivers.keys).to include 'otlp/placeholder'
       end
 
       context 'when the operator provides a real receiver' do
@@ -195,8 +195,8 @@ shared_examples_for 'common config.yml' do
           }
         end
 
-        it 'is ignored' do
-          expect(rendered['receivers'].keys).to_not include 'otlp/some-receiver'
+        it 'includes the provided and built-in receivers' do
+          expect(rendered['receivers'].keys).to eq(["otlp/placeholder", 'otlp/some-receiver', 'otlp/cf-internal-local'])
         end
       end
 
@@ -225,7 +225,6 @@ shared_examples_for 'common config.yml' do
           before do
             config['service']['pipelines'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp']
               },
@@ -240,17 +239,16 @@ shared_examples_for 'common config.yml' do
                 'exporters' => ['otlp']
               },
               'metrics/foo' => {
-                'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp']
               }
             }
           end
 
-          it 'includes only the built-in receiver in every pipeline' do
+          it 'includes only the built-in and provided receivers in every pipeline' do
             expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['traces/2']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+            expect(rendered['service']['pipelines']['traces/2']['receivers']).to eq(['otlp/placeholder', 'otlp/cf-internal-local'])
+            expect(rendered['service']['pipelines']['metrics']['receivers']).to eq(['otlp/placeholder', 'otlp/cf-internal-local'])
             expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to eq(['otlp/cf-internal-local'])
           end
         end

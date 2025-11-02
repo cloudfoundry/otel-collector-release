@@ -149,6 +149,46 @@ var _ = Describe("OTel Collector", func() {
 				}).Should(ContainSubstring(sm.GetScopeMetrics()[0].GetMetrics()[0].Name))
 			})
 		})
+
+		Context("when a prometheus receiver is configured", func() {
+			BeforeEach(func() {
+				otelConfigPath = "prometheus_receiver.yml"
+			})
+
+			It("scrapes metrics from localhost and forwards them via otlp", func() {
+				fakeMetricsServer := NewFakeMetricsServer(otelConfigVars.IngressPromPort)
+				fakeMetricsServer.Start()
+				defer fakeMetricsServer.Stop()
+
+				// Wait for the prometheus receiver to scrape metrics and forward them
+				var emsr *colmetricspb.ExportMetricsServiceRequest
+				Eventually(fakeMetricsServiceServer.ExportMetricsServiceRequests, 10).Should(Receive(&emsr))
+
+				// Verify we received metrics from the prometheus scrape
+				Expect(emsr.GetResourceMetrics()).NotTo(BeEmpty())
+				resourceMetrics := emsr.GetResourceMetrics()[0]
+				Expect(resourceMetrics.GetScopeMetrics()).NotTo(BeEmpty())
+
+				// Check that we have some metrics
+				scopeMetrics := resourceMetrics.GetScopeMetrics()[0]
+				Expect(scopeMetrics.GetMetrics()).NotTo(BeEmpty())
+
+				metricsByName := map[string]*metricspb.Metric{}
+				for _, m := range scopeMetrics.GetMetrics() {
+					metricsByName[m.Name] = m
+				}
+
+				Expect(metricsByName).To(HaveKey("fake_metric"))
+				fakeMetric := metricsByName["fake_metric"]
+				Expect(fakeMetric.Data).To(BeAssignableToTypeOf(&metricspb.Metric_Sum{}))
+				Expect(fakeMetric.GetSum().DataPoints[0].GetAsDouble()).To(Equal(42.0))
+
+				Expect(metricsByName).To(HaveKey("another_fake_metric"))
+				anotherFakeMetric := metricsByName["another_fake_metric"]
+				Expect(anotherFakeMetric.Data).To(BeAssignableToTypeOf(&metricspb.Metric_Gauge{}))
+				Expect(anotherFakeMetric.GetGauge().DataPoints[0].GetAsDouble()).To(Equal(123.45))
+			})
+		})
 	})
 
 	Describe("logs", func() {
@@ -182,6 +222,27 @@ var _ = Describe("OTel Collector", func() {
 			var etsr *coltracepb.ExportTraceServiceRequest
 			Eventually(fakeTracesServiceServer.ExportTracesServiceRequest, 5).Should(Receive(&etsr))
 			Expect(cmp.Diff(etsr.GetResourceSpans()[0], &st, protocmp.Transform())).To(BeEmpty())
+		})
+	})
+
+	Describe("health check", func() {
+		BeforeEach(func() {
+			otelConfigPath = "health_check.yml"
+		})
+
+		It("can probe status endpoint", func() {
+			resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/health/status", otelConfigVars.HealthCheckPort))
+			Expect(err).NotTo(HaveOccurred())
+			defer resp.Body.Close()
+
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+			body, err := io.ReadAll(resp.Body)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(body).NotTo(BeEmpty())
+			Expect(string(body)).To(ContainSubstring("status"))
+			fmt.Printf("Health check response: %s\n", string(body))
 		})
 	})
 })
