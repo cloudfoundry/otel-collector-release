@@ -1,0 +1,47 @@
+---
+
+receivers:
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:{{.IngressOTLPPort}}
+        tls:
+          key_pem: "{{.KeyPem}}"
+          cert_pem: "{{.CertPem}}"
+
+processors:
+  batch:
+
+exporters:
+  file:
+    path: /dev/null
+
+extensions:
+  healthcheckv2:
+    use_v2: true
+    component_health:
+      include_permanent_errors: false
+      include_recoverable_errors: true
+      recovery_duration: 5m
+    http:
+      endpoint: 127.0.0.1:{{.HealthCheckPort}}
+      status:
+        enabled: true
+        path: "/health/status"
+
+service:
+  extensions: [healthcheckv2]
+  pipelines:
+    logs:
+      receivers: [otlp/test]
+      processors: [batch]
+      exporters: [file]
+
+  telemetry:
+    metrics:
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: "https://127.0.0.1:{{.MetricsPort}}"

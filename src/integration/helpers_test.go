@@ -5,7 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/hex"
+	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -339,11 +342,72 @@ func (s FakeMetricsServiceServer) Export(ctx context.Context, emsr *colmetricspb
 	return &colmetricspb.ExportMetricsServiceResponse{}, nil
 }
 
+type FakeMetricsServer struct {
+	server *http.Server
+	port   int
+}
+
+func NewFakeMetricsServer(port int) *FakeMetricsServer {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`# HELP fake_metric A fake metric for testing
+# TYPE fake_metric counter
+fake_metric{label="test"} 42
+# HELP another_fake_metric Another fake metric
+# TYPE another_fake_metric gauge
+another_fake_metric 123.45
+`))
+	})
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: mux,
+	}
+
+	return &FakeMetricsServer{
+		server: server,
+		port:   port,
+	}
+}
+
+func (f *FakeMetricsServer) Start() {
+	go func() {
+		defer GinkgoRecover()
+		if err := f.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			Fail(fmt.Sprintf("Failed to start fake metrics server: %v", err))
+		}
+	}()
+
+	// Wait for server to be ready
+	Eventually(func() error {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", f.port))
+		if err != nil {
+			return err
+		}
+		resp.Body.Close()
+		return nil
+	}, 5*time.Second).Should(Succeed())
+}
+
+func (f *FakeMetricsServer) Stop() {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	f.server.Shutdown(ctx)
+}
+
+func (f *FakeMetricsServer) Port() int {
+	return f.port
+}
+
 type OTelConfigVars struct {
 	IngressOTLPPort int
 	EgressOTLPPort  int
 	MetricsPort     int
 	Port            int
+	IngressPromPort int
+	HealthCheckPort int
 	CA              *certtest.Authority
 	Cert            *certtest.Certificate
 }
@@ -353,6 +417,8 @@ func NewOTELConfigVars() OTelConfigVars {
 	egressOTLPPort := 5000 + GinkgoParallelProcess()*100 + 1
 	metricsPort := 5000 + GinkgoParallelProcess()*100 + 2
 	port := 5000 + GinkgoParallelProcess()*100 + 3
+	ingressPromPort := 5000 + GinkgoParallelProcess()*100 + 4
+	healthCheckPort := 5000 + GinkgoParallelProcess()*100 + 5
 
 	ca, err := certtest.BuildCA("otel")
 	Expect(err).NotTo(HaveOccurred())
@@ -364,6 +430,8 @@ func NewOTELConfigVars() OTelConfigVars {
 		EgressOTLPPort:  egressOTLPPort,
 		MetricsPort:     metricsPort,
 		Port:            port,
+		IngressPromPort: ingressPromPort,
+		HealthCheckPort: healthCheckPort,
 		Cert:            cert,
 		CA:              ca,
 	}

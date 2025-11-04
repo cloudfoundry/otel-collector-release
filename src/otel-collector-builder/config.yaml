@@ -24,8 +24,10 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.135.0
 receivers:
   - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.135.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.135.0
 providers:
   - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.41.0
   - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.41.0
 extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckv2extension v0.135.0
