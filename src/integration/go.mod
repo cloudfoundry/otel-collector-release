@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
 	code.cloudfoundry.org/tlsconfig v0.41.0
 	github.com/google/go-cmp v0.7.0
-	github.com/onsi/ginkgo/v2 v2.27.2
+	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.2
 	go.opentelemetry.io/proto/otlp v1.9.0
 	google.golang.org/grpc v1.77.0
