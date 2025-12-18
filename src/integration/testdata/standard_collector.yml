@@ -21,11 +21,9 @@ exporters:
     path: /dev/null
 
 extensions:
-  health_check:
-    endpoint: 127.0.0.1:{{.HealthCheckPort}}
 
 service:
-  extensions: [health_check]
+  extensions: []
   pipelines:
     logs:
       receivers: [otlp/test]

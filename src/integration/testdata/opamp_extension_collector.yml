@@ -21,9 +21,6 @@ exporters:
     path: /dev/null
 
 extensions:
-  health_check:
-    endpoint: 127.0.0.1:{{.HealthCheckPort}}
-  
   opamp:
     server:
       ws:
@@ -39,7 +36,7 @@ extensions:
     endpoint: 127.0.0.1:{{.PprofPort}}
 
 service:
-  extensions: [health_check, opamp, pprof]
+  extensions: [opamp, pprof]
   pipelines:
     logs:
       receivers: [otlp/test]

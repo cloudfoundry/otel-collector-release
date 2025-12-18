@@ -833,6 +833,9 @@ github.com/googleapis/gax-go/v2/internallog/internal
 # github.com/gorilla/mux v1.8.1
 ## explicit; go 1.20
 github.com/gorilla/mux
+# github.com/gorilla/websocket v1.5.3
+## explicit; go 1.12
+github.com/gorilla/websocket
 # github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc
 ## explicit; go 1.21
 github.com/grafana/regexp
@@ -999,6 +1002,9 @@ github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.20
 ## explicit; go 1.15
 github.com/mattn/go-isatty
+# github.com/michel-laterman/proxy-connect-dialer-go v0.1.0
+## explicit; go 1.23.0
+github.com/michel-laterman/proxy-connect-dialer-go
 # github.com/mitchellh/copystructure v1.2.0
 ## explicit; go 1.15
 github.com/mitchellh/copystructure
@@ -1029,6 +1035,18 @@ github.com/munnerz/goautoneg
 # github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f
 ## explicit
 github.com/mwitkow/go-conntrack
+# github.com/oklog/ulid/v2 v2.1.1
+## explicit; go 1.15
+github.com/oklog/ulid/v2
+# github.com/open-telemetry/opamp-go v0.22.0
+## explicit; go 1.23.0
+github.com/open-telemetry/opamp-go/client
+github.com/open-telemetry/opamp-go/client/internal
+github.com/open-telemetry/opamp-go/client/internal/utils
+github.com/open-telemetry/opamp-go/client/types
+github.com/open-telemetry/opamp-go/internal
+github.com/open-telemetry/opamp-go/internal/testhelpers
+github.com/open-telemetry/opamp-go/protobufs
 # github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter
@@ -1062,6 +1080,13 @@ github.com/open-telemetry/opentelemetry-collector-contrib/exporter/splunkhecexpo
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/syslogexporter/internal/metadata
+# github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages
+# github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension/internal/metadata
 # github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension
@@ -1181,6 +1206,9 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry
+# github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger
@@ -1334,6 +1362,7 @@ github.com/shirou/gopsutil/v3/process
 github.com/shirou/gopsutil/v4/common
 github.com/shirou/gopsutil/v4/cpu
 github.com/shirou/gopsutil/v4/disk
+github.com/shirou/gopsutil/v4/host
 github.com/shirou/gopsutil/v4/internal/common
 github.com/shirou/gopsutil/v4/mem
 github.com/shirou/gopsutil/v4/net
@@ -1995,6 +2024,7 @@ golang.org/x/sys/windows/svc/mgr
 golang.org/x/term
 # golang.org/x/text v0.28.0
 ## explicit; go 1.23.0
+golang.org/x/text/cases
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -2006,6 +2036,7 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
+golang.org/x/text/internal
 golang.org/x/text/internal/language
 golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag

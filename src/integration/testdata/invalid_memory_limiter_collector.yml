@@ -19,11 +19,9 @@ exporters:
     verbosity: basic
 
 extensions:
-  health_check:
-    endpoint: 127.0.0.1:{{.HealthCheckPort}}
 
 service:
-  extensions: [health_check]
+  extensions: []
   pipelines:
     metrics:
       receivers: [otlp/test]
