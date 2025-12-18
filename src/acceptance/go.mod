@@ -3,8 +3,8 @@ module code.cloudfoundry.org/otel-collector-release/src/acceptance
 go 1.25.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/gomega v1.38.3
 )
 
 require (
