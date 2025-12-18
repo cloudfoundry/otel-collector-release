@@ -15,7 +15,8 @@ func TestIntegration(t *testing.T) {
 }
 
 type ComponentPaths struct {
-	Collector string `json:"collector"`
+	Collector       string `json:"collector"`
+	OpAMPSupervisor string `json:"opamp_supervisor"`
 }
 
 func NewComponentPaths() ComponentPaths {
@@ -24,6 +25,15 @@ func NewComponentPaths() ComponentPaths {
 	path, err := gexec.Build("code.cloudfoundry.org/otel-collector-release/src/otel-collector")
 	Expect(err).NotTo(HaveOccurred())
 	cps.Collector = path
+
+	// Build OpAMP supervisor - this will be available once the package is built
+	supervisorPath, err := gexec.Build("code.cloudfoundry.org/otel-collector-release/src/opamp-supervisor-builder")
+	if err != nil {
+		// OpAMP supervisor not available yet, tests will skip
+		cps.OpAMPSupervisor = ""
+	} else {
+		cps.OpAMPSupervisor = supervisorPath
+	}
 
 	return cps
 }

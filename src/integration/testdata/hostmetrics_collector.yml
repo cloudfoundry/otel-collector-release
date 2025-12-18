@@ -1,0 +1,50 @@
+---
+receivers:
+  hostmetrics:
+    collection_interval: 1s
+    scrapers:
+      cpu:
+        metrics:
+          system.cpu.time:
+            enabled: true
+      memory:
+        metrics:
+          system.memory.usage:
+            enabled: true
+      network:
+        metrics:
+          system.network.io:
+            enabled: true
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  memory_limiter:
+    limit_mib: 256
+    check_interval: 1s
+
+exporters:
+  debug:
+    verbosity: detailed
+  file:
+    path: /dev/null
+
+extensions:
+
+service:
+  extensions: []
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [memory_limiter, batch]
+      exporters: [debug, file]
+  telemetry:
+    metrics:
+      readers:
+        - periodic:
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: "http://127.0.0.1:{{.MetricsPort}}"

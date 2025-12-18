@@ -1,0 +1,18 @@
+dist:
+  module: code.cloudfoundry.org/otel-collector-release/src/opamp-supervisor
+  name: opampsupervisor-cf
+  description: OpenTelemetry OpAMP Supervisor for CloudFoundry
+  version: 0.134.0
+  output_path: ../opamp-supervisor
+  go_mod_file: ../opamp-supervisor/go.mod
+
+# OpAMP Supervisor configuration
+supervisor:
+  # Use the upstream OpAMP supervisor as the base
+  base_module: github.com/open-telemetry/opentelemetry-collector-contrib/cmd/opampsupervisor
+  version: v0.134.0
+  
+# Collector configuration for the supervisor to manage
+collector:
+  # Path to the collector binary that the supervisor will manage
+  executable_path: /var/vcap/packages/otel-collector/otel-collector

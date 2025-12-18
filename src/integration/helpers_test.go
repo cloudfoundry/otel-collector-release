@@ -344,6 +344,9 @@ type OTelConfigVars struct {
 	EgressOTLPPort  int
 	MetricsPort     int
 	Port            int
+	HealthCheckPort int
+	OpAMPPort       int
+	PprofPort       int
 	CA              *certtest.Authority
 	Cert            *certtest.Certificate
 }
@@ -353,7 +356,7 @@ func NewOTELConfigVars() OTelConfigVars {
 	egressOTLPPort := 5000 + GinkgoParallelProcess()*100 + 1
 	metricsPort := 5000 + GinkgoParallelProcess()*100 + 2
 	port := 5000 + GinkgoParallelProcess()*100 + 3
-
+	opampPort := 5000 + GinkgoParallelProcess()*100 + 5
 	ca, err := certtest.BuildCA("otel")
 	Expect(err).NotTo(HaveOccurred())
 	cert, err := ca.BuildSignedCertificate("egress")
@@ -364,6 +367,7 @@ func NewOTELConfigVars() OTelConfigVars {
 		EgressOTLPPort:  egressOTLPPort,
 		MetricsPort:     metricsPort,
 		Port:            port,
+		OpAMPPort:       opampPort,
 		Cert:            cert,
 		CA:              ca,
 	}
