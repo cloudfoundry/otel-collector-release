@@ -76,6 +76,21 @@ properties:
   secrets:
     description: "Variables to interpolate into the configuration"
     default: []
+  opamp.enabled:
+    description: "Enable OpAMP extension in the collector. When true, collector includes OpAMP extension. Supervisor is managed by separate job."
+    default: false
+  opamp.server.endpoint:
+    description: "OpAMP server endpoint URL (WebSocket or HTTP) - required when opamp.enabled is true"
+    required: false
+  opamp.server.headers:
+    description: "Headers to send with OpAMP server requests"
+    default: {}
+  opamp.server.tls.insecure:
+    description: "Disable TLS verification for OpAMP server connection"
+    default: false
+  opamp.server.tls.insecure_skip_verify:
+    description: "Skip TLS certificate verification for OpAMP server connection"
+    default: false
   metric_exporters:
     description: "Exporter configuration for aggregate metric egress. Deprecated, please use 'config' property."
     default: {}

@@ -4,6 +4,7 @@ set -euxo pipefail
 release_dir="$(dirname "$0")/.."
 
 rm -rf "${release_dir}/src/otel-collector"
+rm -rf "${release_dir}/src/opamp-supervisor"
 
 pushd "${release_dir}/src/otel-collector-builder"
   go run go.opentelemetry.io/collector/cmd/builder --skip-compilation --config=config.yaml
@@ -11,10 +12,41 @@ popd
 
 pushd "${release_dir}/src/otel-collector"
   go get toolchain@none
+  go mod tidy
   go mod vendor
+popd
+
+pushd "${release_dir}/src/opamp-supervisor-builder"
+  echo "Building OpAMP supervisor"
+  go run main.go config.yaml
+  
+  # Verify supervisor was built
+  if [ -f "../opamp-supervisor/opampsupervisor" ]; then
+    echo "OpAMP Supervisor build successful: $(ls -lh ../opamp-supervisor/opampsupervisor | awk '{print $5}')"
+  else
+    echo "OpAMP Supervisor build failed"
+    exit 1
+  fi
+popd
+
+pushd "${release_dir}/src/opamp-supervisor"
+  if [ -f "go.mod" ]; then
+    echo "Setting up supervisor dependencies"
+    go mod tidy
+    go mod vendor
+  else
+    echo "No go.mod found for supervisor (built from upstream)"
+  fi
 popd
 
 pushd "${release_dir}/src/integration"
   go mod tidy
   go mod vendor
 popd
+
+if [ -d "${release_dir}/src/acceptance" ]; then
+  pushd "${release_dir}/src/acceptance"
+    go mod tidy
+    go mod vendor
+  popd
+fi

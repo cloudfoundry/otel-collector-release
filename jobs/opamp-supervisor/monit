@@ -1,0 +1,7 @@
+<% if p('opamp.enabled') %>
+check process opamp-supervisor
+  with pidfile /var/vcap/sys/run/bpm/opamp-supervisor/opamp-supervisor.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start opamp-supervisor"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop opamp-supervisor"
+  group vcap
+<% end %>

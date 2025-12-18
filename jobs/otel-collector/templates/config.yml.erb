@@ -153,6 +153,45 @@ def expose_internal_telemetry
   }
 end
 
+# Add opAMP extension if explicitly enabled and endpoint is configured. This config is without supervisor. If needed
+# uncomment caller below
+def add_opamp_extension_if_configured
+  if p('opamp.enabled') && !p('opamp.server.endpoint', '').empty?
+    endpoint = p('opamp.server.endpoint')
+    config['extensions'] ||= {}
+    config['extensions']['opamp'] = {
+      'server' => {
+        'ws' => {
+          'endpoint' => endpoint
+        }
+      }
+    }
+    
+    # Add headers if provided
+    if_p('opamp.server.headers') do |headers|
+      config['extensions']['opamp']['server']['ws']['headers'] = headers
+    end
+    
+    # Add TLS config if needed
+    tls_config = {}
+    if_p('opamp.server.tls.insecure') do |insecure|
+      tls_config['insecure'] = insecure
+    end
+    if_p('opamp.server.tls.insecure_skip_verify') do |skip_verify|
+      tls_config['insecure_skip_verify'] = skip_verify
+    end
+    
+    unless tls_config.empty?
+      config['extensions']['opamp']['server']['ws']['tls'] = tls_config
+    end
+    
+    # Add opamp extension to service extensions
+    config['service'] ||= {}
+    config['service']['extensions'] ||= []
+    config['service']['extensions'] << 'opamp' unless config['service']['extensions'].include?('opamp')
+  end
+end
+
 # Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_exporters
   %w[debug otlp file prometheus prometheusremotewrite nop splunk_hec datadog kafka syslog otlphttp].sort
@@ -165,7 +204,7 @@ end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_extensions
-  %w[pprof].sort
+  %w[pprof opamp].sort
 end
 
 def check_for_use_of_valid_components!(component_kind, included_components)
@@ -211,6 +250,7 @@ set_internal_receiver_as_only_receiver
 add_nop_pipelines
 set_internal_receiver_on_all_pipelines
 expose_internal_telemetry
+# add_opamp_extension_if_configured
 
 YAML.dump(config)
 %>

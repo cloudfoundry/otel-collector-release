@@ -1,0 +1,43 @@
+---
+receivers:
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:{{.IngressOTLPPort}}
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  memory_limiter:
+    limit_mib: 256
+    check_interval: 1s
+
+exporters:
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 127.0.0.1:{{.HealthCheckPort}}
+  
+  opamp:
+    server:
+      ws:
+        endpoint: ws://localhost:{{.OpAMPPort}}/v1/opamp
+    agent_description:
+      # Invalid configuration - using identifying_attributes which is not supported
+      identifying_attributes:
+        service.name: otelcol-cf-test
+        service.version: 0.11.4
+      non_identifying_attributes:
+        os.type: test
+
+service:
+  extensions: [health_check, opamp]
+  pipelines:
+    metrics:
+      receivers: [otlp/test]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

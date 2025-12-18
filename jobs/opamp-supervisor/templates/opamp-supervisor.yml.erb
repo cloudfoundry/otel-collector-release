@@ -1,0 +1,26 @@
+server:
+  endpoint: <%= p('opamp.server.endpoint') %>
+<% if_p('opamp.server.headers') do |headers| %>
+  headers:
+<% headers.each do |key, value| %>
+    <%= key %>: <%= value %>
+<% end %>
+<% end %>
+
+agent:
+  # Path to the collector binary that supervisor will manage
+  executable: /var/vcap/packages/otel-collector/otel-collector
+  args:
+    - --config=/var/vcap/jobs/otel-collector/config/config.yml
+
+capabilities:
+  reports_effective_config: <%= p('opamp.capabilities.reports_effective_config') %>
+  reports_own_traces: <%= p('opamp.capabilities.reports_own_traces') %>
+  reports_own_metrics: <%= p('opamp.capabilities.reports_own_metrics') %>
+  reports_own_logs: <%= p('opamp.capabilities.reports_own_logs') %>
+  accepts_remote_config: <%= p('opamp.capabilities.accepts_remote_config') %>
+  reports_health: <%= p('opamp.capabilities.reports_health') %>
+  reports_remote_config: <%= p('opamp.capabilities.reports_remote_config') %>
+
+storage:
+  directory: <%= p('storage_dir') %>
