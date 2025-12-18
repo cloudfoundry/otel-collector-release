@@ -1786,6 +1786,7 @@ type CollectorManifestBuilder struct {
 	scratch             []byte
 	manifestBuilder     ManifestBuilder
 	agentVersionBuilder AgentVersionBuilder
+	systemInfoBuilder   SystemInfoBuilder
 }
 
 func NewCollectorManifestBuilder(writer io.Writer) *CollectorManifestBuilder {
@@ -1849,6 +1850,23 @@ func (x *CollectorManifestBuilder) SetAgentVersion(cb func(w *AgentVersionBuilde
 	x.agentVersionBuilder.scratch = x.scratch
 	cb(&x.agentVersionBuilder)
 	x.scratch = protowire.AppendVarint(x.scratch[:0], 0x42)
+	x.scratch = protowire.AppendVarint(x.scratch, uint64(x.buf.Len()))
+	x.writer.Write(x.scratch)
+	x.writer.Write(x.buf.Bytes())
+}
+func (x *CollectorManifestBuilder) SetOriginCollector(v uint64) {
+	if v != 0 {
+		x.scratch = protowire.AppendVarint(x.scratch[:0], 0x48)
+		x.scratch = protowire.AppendVarint(x.scratch, v)
+		x.writer.Write(x.scratch)
+	}
+}
+func (x *CollectorManifestBuilder) SetSystemInfo(cb func(w *SystemInfoBuilder)) {
+	x.buf.Reset()
+	x.systemInfoBuilder.writer = &x.buf
+	x.systemInfoBuilder.scratch = x.scratch
+	cb(&x.systemInfoBuilder)
+	x.scratch = protowire.AppendVarint(x.scratch[:0], 0x52)
 	x.scratch = protowire.AppendVarint(x.scratch, uint64(x.buf.Len()))
 	x.writer.Write(x.scratch)
 	x.writer.Write(x.buf.Bytes())
@@ -3501,6 +3519,13 @@ func (x *ProcessBuilder) SetServiceDiscovery(cb func(w *ServiceDiscoveryBuilder)
 	x.writer.Write(x.scratch)
 	x.writer.Write(x.buf.Bytes())
 }
+func (x *ProcessBuilder) SetInjectionState(v uint64) {
+	if v != 0 {
+		x.scratch = protowire.AppendVarint(x.scratch[:0], 0xd8)
+		x.scratch = protowire.AppendVarint(x.scratch, v)
+		x.writer.Write(x.scratch)
+	}
+}
 
 type ServiceDiscoveryBuilder struct {
 	writer                io.Writer
@@ -3508,6 +3533,7 @@ type ServiceDiscoveryBuilder struct {
 	scratch               []byte
 	serviceNameBuilder    ServiceNameBuilder
 	tracerMetadataBuilder TracerMetadataBuilder
+	resourceBuilder       ResourceBuilder
 }
 
 func NewServiceDiscoveryBuilder(writer io.Writer) *ServiceDiscoveryBuilder {
@@ -3565,6 +3591,65 @@ func (x *ServiceDiscoveryBuilder) SetApmInstrumentation(v bool) {
 		x.scratch = protowire.AppendVarint(x.scratch, 1)
 		x.writer.Write(x.scratch)
 	}
+}
+func (x *ServiceDiscoveryBuilder) AddResources(cb func(w *ResourceBuilder)) {
+	x.buf.Reset()
+	x.resourceBuilder.writer = &x.buf
+	x.resourceBuilder.scratch = x.scratch
+	cb(&x.resourceBuilder)
+	x.scratch = protowire.AppendVarint(x.scratch[:0], 0x32)
+	x.scratch = protowire.AppendVarint(x.scratch, uint64(x.buf.Len()))
+	x.writer.Write(x.scratch)
+	x.writer.Write(x.buf.Bytes())
+}
+
+type ResourceBuilder struct {
+	writer             io.Writer
+	buf                bytes.Buffer
+	scratch            []byte
+	logResourceBuilder LogResourceBuilder
+}
+
+func NewResourceBuilder(writer io.Writer) *ResourceBuilder {
+	return &ResourceBuilder{
+		writer: writer,
+	}
+}
+func (x *ResourceBuilder) Reset(writer io.Writer) {
+	x.buf.Reset()
+	x.writer = writer
+}
+func (x *ResourceBuilder) SetLogs(cb func(w *LogResourceBuilder)) {
+	x.buf.Reset()
+	x.logResourceBuilder.writer = &x.buf
+	x.logResourceBuilder.scratch = x.scratch
+	cb(&x.logResourceBuilder)
+	x.scratch = protowire.AppendVarint(x.scratch[:0], 0xa)
+	x.scratch = protowire.AppendVarint(x.scratch, uint64(x.buf.Len()))
+	x.writer.Write(x.scratch)
+	x.writer.Write(x.buf.Bytes())
+}
+
+type LogResourceBuilder struct {
+	writer  io.Writer
+	buf     bytes.Buffer
+	scratch []byte
+}
+
+func NewLogResourceBuilder(writer io.Writer) *LogResourceBuilder {
+	return &LogResourceBuilder{
+		writer: writer,
+	}
+}
+func (x *LogResourceBuilder) Reset(writer io.Writer) {
+	x.buf.Reset()
+	x.writer = writer
+}
+func (x *LogResourceBuilder) SetPath(v string) {
+	x.scratch = x.scratch[:0]
+	x.scratch = protowire.AppendVarint(x.scratch, 0xa)
+	x.scratch = protowire.AppendString(x.scratch, v)
+	x.writer.Write(x.scratch)
 }
 
 type ServiceNameBuilder struct {

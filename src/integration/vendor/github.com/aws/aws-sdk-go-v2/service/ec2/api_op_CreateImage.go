@@ -73,7 +73,8 @@ type CreateImageInput struct {
 	//   - You can't modify the encryption status of existing volumes or snapshots. To
 	//   create an AMI with volumes or snapshots that have a different encryption status
 	//   (for example, where the source volume and snapshots are unencrypted, and you
-	//   want to create an AMI with encrypted volumes or snapshots), use the CopyImageaction.
+	//   want to create an AMI with encrypted volumes or snapshots), copy the image
+	//   instead.
 	//
 	//   - The only option that can be changed for existing mappings or snapshots is
 	//   DeleteOnTermination .
@@ -243,40 +244,7 @@ func (c *Client) addOperationCreateImageMiddlewares(stack *middleware.Stack, opt
 	if err = addInterceptAttempt(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptExecution(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeSerialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterSerialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeSigning(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterSigning(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptTransmit(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeDeserialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterDeserialization(stack, options); err != nil {
-		return err
-	}
-	if err = addSpanInitializeStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanInitializeEnd(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil

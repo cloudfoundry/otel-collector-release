@@ -4,17 +4,27 @@
 package otelconftelemetry // import "go.opentelemetry.io/collector/service/telemetry/otelconftelemetry"
 
 import (
-	config "go.opentelemetry.io/contrib/otelconf/v0.3.0"
-	"go.opentelemetry.io/otel/log"
-	"go.opentelemetry.io/otel/sdk/resource"
+	"context"
+
+	otelconf "go.opentelemetry.io/contrib/otelconf/v0.3.0"
+	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/service/telemetry"
 )
 
-// newLogger creates a Logger and a LoggerProvider from Config.
-func newLogger(set telemetry.Settings, cfg *Config, sdk *config.SDK, res *resource.Resource) (*zap.Logger, log.LoggerProvider, error) {
+// createLogger creates a Logger and a LoggerProvider from Config.
+func createLogger(
+	ctx context.Context,
+	set telemetry.LoggerSettings,
+	componentConfig component.Config,
+) (*zap.Logger, component.ShutdownFunc, error) {
+	cfg := componentConfig.(*Config)
+	attrs := pcommonAttrsToOTelAttrs(set.Resource)
+	res := sdkresource.NewWithAttributes("", attrs...)
+
 	// Copied from NewProductionConfig.
 	ec := zap.NewProductionEncoderConfig()
 	ec.EncodeTime = zapcore.ISO8601TimeEncoder
@@ -70,6 +80,27 @@ func newLogger(set telemetry.Settings, cfg *Config, sdk *config.SDK, res *resour
 		}))
 	}
 
-	lp := sdk.LoggerProvider()
-	return logger, lp, nil
+	sdk, err := newSDK(ctx, res, otelconf.OpenTelemetryConfiguration{
+		LoggerProvider: &otelconf.LoggerProvider{
+			Processors: cfg.Logs.Processors,
+		},
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Wrap the zap.Logger with a special zap.Core so scope attributes
+	// can be added and removed dynamically, and tee logs to the
+	// LoggerProvider.
+	loggerProvider := sdk.LoggerProvider()
+	logger = logger.WithOptions(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+		provider := zapCoreProvider{
+			sourceCore: core,
+			lp:         loggerProvider,
+			scopeName:  "go.opentelemetry.io/collector/service",
+		}
+		return provider.newCore()
+	}))
+
+	return logger, sdk.Shutdown, nil
 }
