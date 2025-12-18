@@ -1,7 +1,6 @@
 package acceptance_test
 
 import (
-	"fmt"
 	"os/exec"
 	"time"
 
