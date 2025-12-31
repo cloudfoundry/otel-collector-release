@@ -557,8 +557,8 @@ github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWS
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
-github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
-github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
+github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc h1:GN2Lv3MGO7AS6PrRoT6yV5+wkrOpcszoIsO4+4ds248=
 github.com/grafana/regexp v0.0.0-20240518133315-a468a5bfb3bc/go.mod h1:+JKpmjMGhpgPL+rXZ5nsZieVzvarn86asRlBg4uNGnk=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
@@ -703,6 +703,8 @@ github.com/mdlayher/socket v0.4.1 h1:eM9y2/jlbs1M615oshPQOHZzj6R6wMT7bX5NPiQvn2U
 github.com/mdlayher/socket v0.4.1/go.mod h1:cAqeGjoufqdxWkD7DkpyS+wcefOtmu5OQ8KuoJGIReA=
 github.com/mdlayher/vsock v1.2.1 h1:pC1mTJTvjo1r9n9fbm7S1j04rCgCzhCOS5DY0zqHlnQ=
 github.com/mdlayher/vsock v1.2.1/go.mod h1:NRfCibel++DgeMD8z/hP+PPTjlNJsdPOmxcnENvE+SE=
+github.com/michel-laterman/proxy-connect-dialer-go v0.1.0 h1:Q8asukpmyrEheocd+R+6YEI4jcm62sHHalgTMG+LoLw=
+github.com/michel-laterman/proxy-connect-dialer-go v0.1.0/go.mod h1:HTlVkRAqzTRPYbWxgAiwMT9HRZMOqP3Mx7+toa3yJjc=
 github.com/miekg/dns v1.1.66 h1:FeZXOS3VCVsKnEAd+wBkjMC3D2K+ww66Cq3VnCINuJE=
 github.com/miekg/dns v1.1.66/go.mod h1:jGFzBsSNbJw6z1HYut1RKBKHA9PBdxeHrZG8J+gC2WE=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=
@@ -755,6 +757,8 @@ github.com/onsi/ginkgo/v2 v2.21.0 h1:7rg/4f3rB88pb5obDgNZrNHrQ4e6WpjonchcpuBRnZM
 github.com/onsi/ginkgo/v2 v2.21.0/go.mod h1:7Du3c42kxCUegi0IImZ1wUQzMBVecgIHjR1C+NkhLQo=
 github.com/onsi/gomega v1.35.1 h1:Cwbd75ZBPxFSuZ6T+rN/WCb/gOc6YgFBXLlZLhC7Ds4=
 github.com/onsi/gomega v1.35.1/go.mod h1:PvZbdDc8J6XJEpDK4HCuRBm8a6Fzp9/DmhC9C7yFlog=
+github.com/open-telemetry/opamp-go v0.22.0 h1:7UnsQgFFS7ffM09JQk+9aGVBAAlsLfcooZ9xvSYwxWM=
+github.com/open-telemetry/opamp-go v0.22.0/go.mod h1:339N71soCPrhHywbAcKUZJDODod581ZOxCpTkrl3zYQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.135.0 h1:8hohu6RgxXPZvmP9QOkXYLJisrEJcflkwTyeJK2hh5s=
 github.com/open-telemetry/opentelemetry-collector-contrib/connector/datadogconnector v0.135.0/go.mod h1:j9kdOB736PzTuLvWKXbMZpN0TRw1BtAG5Fe+wNCV07E=
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.135.0 h1:VIU0sTDMV/5GOMrn5avGctg6lhxCUVIi85gOadSUz4o=
@@ -775,6 +779,10 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.135.0/go.mod h1:VlfmANOeR9zLIUOeBotuT26iGHnFJlx7ts68sgyqHAc=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.135.0 h1:VmQogXTCe5IWQhTKGLrglDLnYJC3pojmWjNwE9Vd58k=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.135.0/go.mod h1:cV2MJoxTXonAbSh7G4RdcS6r31zI++Xkjq+L+5IP2N4=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.135.0 h1:U7rkQiHCOiuq0UpxglU8bCwHCktXwpGRyBzgdBAi7II=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.135.0/go.mod h1:gLJlqRfHOzS5fRLaclK9qAcKPBlrxGr+/eKBgQSM4jE=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.135.0 h1:EEuBY/RNQkzGf4bdI7S2kKpu5BbxWU9UGN95tz3pnBk=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.135.0/go.mod h1:JBGOHdDAo5beks/gaIsmsGxRGySsyIokH+efdpgwzDo=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0 h1:QHmiuMp9RyeuVopoCeQB6baJeZxvmGOEHeiISkGY3L4=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0/go.mod h1:dm1KHhrYNmWD/k1DpRjahkeIUvQ/rolrol2uBMaHOHU=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.135.0 h1:a872WY0TsuRf9r1Ts8BE+8mtAZ1+4vRjsztBLNbPDDA=
@@ -833,6 +841,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.135.0 
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.135.0/go.mod h1:9Fcpl8MyBB7Q6TVHhJULk1KzEnSXivCRqWhWMIa05Lg=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.135.0 h1:xZz4GmfjBUx3Jwr9nArOpGSII27PL6JCMQVRNceeQgU=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.135.0/go.mod h1:4L3KUL3gkbqdw9lPwEne+GDfo58GhW6N6nsS87PyPzU=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.135.0 h1:S4ffDAbhTP/icsGxPh/uPswzwcizUVieuCyhYiptCVs=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.135.0/go.mod h1:70KaB7b8IIh8X7PxjlWg/y5Pfh40Yh7km791U0TPOaY=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.135.0 h1:68kFACEUPRtyDqGInmq3OvG1XKwCpFXwDxIH89I6u/o=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.135.0/go.mod h1:U6rJJv9q/O0TG4NuUrrTZrkHMwU7GRBvkF+9cpju9NE=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.135.0 h1:DrGrX8N4ulyCWxPoVXSODkfTwVld5dP2/q/hX7Fzfgc=
@@ -880,6 +890,7 @@ github.com/ovh/go-ovh v1.8.0 h1:eQ5TAAFZvZAVarQir62oaTL+8a503pIBuOWVn72iGtY=
 github.com/ovh/go-ovh v1.8.0/go.mod h1:cTVDnl94z4tl8pP1uZ/8jlVxntjSIf09bNcQ5TJSC7c=
 github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
+github.com/pborman/getopt v0.0.0-20170112200414-7148bc3a4c30/go.mod h1:85jBQOZwpVEaDAr341tbn15RS4fCAsIst0qp7i8ex1o=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=

@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e -x
+
+source /var/vcap/packages/golang-1.25-linux/bosh/compile.env
+
+export CGO_ENABLED=0
+
+# Build the OpAMP Supervisor using the builder
+echo "Building OpAMP Supervisor with builder..."
+pushd opamp-supervisor-builder
+  # Use the supervisor builder to generate and build the supervisor
+  go run main.go config.yaml
+  
+  # Copy the supervisor binary to the install target
+  cp "../opamp-supervisor/opampsupervisor" "${BOSH_INSTALL_TARGET}/opampsupervisor"
+popd
+
+echo "Built OpAMP Supervisor:"
+ls -la "${BOSH_INSTALL_TARGET}/"

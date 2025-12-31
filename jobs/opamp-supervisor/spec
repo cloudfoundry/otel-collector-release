@@ -1,0 +1,56 @@
+---
+name: opamp-supervisor
+
+description: "OpAMP Supervisor for remote management of OpenTelemetry Collector"
+
+packages:
+  - opamp-supervisor
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+  opamp-supervisor.yml.erb: config/opamp-supervisor.yml
+  bin/pre-start: bin/pre-start
+
+properties:
+  opamp.enabled:
+    description: "Enable OpAMP functionality. When false, this job will not start."
+    default: false
+  opamp.server.endpoint:
+    description: "OpAMP server endpoint URL (WebSocket or HTTP) - required when opamp.enabled is true"
+    required: false
+  opamp.server.headers:
+    description: "Headers to send with OpAMP server requests"
+    default: {}
+  opamp.agent_description.identifier:
+    description: "Agent identifier for OpAMP"
+    default: "otel-collector-cf"
+  opamp.agent_description.name:
+    description: "Agent name for OpAMP"
+    default: "OpenTelemetry Collector CF"
+  opamp.agent_description.version:
+    description: "Agent version for OpAMP"
+    default: "1.0.0"
+  opamp.capabilities.reports_effective_config:
+    description: "Enable reporting effective config capability"
+    default: true
+  opamp.capabilities.reports_own_traces:
+    description: "Enable reporting own traces capability"
+    default: true
+  opamp.capabilities.reports_own_metrics:
+    description: "Enable reporting own metrics capability"
+    default: true
+  opamp.capabilities.reports_own_logs:
+    description: "Enable reporting own logs capability"
+    default: true
+  opamp.capabilities.accepts_remote_config:
+    description: "Enable accepting remote config capability"
+    default: true
+  opamp.capabilities.reports_health:
+    description: "Enable reporting health capability"
+    default: true
+  opamp.capabilities.reports_remote_config:
+    description: "Enable reporting remote config capability"
+    default: true
+  storage_dir:
+    description: "Directory for OpAMP supervisor storage"
+    default: "/var/vcap/store/opamp-supervisor"

@@ -1,4 +1,8 @@
-<% if p('enabled') %>
+<% 
+  # Only start otel-collector if enabled AND opamp is not enabled
+  opamp_enabled = p('opamp.enabled', false)  # default to false if not found
+%>
+<% if p('enabled') && !opamp_enabled %>
 check process otel-collector
   with pidfile /var/vcap/sys/run/bpm/otel-collector/otel-collector.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start otel-collector"
