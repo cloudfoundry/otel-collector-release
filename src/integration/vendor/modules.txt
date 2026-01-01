@@ -624,6 +624,9 @@ github.com/benbjohnson/clock
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
 github.com/beorn7/perks/quantile
+# github.com/bmatcuk/doublestar/v4 v4.9.1
+## explicit; go 1.16
+github.com/bmatcuk/doublestar/v4
 # github.com/cenkalti/backoff v2.2.1+incompatible
 ## explicit
 github.com/cenkalti/backoff
@@ -964,6 +967,9 @@ github.com/jcmturner/gokrb5/v8/types
 ## explicit; go 1.13
 github.com/jcmturner/rpc/v2/mstypes
 github.com/jcmturner/rpc/v2/ndr
+# github.com/jonboulle/clockwork v0.5.0
+## explicit; go 1.21
+github.com/jonboulle/clockwork
 # github.com/josharian/intern v1.0.0
 ## explicit; go 1.5
 github.com/josharian/intern
@@ -1000,6 +1006,18 @@ github.com/knadh/koanf/v2
 ## explicit; go 1.11
 github.com/kylelemons/godebug/diff
 github.com/kylelemons/godebug/pretty
+# github.com/leodido/go-syslog/v4 v4.2.0
+## explicit; go 1.21
+github.com/leodido/go-syslog/v4
+github.com/leodido/go-syslog/v4/common
+github.com/leodido/go-syslog/v4/nontransparent
+github.com/leodido/go-syslog/v4/octetcounting
+github.com/leodido/go-syslog/v4/rfc3164
+github.com/leodido/go-syslog/v4/rfc5424
+# github.com/leodido/ragel-machinery v0.0.0-20190525184631-5f46317e436b
+## explicit
+github.com/leodido/ragel-machinery
+github.com/leodido/ragel-machinery/parser
 # github.com/lightstep/go-expohisto v1.0.0
 ## explicit; go 1.19
 github.com/lightstep/go-expohisto/mapping
@@ -1144,6 +1162,7 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/saniti
 # github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/aggregateutil
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/consumerretry
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/occonventions
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/parseutils
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/coreinternal/textutils
@@ -1249,6 +1268,66 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry
+# github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/adapter
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/entry
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/errors
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/attrs
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/emit
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/archive
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/checkpoint
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/fileset
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/fingerprint
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/header
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/metadata
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/reader
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/scanner
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/internal/tracker
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/matcher
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/matcher/internal/filter
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/fileconsumer/matcher/internal/finder
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/flush
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/internal/time
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/helper
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/file
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/syslog
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/tcp
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/input/udp
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/output/file
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/output/stdout
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/container
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/csv
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/json
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/jsonarray
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/keyvalue
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/regex
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/scope
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/severity
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/syslog
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/time
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/trace
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/parser/uri
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/add
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/assignkeys
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/copy
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/filter
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/flatten
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/move
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/noop
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/recombine
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/regexreplace
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/remove
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/retain
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/router
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/sanitizeutf8
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/operator/transformer/unquote
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/pipeline
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/split
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/tokenlen
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza/trim
 # github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.135.0
 ## explicit; go 1.24.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger
@@ -1275,6 +1354,14 @@ github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformpro
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/metrics
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/profiles
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor/internal/traces
+# github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver/internal/metadata
+# github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.135.0
+## explicit; go 1.24.0
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver/internal/metadata
 # github.com/openshift/api v3.9.0+incompatible
 ## explicit
 github.com/openshift/api/quota/v1
@@ -1490,6 +1577,10 @@ github.com/twmb/murmur3
 # github.com/ua-parser/uap-go v0.0.0-20240611065828-3a4781585db6
 ## explicit
 github.com/ua-parser/uap-go/uaparser
+# github.com/valyala/fastjson v1.6.4
+## explicit; go 1.12
+github.com/valyala/fastjson
+github.com/valyala/fastjson/fastfloat
 # github.com/x448/float16 v0.8.4
 ## explicit; go 1.11
 github.com/x448/float16
@@ -2143,6 +2234,15 @@ gonum.org/v1/gonum/blas/gonum
 gonum.org/v1/gonum/floats
 gonum.org/v1/gonum/floats/scalar
 gonum.org/v1/gonum/graph
+gonum.org/v1/gonum/graph/encoding
+gonum.org/v1/gonum/graph/encoding/dot
+gonum.org/v1/gonum/graph/formats/dot
+gonum.org/v1/gonum/graph/formats/dot/ast
+gonum.org/v1/gonum/graph/formats/dot/internal/astx
+gonum.org/v1/gonum/graph/formats/dot/internal/errors
+gonum.org/v1/gonum/graph/formats/dot/internal/lexer
+gonum.org/v1/gonum/graph/formats/dot/internal/parser
+gonum.org/v1/gonum/graph/formats/dot/internal/token
 gonum.org/v1/gonum/graph/internal/linear
 gonum.org/v1/gonum/graph/internal/set
 gonum.org/v1/gonum/graph/iterator

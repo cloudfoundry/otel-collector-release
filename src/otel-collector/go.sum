@@ -777,6 +777,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otl
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.135.0/go.mod h1:cV2MJoxTXonAbSh7G4RdcS6r31zI++Xkjq+L+5IP2N4=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0 h1:QHmiuMp9RyeuVopoCeQB6baJeZxvmGOEHeiISkGY3L4=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.135.0/go.mod h1:dm1KHhrYNmWD/k1DpRjahkeIUvQ/rolrol2uBMaHOHU=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage v0.135.0 h1:4kkaudrvvMFpWyQJyyco6XZJH80BNDiAHOHGshyoq34=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage v0.135.0/go.mod h1:EdehVp9923En26evluBKSYgTpms4LZc7wAk3OBuSa1Q=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.135.0 h1:a872WY0TsuRf9r1Ts8BE+8mtAZ1+4vRjsztBLNbPDDA=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/ecsutil v0.135.0/go.mod h1:WyOS6CVzMGun2+O9J2xLjWtm5ImdzP4dyG9KEwmMX4w=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.135.0 h1:lXPLI33nuXRYNjy3IDM8gSb3fMLvbtigjG/ulklPMm8=
@@ -863,6 +865,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsre
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver v0.135.0/go.mod h1:ZZNsYyhecTo/CzZP+SClocKk7i7RygxYXtvOWw+MZ2Y=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.135.0 h1:HBNPVpCIYEMbypyNAAQPM/0j5UTqk94f+0Bi145oZNo=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.135.0/go.mod h1:M89Ila5LSmmui0R/tHO5SA/04eYyPkXOhyS3qNHcTE8=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.135.0 h1:dBKECgJDbVJTroFLpHXLfeKvZX2hCjLpWAcKNuDhg5Y=
+github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.135.0/go.mod h1:yovlcDvFtzBWluYM0T+zylaXmRns+2grVHZRBITvyKY=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJwooC2xJA040=
