@@ -9,11 +9,8 @@ import (
 	"github.com/leodido/go-syslog/v4/common"
 )
 
-// BestEfforter is an interface that wraps the WithBestEffort and the HasBestEffort methods.
+// BestEfforter is an interface that wraps the HasBestEffort method.
 type BestEfforter interface {
-	// WithBestEffort enables best effort mode for syslog parsers.
-	//
-	// When passed to a parser it tries to recover as much of the syslog messages as possible.
 	WithBestEffort()
 	HasBestEffort() bool
 }
@@ -37,7 +34,6 @@ type Parser interface {
 	Parse(r io.Reader)
 	WithListener(ParserListener)
 	BestEfforter
-	WithMachineOptions(opts ...MachineOption)
 	MaxMessager
 }
 
@@ -69,17 +65,15 @@ type Message interface {
 //
 // It contains the fields in common among different formats.
 type Base struct {
-	Facility       *uint8
-	Severity       *uint8
-	Priority       *uint8
-	MessageCounter *uint32
-	Sequence       *uint32
-	Timestamp      *time.Time
-	Hostname       *string
-	Appname        *string
-	ProcID         *string
-	MsgID          *string
-	Message        *string
+	Facility  *uint8
+	Severity  *uint8
+	Priority  *uint8
+	Timestamp *time.Time
+	Hostname  *string
+	Appname   *string
+	ProcID    *string
+	MsgID     *string
+	Message   *string
 }
 
 // Valid tells whether the receiving message is well-formed or not.
