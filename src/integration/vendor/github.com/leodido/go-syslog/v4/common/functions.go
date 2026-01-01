@@ -1,9 +1,7 @@
 package common
 
-import "strings"
-
 // UnsafeUTF8DecimalCodePointsToInt converts a slice containing
-// a series of UTF-8 decimal code points into their integer representation.
+// a series of UTF-8 decimal code points into their integer rapresentation.
 //
 // It assumes input code points are in the range 48-57.
 // Returns a pointer since an empty slice is equal to nil and not to the zero value of the codomain (ie., `int`).
@@ -31,15 +29,16 @@ func RemoveBytes(data []byte, positions []int, offset int) []byte {
 
 // EscapeBytes adds a backslash to \, ], " characters.
 func EscapeBytes(value string) string {
-	var sb strings.Builder
-	for _, c := range value {
+	res := ""
+	for i, c := range value {
 		// todo(leodido): generalize byte codes (the function should ideally accept a byte slice containing byte codes to escape)
-		if c == '\\' || c == ']' || c == '"' {
-			sb.WriteByte('\\')
+		if c == 92 || c == 93 || c == 34 {
+			res += `\`
 		}
-		sb.WriteRune(c)
+		res += string(value[i])
 	}
-	return sb.String()
+
+	return res
 }
 
 // InBetween tells whether value is into [min, max] range.
