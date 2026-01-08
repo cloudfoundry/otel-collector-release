@@ -25,7 +25,13 @@ var useLocalHostAsDefaultMetricsAddressFeatureGate = featuregate.GlobalRegistry(
 // NewFactory creates a new telemetry.Factory that uses otelconf
 // to configure opentelemetry-go SDK telemetry providers.
 func NewFactory() telemetry.Factory {
-	return telemetry.NewFactory(createDefaultConfig, createProviders)
+	return telemetry.NewFactory(
+		createDefaultConfig,
+		telemetry.WithCreateResource(createResource),
+		telemetry.WithCreateLogger(createLogger),
+		telemetry.WithCreateMeterProvider(createMeterProvider),
+		telemetry.WithCreateTracerProvider(createTracerProvider),
+	)
 }
 
 func createDefaultConfig() component.Config {
@@ -45,11 +51,12 @@ func createDefaultConfig() component.Config {
 				Initial:    10,
 				Thereafter: 100,
 			},
-			OutputPaths:       []string{"stderr"},
-			ErrorOutputPaths:  []string{"stderr"},
-			DisableCaller:     false,
-			DisableStacktrace: false,
-			InitialFields:     map[string]any(nil),
+			OutputPaths:        []string{"stderr"},
+			ErrorOutputPaths:   []string{"stderr"},
+			DisableCaller:      false,
+			DisableStacktrace:  false,
+			InitialFields:      map[string]any(nil),
+			DisableZapResource: false,
 		},
 		Metrics: MetricsConfig{
 			Level: configtelemetry.LevelNormal,

@@ -128,6 +128,8 @@ type headState struct {
 	foundLeadingExpressionInParentheses bool
 	standaloneExpressionInParentheses   bool
 	expressionInParentheses             strings.Builder
+	hasCommandInLeadingParentheses      bool
+	parenthesesDepth                    int
 }
 
 type Normalizer struct {
@@ -156,12 +158,7 @@ func (n *Normalizer) normalizeToken(lexer *Lexer, normalizedSQLBuilder *strings.
 
 	var groupablePlaceholder groupablePlaceholder
 	var headState headState
-	var ctes map[string]bool
-
-	// Only allocate CTEs map if collecting tables
-	if n.config.CollectTables {
-		ctes = make(map[string]bool, 2)
-	}
+	var ctes map[string]bool // Lazily initialized when first CTE is encountered
 
 	var lastValueToken *LastValueToken
 
@@ -172,7 +169,7 @@ func (n *Normalizer) normalizeToken(lexer *Lexer, normalizedSQLBuilder *strings.
 			preProcessToken(token, lastValueToken)
 		}
 		if n.shouldCollectMetadata() {
-			n.collectMetadata(token, lastValueToken, meta, statementMetadata, ctes)
+			n.collectMetadata(token, lastValueToken, meta, statementMetadata, &ctes)
 		}
 		n.normalizeSQL(token, lastValueToken, normalizedSQLBuilder, &groupablePlaceholder, &headState, lexerOpts...)
 		if token.Type == EOF {
@@ -218,7 +215,7 @@ func (n *Normalizer) shouldCollectMetadata() bool {
 	return n.config.CollectTables || n.config.CollectCommands || n.config.CollectComments || n.config.CollectProcedure
 }
 
-func (n *Normalizer) collectMetadata(token *Token, lastValueToken *LastValueToken, meta *metadataSet, statementMetadata *StatementMetadata, ctes map[string]bool) {
+func (n *Normalizer) collectMetadata(token *Token, lastValueToken *LastValueToken, meta *metadataSet, statementMetadata *StatementMetadata, ctes *map[string]bool) {
 	if n.config.CollectComments && (token.Type == COMMENT || token.Type == MULTILINE_COMMENT) {
 		comment := token.Value
 		meta.addMetadata(comment, meta.commentsSet, &statementMetadata.Comments)
@@ -231,20 +228,31 @@ func (n *Normalizer) collectMetadata(token *Token, lastValueToken *LastValueToke
 		tokenVal := token.Value
 		if token.Type == QUOTED_IDENT {
 			tokenVal = trimQuotes(token)
-			if !n.config.KeepIdentifierQuotation {
+			if n.shouldStripIdentifierQuotes(token, lastValueToken) {
 				// trim quotes and set the token type to IDENT
 				token.Value = tokenVal
 				token.Type = IDENT
 			}
 		}
-		if lastValueToken != nil && lastValueToken.Type == CTE_INDICATOR {
-			ctes[tokenVal] = true
-		} else if n.config.CollectTables && lastValueToken != nil && lastValueToken.isTableIndicator {
-			if _, ok := ctes[tokenVal]; !ok {
-				meta.addMetadata(tokenVal, meta.tablesSet, &statementMetadata.Tables)
+
+		// Only collect metadata if we have context from the previous token
+		if lastValueToken != nil {
+			// Track CTE names so we can exclude them from the tables list
+			if lastValueToken.Type == CTE_INDICATOR {
+				if *ctes == nil {
+					*ctes = make(map[string]bool, 2)
+				}
+				(*ctes)[tokenVal] = true
+			} else if n.config.CollectTables && lastValueToken.isTableIndicator {
+				// Collect table names, excluding any CTEs
+				isCTE := *ctes != nil && (*ctes)[tokenVal]
+				if !isCTE {
+					meta.addMetadata(tokenVal, meta.tablesSet, &statementMetadata.Tables)
+				}
+			} else if n.config.CollectProcedure && lastValueToken.Type == PROC_INDICATOR {
+				// Collect procedure names
+				meta.addMetadata(tokenVal, meta.proceduresSet, &statementMetadata.Procedures)
 			}
-		} else if n.config.CollectProcedure && lastValueToken != nil && lastValueToken.Type == PROC_INDICATOR {
-			meta.addMetadata(tokenVal, meta.proceduresSet, &statementMetadata.Procedures)
 		}
 	}
 }
@@ -252,7 +260,9 @@ func (n *Normalizer) collectMetadata(token *Token, lastValueToken *LastValueToke
 func (n *Normalizer) normalizeSQL(token *Token, lastValueToken *LastValueToken, normalizedSQLBuilder *strings.Builder, groupablePlaceholder *groupablePlaceholder, headState *headState, lexerOpts ...lexerOption) {
 	if token.Type != SPACE && token.Type != COMMENT && token.Type != MULTILINE_COMMENT {
 		if token.Type == QUOTED_IDENT && !n.config.KeepIdentifierQuotation {
-			token.Value = trimQuotes(token)
+			if n.shouldStripIdentifierQuotes(token, lastValueToken) {
+				token.Value = trimQuotes(token)
+			}
 		}
 
 		// handle leading expression in parentheses
@@ -261,6 +271,11 @@ func (n *Normalizer) normalizeSQL(token *Token, lastValueToken *LastValueToken, 
 			if token.Type == PUNCTUATION && token.Value == "(" {
 				headState.inLeadingParenthesesExpression = true
 				headState.standaloneExpressionInParentheses = true
+				headState.parenthesesDepth = 1
+				// Write the opening parenthesis to the buffer and return
+				// to avoid double-processing it in the inLeadingParenthesesExpression block below
+				headState.expressionInParentheses.WriteString(token.Value)
+				return
 			}
 		}
 		if token.Type == EOF {
@@ -269,7 +284,13 @@ func (n *Normalizer) normalizeSQL(token *Token, lastValueToken *LastValueToken, 
 			}
 			return
 		} else if headState.foundLeadingExpressionInParentheses {
+			// If the leading parentheses contained a SQL command (like SELECT),
+			// it's a SQL statement, not a parameter declaration, so write it out
+			if headState.hasCommandInLeadingParentheses {
+				normalizedSQLBuilder.WriteString(headState.expressionInParentheses.String())
+			}
 			headState.standaloneExpressionInParentheses = false
+			headState.foundLeadingExpressionInParentheses = false
 		}
 
 		if token.Type == DOLLAR_QUOTED_FUNCTION && token.Value != StringPlaceholder {
@@ -317,15 +338,41 @@ func (n *Normalizer) normalizeSQL(token *Token, lastValueToken *LastValueToken, 
 		if headState.inLeadingParenthesesExpression {
 			n.appendSpace(token, lastValueToken, &headState.expressionInParentheses)
 			n.writeToken(token.Type, token.Value, &headState.expressionInParentheses)
-			if token.Type == PUNCTUATION && token.Value == ")" {
-				headState.inLeadingParenthesesExpression = false
-				headState.foundLeadingExpressionInParentheses = true
+			// Track if we find a SQL command in the leading parentheses
+			if token.Type == COMMAND {
+				headState.hasCommandInLeadingParentheses = true
+			}
+			if token.Type == PUNCTUATION && token.Value == "(" {
+				headState.parenthesesDepth++
+			} else if token.Type == PUNCTUATION && token.Value == ")" {
+				headState.parenthesesDepth--
+				if headState.parenthesesDepth == 0 {
+					headState.inLeadingParenthesesExpression = false
+					headState.foundLeadingExpressionInParentheses = true
+				}
 			}
 		} else {
 			n.appendSpace(token, lastValueToken, normalizedSQLBuilder)
 			n.writeToken(token.Type, token.Value, normalizedSQLBuilder)
 		}
 	}
+}
+
+func (n *Normalizer) shouldStripIdentifierQuotes(token *Token, lastValueToken *LastValueToken) bool {
+	if n.config.KeepIdentifierQuotation {
+		return false
+	}
+	if token == nil {
+		return true
+	}
+	if isAliasContext(lastValueToken) && !token.isSimpleIdentifier {
+		return false
+	}
+	return true
+}
+
+func isAliasContext(lastValueToken *LastValueToken) bool {
+	return lastValueToken != nil && lastValueToken.Type == ALIAS_INDICATOR
 }
 
 func (n *Normalizer) writeToken(tokenType TokenType, tokenValue string, normalizedSQLBuilder *strings.Builder) {
