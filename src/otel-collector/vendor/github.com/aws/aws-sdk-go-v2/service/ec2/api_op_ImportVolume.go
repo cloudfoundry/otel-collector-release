@@ -38,11 +38,6 @@ func (c *Client) ImportVolume(ctx context.Context, params *ImportVolumeInput, op
 
 type ImportVolumeInput struct {
 
-	// The Availability Zone for the resulting EBS volume.
-	//
-	// This member is required.
-	AvailabilityZone *string
-
 	// The disk image.
 	//
 	// This member is required.
@@ -52,6 +47,16 @@ type ImportVolumeInput struct {
 	//
 	// This member is required.
 	Volume *types.VolumeDetail
+
+	// The Availability Zone for the resulting EBS volume.
+	//
+	// Either AvailabilityZone or AvailabilityZoneId must be specified, but not both.
+	AvailabilityZone *string
+
+	// The ID of the Availability Zone for the resulting EBS volume.
+	//
+	// Either AvailabilityZone or AvailabilityZoneId must be specified, but not both.
+	AvailabilityZoneId *string
 
 	// A description of the volume.
 	Description *string
@@ -170,40 +175,7 @@ func (c *Client) addOperationImportVolumeMiddlewares(stack *middleware.Stack, op
 	if err = addInterceptAttempt(stack, options); err != nil {
 		return err
 	}
-	if err = addInterceptExecution(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeSerialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterSerialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeSigning(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterSigning(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptTransmit(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptBeforeDeserialization(stack, options); err != nil {
-		return err
-	}
-	if err = addInterceptAfterDeserialization(stack, options); err != nil {
-		return err
-	}
-	if err = addSpanInitializeStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanInitializeEnd(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestStart(stack); err != nil {
-		return err
-	}
-	if err = addSpanBuildRequestEnd(stack); err != nil {
+	if err = addInterceptors(stack, options); err != nil {
 		return err
 	}
 	return nil

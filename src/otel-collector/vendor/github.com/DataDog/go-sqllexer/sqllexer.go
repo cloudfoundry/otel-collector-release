@@ -39,18 +39,20 @@ const (
 
 // Token represents a SQL token with its type and value.
 type Token struct {
-	Type             TokenType
-	Value            string
-	isTableIndicator bool // true if the token is a table indicator
-	hasDigits        bool
-	hasQuotes        bool           // private - only used by trimQuotes
-	lastValueToken   LastValueToken // private - internal state
+	Type               TokenType
+	Value              string
+	isTableIndicator   bool // true if the token is a table indicator
+	hasDigits          bool
+	hasQuotes          bool           // private - only used by trimQuotes
+	isSimpleIdentifier bool           // true if quoted ident started with a letter and only used alphanumerics afterwards
+	lastValueToken     LastValueToken // private - internal state
 }
 
 type LastValueToken struct {
-	Type             TokenType
-	Value            string
-	isTableIndicator bool
+	Type               TokenType
+	Value              string
+	isTableIndicator   bool
+	isSimpleIdentifier bool
 }
 
 // getLastValueToken can be private since it's only used internally
@@ -58,6 +60,7 @@ func (t *Token) getLastValueToken() *LastValueToken {
 	t.lastValueToken.Type = t.Type
 	t.lastValueToken.Value = t.Value
 	t.lastValueToken.isTableIndicator = t.isTableIndicator
+	t.lastValueToken.isSimpleIdentifier = t.isSimpleIdentifier
 	return &t.lastValueToken
 }
 
@@ -83,14 +86,15 @@ type trieNode struct {
 
 // SQL Lexer inspired from Rob Pike's talk on Lexical Scanning in Go
 type Lexer struct {
-	src              string // the input src string
-	cursor           int    // the current position of the cursor
-	start            int    // the start position of the current token
-	config           *LexerConfig
-	token            *Token
-	hasQuotes        bool // true if any quotes in token
-	hasDigits        bool // true if the token has digits
-	isTableIndicator bool // true if the token is a table indicator
+	src                string // the input src string
+	cursor             int    // the current position of the cursor
+	start              int    // the start position of the current token
+	config             *LexerConfig
+	token              *Token
+	hasQuotes          bool // true if any quotes in token
+	hasDigits          bool // true if the token has digits
+	isTableIndicator   bool // true if the token is a table indicator
+	isSimpleIdentifier bool // true if current quoted ident started with a letter and only used alphanumerics afterwards
 }
 
 func New(input string, opts ...lexerOption) *Lexer {
@@ -114,9 +118,13 @@ func (s *Lexer) Scan() *Token {
 	case isLetter(ch):
 		return s.scanIdentifier(ch)
 	case isDoubleQuote(ch):
+		// MySQL by default (without ANSI_QUOTES mode) treats double quotes as string literals
+		if s.config.DBMS == DBMSMySQL {
+			return s.scanStringWithDelimiter('"')
+		}
 		return s.scanDoubleQuotedIdentifier('"')
 	case isSingleQuote(ch):
-		return s.scanString()
+		return s.scanStringWithDelimiter('\'')
 	case isSingleLineComment(ch, s.lookAhead(1)):
 		return s.scanSingleLineComment(ch)
 	case isMultiLineComment(ch, s.lookAhead(1)):
@@ -312,7 +320,7 @@ func (s *Lexer) scanOctalNumber() *Token {
 	return s.emit(NUMBER)
 }
 
-func (s *Lexer) scanString() *Token {
+func (s *Lexer) scanStringWithDelimiter(delimiter rune) *Token {
 	s.start = s.cursor
 	escaped := false
 	escapedQuote := false
@@ -322,7 +330,7 @@ func (s *Lexer) scanString() *Token {
 	for ; !isEOF(ch); ch = s.next() {
 		if escaped {
 			escaped = false
-			escapedQuote = ch == '\''
+			escapedQuote = ch == delimiter
 			continue
 		}
 
@@ -331,7 +339,7 @@ func (s *Lexer) scanString() *Token {
 			continue
 		}
 
-		if ch == '\'' {
+		if ch == delimiter {
 			s.next() // consume the closing quote
 			return s.emit(STRING)
 		}
@@ -415,25 +423,42 @@ func (s *Lexer) scanDoubleQuotedIdentifier(delimiter rune) *Token {
 
 	s.start = s.cursor
 	s.hasQuotes = true
+	s.isSimpleIdentifier = true
+	firstRune := true
 	ch := s.next() // consume the opening quote
+	specialCase := []rune{closingDelimiter, '.', delimiter}
 	for {
 		// encountered the closing quote
 		// BUT if it's followed by .", then we should keep going
 		// e.g. postgres "foo"."bar"
 		// e.g. sqlserver [foo].[bar]
 		if ch == closingDelimiter {
-			specialCase := []rune{closingDelimiter, '.', delimiter}
-			if s.matchAt([]rune(specialCase)) {
+			if s.matchAt(specialCase) {
+				s.isSimpleIdentifier = false
 				ch = s.nextBy(3) // consume the "."
 				continue
+			}
+			if firstRune {
+				s.isSimpleIdentifier = false
 			}
 			break
 		}
 		if isEOF(ch) {
 			s.hasQuotes = false // if we hit EOF, we clear the quotes
+			s.isSimpleIdentifier = false
 			return s.emit(ERROR)
 		}
 		s.hasDigits = s.hasDigits || isDigit(ch)
+		if s.isSimpleIdentifier {
+			if firstRune {
+				if !isLetter(ch) {
+					s.isSimpleIdentifier = false
+				}
+				firstRune = false
+			} else if !isAlphaNumeric(ch) {
+				s.isSimpleIdentifier = false
+			}
+		}
 		ch = s.next()
 	}
 	s.next() // consume the closing quote
@@ -554,10 +579,12 @@ func (s *Lexer) scanDollarQuotedString() *Token {
 	}
 	s.next()                            // consume the closing dollar sign of the tag
 	tag := s.src[tagStart-1 : s.cursor] // include the opening and closing dollar sign e.g. $tag$
+	tagRune := []rune(tag)
+	tagLen := len(tagRune)
 
 	for s.cursor < len(s.src) {
-		if s.matchAt([]rune(tag)) {
-			s.nextBy(len(tag)) // consume the closing tag
+		if s.matchAt(tagRune) {
+			s.nextBy(tagLen) // consume the closing tag
 			if tag == "$func$" {
 				return s.emit(DOLLAR_QUOTED_FUNCTION)
 			}
@@ -627,11 +654,13 @@ func (s *Lexer) emit(t TokenType) *Token {
 
 	tok.hasDigits = s.hasDigits
 	tok.hasQuotes = s.hasQuotes
+	tok.isSimpleIdentifier = s.isSimpleIdentifier
 
 	// Reset lexer state
 	s.start = s.cursor
 	s.isTableIndicator = false
 	s.hasDigits = false
+	s.isSimpleIdentifier = false
 
 	return tok
 }

@@ -28,6 +28,10 @@ type CloudWorkloadSecurityAgentPolicyAttributes struct {
 	MonitoringRulesCount *int32 `json:"monitoringRulesCount,omitempty"`
 	// The name of the policy
 	Name *string `json:"name,omitempty"`
+	// Whether the policy is pinned
+	Pinned *bool `json:"pinned,omitempty"`
+	// The type of the policy
+	PolicyType *string `json:"policyType,omitempty"`
 	// The version of the policy
 	PolicyVersion *string `json:"policyVersion,omitempty"`
 	// The priority of the policy
@@ -40,6 +44,8 @@ type CloudWorkloadSecurityAgentPolicyAttributes struct {
 	UpdatedAt *int64 `json:"updatedAt,omitempty"`
 	// The attributes of the user who last updated the policy
 	Updater *CloudWorkloadSecurityAgentPolicyUpdaterAttributes `json:"updater,omitempty"`
+	// The versions of the policy
+	Versions []CloudWorkloadSecurityAgentPolicyVersion `json:"versions,omitempty"`
 	// UnparsedObject contains the raw value of the object if there was an error when deserializing into the struct
 	UnparsedObject       map[string]interface{} `json:"-"`
 	AdditionalProperties map[string]interface{} `json:"-"`
@@ -314,6 +320,62 @@ func (o *CloudWorkloadSecurityAgentPolicyAttributes) SetName(v string) {
 	o.Name = &v
 }
 
+// GetPinned returns the Pinned field value if set, zero value otherwise.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetPinned() bool {
+	if o == nil || o.Pinned == nil {
+		var ret bool
+		return ret
+	}
+	return *o.Pinned
+}
+
+// GetPinnedOk returns a tuple with the Pinned field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetPinnedOk() (*bool, bool) {
+	if o == nil || o.Pinned == nil {
+		return nil, false
+	}
+	return o.Pinned, true
+}
+
+// HasPinned returns a boolean if a field has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) HasPinned() bool {
+	return o != nil && o.Pinned != nil
+}
+
+// SetPinned gets a reference to the given bool and assigns it to the Pinned field.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) SetPinned(v bool) {
+	o.Pinned = &v
+}
+
+// GetPolicyType returns the PolicyType field value if set, zero value otherwise.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetPolicyType() string {
+	if o == nil || o.PolicyType == nil {
+		var ret string
+		return ret
+	}
+	return *o.PolicyType
+}
+
+// GetPolicyTypeOk returns a tuple with the PolicyType field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetPolicyTypeOk() (*string, bool) {
+	if o == nil || o.PolicyType == nil {
+		return nil, false
+	}
+	return o.PolicyType, true
+}
+
+// HasPolicyType returns a boolean if a field has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) HasPolicyType() bool {
+	return o != nil && o.PolicyType != nil
+}
+
+// SetPolicyType gets a reference to the given string and assigns it to the PolicyType field.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) SetPolicyType(v string) {
+	o.PolicyType = &v
+}
+
 // GetPolicyVersion returns the PolicyVersion field value if set, zero value otherwise.
 func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetPolicyVersion() string {
 	if o == nil || o.PolicyVersion == nil {
@@ -482,6 +544,34 @@ func (o *CloudWorkloadSecurityAgentPolicyAttributes) SetUpdater(v CloudWorkloadS
 	o.Updater = &v
 }
 
+// GetVersions returns the Versions field value if set, zero value otherwise.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetVersions() []CloudWorkloadSecurityAgentPolicyVersion {
+	if o == nil || o.Versions == nil {
+		var ret []CloudWorkloadSecurityAgentPolicyVersion
+		return ret
+	}
+	return o.Versions
+}
+
+// GetVersionsOk returns a tuple with the Versions field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) GetVersionsOk() (*[]CloudWorkloadSecurityAgentPolicyVersion, bool) {
+	if o == nil || o.Versions == nil {
+		return nil, false
+	}
+	return &o.Versions, true
+}
+
+// HasVersions returns a boolean if a field has been set.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) HasVersions() bool {
+	return o != nil && o.Versions != nil
+}
+
+// SetVersions gets a reference to the given []CloudWorkloadSecurityAgentPolicyVersion and assigns it to the Versions field.
+func (o *CloudWorkloadSecurityAgentPolicyAttributes) SetVersions(v []CloudWorkloadSecurityAgentPolicyVersion) {
+	o.Versions = v
+}
+
 // MarshalJSON serializes the struct using spec logic.
 func (o CloudWorkloadSecurityAgentPolicyAttributes) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
@@ -515,6 +605,12 @@ func (o CloudWorkloadSecurityAgentPolicyAttributes) MarshalJSON() ([]byte, error
 	if o.Name != nil {
 		toSerialize["name"] = o.Name
 	}
+	if o.Pinned != nil {
+		toSerialize["pinned"] = o.Pinned
+	}
+	if o.PolicyType != nil {
+		toSerialize["policyType"] = o.PolicyType
+	}
 	if o.PolicyVersion != nil {
 		toSerialize["policyVersion"] = o.PolicyVersion
 	}
@@ -532,6 +628,9 @@ func (o CloudWorkloadSecurityAgentPolicyAttributes) MarshalJSON() ([]byte, error
 	}
 	if o.Updater != nil {
 		toSerialize["updater"] = o.Updater
+	}
+	if o.Versions != nil {
+		toSerialize["versions"] = o.Versions
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -552,19 +651,22 @@ func (o *CloudWorkloadSecurityAgentPolicyAttributes) UnmarshalJSON(bytes []byte)
 		HostTagsLists        [][]string                                         `json:"hostTagsLists,omitempty"`
 		MonitoringRulesCount *int32                                             `json:"monitoringRulesCount,omitempty"`
 		Name                 *string                                            `json:"name,omitempty"`
+		Pinned               *bool                                              `json:"pinned,omitempty"`
+		PolicyType           *string                                            `json:"policyType,omitempty"`
 		PolicyVersion        *string                                            `json:"policyVersion,omitempty"`
 		Priority             *int64                                             `json:"priority,omitempty"`
 		RuleCount            *int32                                             `json:"ruleCount,omitempty"`
 		UpdateDate           *int64                                             `json:"updateDate,omitempty"`
 		UpdatedAt            *int64                                             `json:"updatedAt,omitempty"`
 		Updater              *CloudWorkloadSecurityAgentPolicyUpdaterAttributes `json:"updater,omitempty"`
+		Versions             []CloudWorkloadSecurityAgentPolicyVersion          `json:"versions,omitempty"`
 	}{}
 	if err = datadog.Unmarshal(bytes, &all); err != nil {
 		return datadog.Unmarshal(bytes, &o.UnparsedObject)
 	}
 	additionalProperties := make(map[string]interface{})
 	if err = datadog.Unmarshal(bytes, &additionalProperties); err == nil {
-		datadog.DeleteKeys(additionalProperties, &[]string{"blockingRulesCount", "datadogManaged", "description", "disabledRulesCount", "enabled", "hostTags", "hostTagsLists", "monitoringRulesCount", "name", "policyVersion", "priority", "ruleCount", "updateDate", "updatedAt", "updater"})
+		datadog.DeleteKeys(additionalProperties, &[]string{"blockingRulesCount", "datadogManaged", "description", "disabledRulesCount", "enabled", "hostTags", "hostTagsLists", "monitoringRulesCount", "name", "pinned", "policyType", "policyVersion", "priority", "ruleCount", "updateDate", "updatedAt", "updater", "versions"})
 	} else {
 		return err
 	}
@@ -579,6 +681,8 @@ func (o *CloudWorkloadSecurityAgentPolicyAttributes) UnmarshalJSON(bytes []byte)
 	o.HostTagsLists = all.HostTagsLists
 	o.MonitoringRulesCount = all.MonitoringRulesCount
 	o.Name = all.Name
+	o.Pinned = all.Pinned
+	o.PolicyType = all.PolicyType
 	o.PolicyVersion = all.PolicyVersion
 	o.Priority = all.Priority
 	o.RuleCount = all.RuleCount
@@ -588,6 +692,7 @@ func (o *CloudWorkloadSecurityAgentPolicyAttributes) UnmarshalJSON(bytes []byte)
 		hasInvalidField = true
 	}
 	o.Updater = all.Updater
+	o.Versions = all.Versions
 
 	if len(additionalProperties) > 0 {
 		o.AdditionalProperties = additionalProperties
