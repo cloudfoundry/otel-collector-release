@@ -16,7 +16,6 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.135.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.135.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.135.0
-	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/syslogreceiver v0.135.0
 	go.opentelemetry.io/collector/component v1.41.0
 	go.opentelemetry.io/collector/confmap v1.41.0
 	go.opentelemetry.io/collector/confmap/provider/envprovider v1.41.0
