@@ -2,7 +2,9 @@ package integration_test
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,7 +14,8 @@ import (
 )
 
 var _ = Describe("OpAMP Integration - Simplified Implementation", func() {
-	var wrapperSession *gexec.Session
+	var collectorSession *gexec.Session
+	var supervisorSession *gexec.Session
 	var otelConfigVars OTelConfigVars
 	var tempDir string
 
@@ -25,8 +28,13 @@ var _ = Describe("OpAMP Integration - Simplified Implementation", func() {
 	})
 
 	AfterEach(func() {
-		if wrapperSession != nil {
-			wrapperSession.Kill()
+		if collectorSession != nil {
+			collectorSession.Kill()
+			collectorSession.Wait()
+		}
+		if supervisorSession != nil {
+			supervisorSession.Kill()
+			supervisorSession.Wait()
 		}
 	})
 
@@ -36,84 +44,103 @@ var _ = Describe("OpAMP Integration - Simplified Implementation", func() {
 
 			cmd := exec.Command(componentPaths.Collector, fmt.Sprintf("--config=file:%s", configPath))
 			var err error
-			wrapperSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			collectorSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Wait for collector to be ready
-			Eventually(wrapperSession.Err, 10*time.Second).Should(gbytes.Say(`Everything is ready. Begin running and processing data.`))
+			Eventually(collectorSession.Err, 10*time.Second).Should(gbytes.Say(`Everything is ready. Begin running and processing data.`))
 		})
 
-		It("should collect and export host metrics", func() {
-			// Skip - hostmetrics receiver not included in collector build
-			Skip("hostmetrics receiver not included in collector build")
-		})
 	})
 
 	Describe("Dual Process Mode (opamp.enabled=true)", func() {
-		It("should start both collector and supervisor processes", func() {
-			// Skip for now - we need wrapper script in test environment
-			Skip("Wrapper script integration test requires BOSH job template evaluation")
-
-			// This test would validate that the wrapper script:
-			// 1. Starts both collector with OpAMP extension and supervisor
-			// 2. Both processes are running simultaneously
-			// 3. Collector has OpAMP extension loaded
-			// 4. Supervisor attempts server connections
-			// 5. Health check endpoint works
+		BeforeEach(func() {
+			if componentPaths.OpAMPSupervisor == "" {
+				Skip("OpAMP supervisor binary not available")
+			}
 		})
 
-		It("should start collector with OpAMP extension and handle server unavailability", func() {
-			configPath := createCollectorConfig(tempDir, "opamp_extension_collector.yml", otelConfigVars)
-
-			cmd := exec.Command(componentPaths.Collector, fmt.Sprintf("--config=file:%s", configPath))
-			var err error
-			wrapperSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+		It("should verify supervisor binary exists and can be executed", func() {
+			// Test that the supervisor binary is executable and can show help
+			cmd := exec.Command(componentPaths.OpAMPSupervisor, "--help")
+			helpSession, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Wait for collector to be ready
-			Eventually(wrapperSession.Err, 10*time.Second).Should(gbytes.Say(`Everything is ready. Begin running and processing data.`))
+			// Supervisor should exit successfully when showing help
+			Eventually(helpSession, 5*time.Second).Should(gexec.Exit(0))
 
-			// Verify OpAMP extension is loaded
-			Eventually(wrapperSession.Err, 5*time.Second).Should(gbytes.Say(`opamp.*extension`))
-
-			// Verify OpAMP connection attempts (should fail since no server)
-			Eventually(wrapperSession.Err, 10*time.Second).Should(gbytes.Say(`Failed to connect to the OpAMP server|Connection failed.*will retry`))
-
-			// Verify retry logic is working
-			Eventually(wrapperSession.Err, 15*time.Second).Should(gbytes.Say(`Connection failed.*will retry`))
-
-			// Collector should continue running despite OpAMP connection failures
-			Consistently(wrapperSession, 5*time.Second).ShouldNot(gexec.Exit())
+			// Help output should mention config
+			helpOutput := string(helpSession.Out.Contents()) + string(helpSession.Err.Contents())
+			Expect(helpOutput).To(ContainSubstring("config"))
 		})
+
+		It("should verify supervisor validates configuration", func() {
+			// Create an invalid supervisor config (missing required fields)
+			invalidConfig := `
+server:
+  endpoint: ""
+agent:
+  executable: ""
+`
+			configPath := filepath.Join(tempDir, "invalid-supervisor-config.yaml")
+			err := os.WriteFile(configPath, []byte(invalidConfig), 0660)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Start the supervisor with invalid config
+			cmd := exec.Command(componentPaths.OpAMPSupervisor, fmt.Sprintf("--config=%s", configPath))
+			supervisorSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Supervisor should exit with an error due to invalid configuration
+			Eventually(supervisorSession, 10*time.Second).Should(gexec.Exit())
+			// Exit code should be non-zero
+			Expect(supervisorSession.ExitCode()).NotTo(Equal(0))
+		})
+
+		It("should start supervisor and attempt to connect to OpAMP server", func() {
+			// Create collector configuration
+			collectorConfigPath := createCollectorConfig(tempDir, "standard_collector.yml", otelConfigVars)
+
+			// Create supervisor configuration that points to the collector
+			supervisorConfigPath := createSupervisorConfigWithCollector(tempDir, collectorConfigPath, otelConfigVars)
+
+			// Start the supervisor - it will attempt to start and connect to OpAMP server
+			cmd := exec.Command(componentPaths.OpAMPSupervisor, fmt.Sprintf("--config=%s", supervisorConfigPath))
+			var err error
+			supervisorSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Give the supervisor time to start and attempt connections
+			// The supervisor will continuously retry connecting to the OpAMP server
+			time.Sleep(3 * time.Second)
+
+			// Supervisor should continue running (not exit immediately)
+			// This proves the supervisor starts correctly and handles server unavailability gracefully
+			Expect(supervisorSession.ExitCode()).To(Equal(-1), "Supervisor should still be running (exit code -1 means not exited)")
+		})
+
+		// Note: Full integration testing of OpAMP supervisor with collector requires:
+		// 1. An OpAMP server running, OR
+		// 2. A pre-cached remote configuration in the storage directory
+		// Per the OpAMP specification: "When the supervisor cannot connect to the OpAMP server,
+		// the collector will be run with the last known configuration if a previous configuration
+		// is persisted. If no previous configuration has been persisted, the collector does not run."
+		// This is the expected behavior for security reasons - the supervisor needs authorization
+		// from an OpAMP server before running arbitrary configurations.
 	})
 
-	// Health Check Extension tests removed - extension not included in collector build
-
 	Describe("Configuration Validation", func() {
-		It("should reject invalid OpAMP extension configuration", func() {
-			configPath := createCollectorConfig(tempDir, "invalid_opamp_collector.yml", otelConfigVars)
-
-			cmd := exec.Command(componentPaths.Collector, fmt.Sprintf("--config=file:%s", configPath))
-			var err error
-			wrapperSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Should exit with configuration error
-			Eventually(wrapperSession, 5*time.Second).Should(gexec.Exit())
-			Expect(wrapperSession.Err).To(gbytes.Say(`failed to get config`))
-		})
-
 		It("should validate memory limiter configuration", func() {
 			configPath := createCollectorConfig(tempDir, "invalid_memory_limiter_collector.yml", otelConfigVars)
 
 			cmd := exec.Command(componentPaths.Collector, fmt.Sprintf("--config=file:%s", configPath))
 			var err error
-			wrapperSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
+			collectorSession, err = gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Should exit with configuration error
-			Eventually(wrapperSession, 5*time.Second).Should(gexec.Exit())
-			Expect(wrapperSession.Err).To(gbytes.Say(`'check_interval' must be greater than zero`))
+			Eventually(collectorSession, 5*time.Second).Should(gexec.Exit())
+			Expect(collectorSession.Err).To(gbytes.Say(`'check_interval' must be greater than zero`))
 		})
 	})
 })

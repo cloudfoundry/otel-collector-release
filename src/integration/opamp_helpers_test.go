@@ -73,24 +73,40 @@ storage:
 	return configPath
 }
 
-// createInvalidSupervisorConfig creates an invalid OpAMP supervisor configuration
-func createInvalidSupervisorConfig(tempDir string) string {
-	invalidConfig := `server:
-  endpoint: ws://localhost:4320/v1/opamp
+// createSupervisorConfigWithCollector creates an OpAMP supervisor configuration that manages the collector
+func createSupervisorConfigWithCollector(tempDir, collectorConfigPath string, vars OTelConfigVars) string {
+	// The supervisor automatically injects $OPAMP_EXTENSION_CONFIG which configures
+	// the collector's OpAMP extension to connect back to the supervisor's internal server.
+	// We increase bootstrap_timeout to give the collector more time to start and connect.
+	supervisorConfig := fmt.Sprintf(`server:
+  endpoint: ws://localhost:%d/v1/opamp
 
 agent:
-  executable: /nonexistent/binary
-  config_file: invalid_key  # This key is not supported
+  executable: %s
+  bootstrap_timeout: 30s
+  config_files:
+    - %s
 
 capabilities:
-  invalid_capability: true  # This capability doesn't exist
+  accepts_remote_config: true
+  reports_remote_config: true
+  reports_effective_config: true
+  reports_own_traces: true
+  reports_own_metrics: true
+  reports_own_logs: true
+  reports_health: true
 
 storage:
-  directory: /tmp/opamp-storage
-`
+  directory: %s/opamp-storage
+`, vars.OpAMPPort, componentPaths.Collector, collectorConfigPath, tempDir)
 
-	configPath := filepath.Join(tempDir, "invalid-supervisor-config.yaml")
-	err := os.WriteFile(configPath, []byte(invalidConfig), 0660)
+	configPath := filepath.Join(tempDir, "supervisor-config.yaml")
+	err := os.WriteFile(configPath, []byte(supervisorConfig), 0660)
+	Expect(err).NotTo(HaveOccurred())
+
+	// Create storage directory
+	storageDir := filepath.Join(tempDir, "opamp-storage")
+	err = os.MkdirAll(storageDir, 0700)
 	Expect(err).NotTo(HaveOccurred())
 
 	return configPath

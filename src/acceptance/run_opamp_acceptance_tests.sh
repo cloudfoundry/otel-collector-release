@@ -111,14 +111,13 @@ echo ""
 
 if [ "$OPAMP_MODE" = "enabled" ]; then
     echo "✅ OpAMP-enabled tests executed"
-    echo "   - OpAMP extension functionality"
     echo "   - OpAMP supervisor operations"
-    echo "   - Health check endpoints"
+    echo "   - Dual process mode validation"
     echo "   - Configuration validation"
 else
     echo "ℹ️  OpAMP-disabled tests executed"
     echo "   - Standard collector functionality"
-    echo "   - OpAMP absence validation"
+    echo "   - Single process mode validation"
 fi
 
 echo ""

@@ -769,10 +769,10 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetr
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.143.0/go.mod h1:nR4fiH1vtKQSfY9ZvBg16NqC9JCf+1Ia/qoSNnOB9Lg=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.142.0 h1:lFowWhr/qx5Gm2X8H0BbG87xZh/e+4S0PQw8HQO5D4Y=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.142.0/go.mod h1:JybcaNLHHzJQh690eSp+KDbLrxB1+AhKNLlibqrogt4=
-github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.143.0 h1:oJjHO+juQ0yhKs94vYRmdWpK3+EitrhTFi2E7vNQa3w=
-github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.143.0/go.mod h1:UUWkycAgRXadUIriVld5i38i3YZd3iSN5vWZId86OnQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.143.0 h1:QOraqGLh6qqApMnrWC2QHz9nIkblY57V3A61ux/VJEw=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/stanza v0.143.0/go.mod h1:++S3tKKRuEwlIHULsqMC1g1tUfGIPWIiWgVGzqlZCZE=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.143.0 h1:oJjHO+juQ0yhKs94vYRmdWpK3+EitrhTFi2E7vNQa3w=
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/status v0.143.0/go.mod h1:UUWkycAgRXadUIriVld5i38i3YZd3iSN5vWZId86OnQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.143.0 h1:7ltUKaM5iCH3atgvk3udsHCOvRmL75/9j+nzTBqr6CE=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/jaeger v0.143.0/go.mod h1:79hFA8OO8gO+0lu8UwYb0OXy5SnaLjqG1YA0imkgFCE=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/prometheus v0.143.0 h1:Xd+FGTq6FKerd5V0yzHNtsjOvykT7+CLSWhAjE0SZq0=

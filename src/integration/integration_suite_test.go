@@ -2,6 +2,8 @@ package integration_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -22,17 +24,29 @@ type ComponentPaths struct {
 func NewComponentPaths() ComponentPaths {
 	cps := ComponentPaths{}
 
-	path, err := gexec.Build("code.cloudfoundry.org/otel-collector-release/src/otel-collector")
-	Expect(err).NotTo(HaveOccurred())
-	cps.Collector = path
-
-	// Build OpAMP supervisor - this will be available once the package is built
-	supervisorPath, err := gexec.Build("code.cloudfoundry.org/otel-collector-release/src/opamp-supervisor-builder")
-	if err != nil {
-		// OpAMP supervisor not available yet, tests will skip
-		cps.OpAMPSupervisor = ""
+	// Use pre-built collector binary from src/otel-collector/otelcol-cf
+	// This ensures we're testing the actual built collector with all extensions (including opamp)
+	collectorPath := "../otel-collector/otelcol-cf"
+	if _, err := os.Stat(collectorPath); err == nil {
+		absPath, err := filepath.Abs(collectorPath)
+		if err == nil {
+			cps.Collector = absPath
+		}
 	} else {
-		cps.OpAMPSupervisor = supervisorPath
+		// Fallback to building from source if pre-built binary doesn't exist
+		path, err := gexec.Build("code.cloudfoundry.org/otel-collector-release/src/otel-collector")
+		Expect(err).NotTo(HaveOccurred())
+		cps.Collector = path
+	}
+
+	// Use pre-built OpAMP supervisor binary from src/opamp-supervisor/opampsupervisor
+	// The supervisor is built by opamp-supervisor-builder and committed to src/opamp-supervisor/
+	supervisorPath := "../opamp-supervisor/opampsupervisor"
+	if _, err := os.Stat(supervisorPath); err == nil {
+		absPath, err := filepath.Abs(supervisorPath)
+		if err == nil {
+			cps.OpAMPSupervisor = absPath
+		}
 	}
 
 	return cps

@@ -9,7 +9,7 @@ packages:
 templates:
   bpm.yml.erb: config/bpm.yml
   opamp-supervisor.yml.erb: config/opamp-supervisor.yml
-  bin/pre-start: bin/pre-start
+  persistent_state.yaml.erb: store/persistent_state.yaml
 
 properties:
   opamp.enabled:
@@ -53,4 +53,4 @@ properties:
     default: true
   storage_dir:
     description: "Directory for OpAMP supervisor storage"
-    default: "/var/vcap/store/opamp-supervisor"
+    default: "/var/vcap/jobs/opamp-supervisor/store"
