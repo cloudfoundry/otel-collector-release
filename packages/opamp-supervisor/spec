@@ -1,0 +1,8 @@
+---
+name: opamp-supervisor
+
+dependencies:
+- golang-1.25-linux
+
+files:
+- opamp-supervisor-builder/**/*

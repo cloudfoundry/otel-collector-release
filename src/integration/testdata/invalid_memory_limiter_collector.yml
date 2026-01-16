@@ -1,0 +1,29 @@
+---
+receivers:
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:{{.IngressOTLPPort}}
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  # Invalid memory_limiter configuration - missing check_interval
+  memory_limiter:
+    limit_mib: 256
+
+exporters:
+  debug:
+    verbosity: basic
+
+extensions:
+
+service:
+  extensions: []
+  pipelines:
+    metrics:
+      receivers: [otlp/test]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

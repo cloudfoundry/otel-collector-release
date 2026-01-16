@@ -1,0 +1,22 @@
+<%=
+  bpm = {
+    'processes' => [
+        {
+          'name' => 'opamp-supervisor',
+          'executable' => '/var/vcap/packages/opamp-supervisor/opampsupervisor',
+          'args' => ['--config','/var/vcap/jobs/opamp-supervisor/config/opamp-supervisor.yml'],
+          'env' => { 'OPAMP_ENABLED' => p('opamp.enabled').to_s },
+          'limits' => { 'processes' => 1024 },
+          'additional_volumes' => [
+            {
+              'path' => '/var/vcap/jobs/otel-collector/config',
+              'writable' => false,
+              'allow_executions' => false
+            }
+          ]
+        }
+      ]
+    }
+  
+  YAML.dump(bpm) 
+%>
