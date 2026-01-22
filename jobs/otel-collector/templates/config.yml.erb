@@ -165,7 +165,7 @@ end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_extensions
-  %w[pprof].sort
+  %w[opamp pprof].sort
 end
 
 def check_for_use_of_valid_components!(component_kind, included_components)
