@@ -599,6 +599,58 @@ func NewConfiguration() *Configuration {
 					},
 				},
 			},
+			"v2.ProductAnalyticsApi.SubmitProductAnalyticsEvent": {
+				{
+					URL:         "https://{subdomain}.{site}",
+					Description: "No description provided",
+					Variables: map[string]ServerVariable{
+						"site": {
+							Description:  "The regional site for customers.",
+							DefaultValue: "datadoghq.com",
+							EnumValues: []string{
+								"datadoghq.com",
+								"us3.datadoghq.com",
+								"us5.datadoghq.com",
+								"ap1.datadoghq.com",
+								"ap2.datadoghq.com",
+								"datadoghq.eu",
+							},
+						},
+						"subdomain": {
+							Description:  "The subdomain where the API is deployed.",
+							DefaultValue: "browser-intake",
+						},
+					},
+				},
+				{
+					URL:         "{protocol}://{name}",
+					Description: "No description provided",
+					Variables: map[string]ServerVariable{
+						"name": {
+							Description:  "Full site DNS name.",
+							DefaultValue: "browser-intake-datadoghq.com",
+						},
+						"protocol": {
+							Description:  "The protocol for accessing the API.",
+							DefaultValue: "https",
+						},
+					},
+				},
+				{
+					URL:         "https://{subdomain}.{site}",
+					Description: "No description provided",
+					Variables: map[string]ServerVariable{
+						"site": {
+							Description:  "Any Datadog deployment.",
+							DefaultValue: "datadoghq.com",
+						},
+						"subdomain": {
+							Description:  "The subdomain where the API is deployed.",
+							DefaultValue: "browser-intake",
+						},
+					},
+				},
+			},
 		},
 		unstableOperations: map[string]bool{
 			"v2.CancelFleetDeployment":                   false,
@@ -661,12 +713,14 @@ func NewConfiguration() *Configuration {
 			"v2.UpdateDeploymentGate":                    false,
 			"v2.UpdateDeploymentRule":                    false,
 			"v2.CreateIncident":                          false,
+			"v2.CreateIncidentAttachment":                false,
 			"v2.CreateIncidentIntegration":               false,
 			"v2.CreateIncidentNotificationRule":          false,
 			"v2.CreateIncidentNotificationTemplate":      false,
 			"v2.CreateIncidentTodo":                      false,
 			"v2.CreateIncidentType":                      false,
 			"v2.DeleteIncident":                          false,
+			"v2.DeleteIncidentAttachment":                false,
 			"v2.DeleteIncidentIntegration":               false,
 			"v2.DeleteIncidentNotificationRule":          false,
 			"v2.DeleteIncidentNotificationTemplate":      false,
@@ -687,7 +741,7 @@ func NewConfiguration() *Configuration {
 			"v2.ListIncidentTypes":                       false,
 			"v2.SearchIncidents":                         false,
 			"v2.UpdateIncident":                          false,
-			"v2.UpdateIncidentAttachments":               false,
+			"v2.UpdateIncidentAttachment":                false,
 			"v2.UpdateIncidentIntegration":               false,
 			"v2.UpdateIncidentNotificationRule":          false,
 			"v2.UpdateIncidentNotificationTemplate":      false,
@@ -747,13 +801,8 @@ func NewConfiguration() *Configuration {
 			"v2.CreateSCAResolveVulnerableSymbols":       false,
 			"v2.CreateSCAResult":                         false,
 			"v2.AddMemberTeam":                           false,
-			"v2.CreateTeamConnections":                   false,
-			"v2.DeleteTeamConnections":                   false,
-			"v2.GetTeamSync":                             false,
 			"v2.ListMemberTeams":                         false,
-			"v2.ListTeamConnections":                     false,
 			"v2.RemoveMemberTeam":                        false,
-			"v2.SyncTeams":                               false,
 			"v2.CreateIncidentTeam":                      false,
 			"v2.DeleteIncidentTeam":                      false,
 			"v2.GetIncidentTeam":                         false,
