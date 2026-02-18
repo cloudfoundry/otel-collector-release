@@ -16,7 +16,7 @@ shared_examples_for 'common config.yml' do
           'batch' => nil
         },
         'exporters' => {
-          'otlp' => {
+          'otlp_grpc' => {
             'endpoint' => 'otelcol:4317'
           }
         },
@@ -29,17 +29,17 @@ shared_examples_for 'common config.yml' do
             'traces' => {
               'receivers' => ['otlp/placeholder'],
               'processors' => ['batch'],
-              'exporters' => ['otlp']
+              'exporters' => ['otlp_grpc']
             },
             'metrics' => {
               'receivers' => ['otlp/placeholder'],
               'processors' => ['batch'],
-              'exporters' => ['otlp']
+              'exporters' => ['otlp_grpc']
             },
             'logs' => {
               'receivers' => ['otlp/placeholder'],
               'processors' => ['batch'],
-              'exporters' => ['otlp']
+              'exporters' => ['otlp_grpc']
             }
           }
         }
@@ -107,7 +107,7 @@ shared_examples_for 'common config.yml' do
               'traces' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               }
             }
           end
@@ -143,7 +143,7 @@ shared_examples_for 'common config.yml' do
               'traces' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               }
             }
           end
@@ -227,22 +227,22 @@ shared_examples_for 'common config.yml' do
               'traces' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               },
               'traces/2' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch/test'],
-                'exporters' => ['otlp/2']
+                'exporters' => ['otlp_grpc/2']
               },
               'metrics' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               },
               'metrics/foo' => {
                 'receivers' => ['otlp/placeholder'],
                 'processors' => ['batch'],
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               }
             }
           end
@@ -358,16 +358,16 @@ shared_examples_for 'common config.yml' do
 
       it 'errors when a configured exporters is not allowed' do
         properties['allow_list'] = {'exporters' => ['prometheus']}
-        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp"\]/)
+        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp_grpc"\]/)
       end
 
       it 'allows no exporters with empty allow list' do
         properties['allow_list'] = {'exporters' => []}
-        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp"\]/)
+        expect { rendered }.to raise_error(/The following configured exporters are not allowed: \["otlp_grpc"\]/)
       end
 
       it 'includes the configured exporters even if their names contain `/`' do
-        config['exporters']['otlp/bar'] = nil
+        config['exporters']['otlp_grpc/bar'] = nil
         expect(rendered.keys).to include 'exporters'
         expect(rendered['exporters']).to eq(config['exporters'])
       end
@@ -398,7 +398,7 @@ shared_examples_for 'common config.yml' do
 
       context 'when an exporter uses the reserved namespace' do
         before do
-          config['exporters']['otlp/cf-internal-foo'] = {
+          config['exporters']['otlp_grpc/cf-internal-foo'] = {
             'endpoint' => '203.0.113.10:4317'
           }
         end
@@ -515,14 +515,14 @@ shared_examples_for 'common config.yml' do
       let(:properties) do
         {
           'metric_exporters' => {
-            'otlp' => { 'endpoint' => 'otelcol:4317' },
+            'otlp_grpc' => { 'endpoint' => 'otelcol:4317' },
             'prometheus/tls' => {
               'endpoint' => '1.2.3.4:1234',
               'metric_expiration' => '60m'
             }
           },
           'trace_exporters' => {
-            'otlp/traces' => { 'endpoint' => 'otelcol:4317' }
+            'otlp_grpc/traces' => { 'endpoint' => 'otelcol:4317' }
           }
         }
       end
@@ -530,12 +530,12 @@ shared_examples_for 'common config.yml' do
       it 'uses the exporters provided' do
         expect(rendered['exporters']).to eq(
           {
-            'otlp' => { 'endpoint' => 'otelcol:4317' },
+            'otlp_grpc' => { 'endpoint' => 'otelcol:4317' },
             'prometheus/tls' => {
               'endpoint' => '1.2.3.4:1234',
               'metric_expiration' => '60m'
             },
-            'otlp/traces' => { 'endpoint' => 'otelcol:4317' },
+            'otlp_grpc/traces' => { 'endpoint' => 'otelcol:4317' },
             'nop' => nil
           }
         )
@@ -544,11 +544,11 @@ shared_examples_for 'common config.yml' do
       it 'generates pipelines that include the exporters' do
         metrics_pipeline = rendered['service']['pipelines']['metrics']
         expect(metrics_pipeline['receivers']).to eq(['otlp/cf-internal-local'])
-        expect(metrics_pipeline['exporters']).to eq(['otlp', 'prometheus/tls'])
+        expect(metrics_pipeline['exporters']).to eq(['otlp_grpc', 'prometheus/tls'])
 
         traces_pipeline = rendered['service']['pipelines']['traces']
         expect(traces_pipeline['receivers']).to eq(['otlp/cf-internal-local'])
-        expect(traces_pipeline['exporters']).to eq(['otlp/traces'])
+        expect(traces_pipeline['exporters']).to eq(['otlp_grpc/traces'])
       end
 
       context 'when only a metrics pipeline is defined' do
@@ -571,7 +571,7 @@ shared_examples_for 'common config.yml' do
 
       context 'when an exporter has a name collision' do
         before do
-          properties['trace_exporters'] = { 'otlp' => { 'endpoint' => 'otelcol:4317' } }
+          properties['trace_exporters'] = { 'otlp_grpc' => { 'endpoint' => 'otelcol:4317' } }
         end
 
         it 'raises an error' do
@@ -585,7 +585,7 @@ shared_examples_for 'common config.yml' do
         end
 
         it 'parses it as YAML' do
-          expect(rendered['service']['pipelines']['traces']).to eq({ 'exporters' => ['otlp/traces'],
+          expect(rendered['service']['pipelines']['traces']).to eq({ 'exporters' => ['otlp_grpc/traces'],
                                                                      'receivers' => ['otlp/cf-internal-local'] })
         end
       end
@@ -607,7 +607,7 @@ shared_examples_for 'common config.yml' do
       let(:config) do
         {
           'exporters' => {
-            'otlp' => {
+            'otlp_grpc' => {
               'endpoint' => 'otelcol:4317',
               'tls' => {
                 'cert_pem' => '{{ .test-secret.cert }}',
@@ -627,10 +627,10 @@ shared_examples_for 'common config.yml' do
           'service' => {
             'pipelines' => {
               'traces' => {
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               },
               'metrics' => {
-                'exporters' => ['otlp']
+                'exporters' => ['otlp_grpc']
               }
             }
           }
@@ -683,10 +683,10 @@ HqBTRxft
       end
 
       it 'interpolates the config and renders it successfully' do
-        expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
-        expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
-        expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
-        expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+        expect(rendered['exporters']['otlp_grpc']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
+        expect(rendered['exporters']['otlp_grpc']['tls']['key_pem']).to eq('bar')
+        expect(rendered['exporters']['otlp_grpc']['tls']['ca_pem']).to eq('baz')
+        expect(rendered['exporters']['otlp_grpc']['headers']['auth']).to eq('foobarbaz')
         expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('foobarbaz')
       end
 
@@ -698,17 +698,17 @@ HqBTRxft
         end
 
         it 'does not interpolate those template variables' do
-          expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
-          expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('{{ .test-secret.key }}')
-          expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('{{ .test-secret.ca }}')
-          expect(rendered['exporters']['otlp']['headers']['auth']).to eq('{{ .anothersecret.secret }}')
+          expect(rendered['exporters']['otlp_grpc']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
+          expect(rendered['exporters']['otlp_grpc']['tls']['key_pem']).to eq('{{ .test-secret.key }}')
+          expect(rendered['exporters']['otlp_grpc']['tls']['ca_pem']).to eq('{{ .test-secret.ca }}')
+          expect(rendered['exporters']['otlp_grpc']['headers']['auth']).to eq('{{ .anothersecret.secret }}')
           expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('{{ .anothersecret.secret }}')
         end
       end
 
       context 'when no template variables exist for a secret' do
         before do
-          config['exporters']['otlp'].delete('headers')
+          config['exporters']['otlp_grpc'].delete('headers')
           config['exporters'].delete('prometheus/test')
         end
 
@@ -719,25 +719,25 @@ HqBTRxft
 
       context 'when template variables uses differing amounts of space separation' do
         before do
-          config['exporters']['otlp']['tls']['cert_pem'] = '{{.test-secret.cert}}'
-          config['exporters']['otlp']['tls']['key_pem'] = '{{        .test-secret.key}}'
-          config['exporters']['otlp']['tls']['ca_pem'] = '{{   .test-secret.ca     }}'
+          config['exporters']['otlp_grpc']['tls']['cert_pem'] = '{{.test-secret.cert}}'
+          config['exporters']['otlp_grpc']['tls']['key_pem'] = '{{        .test-secret.key}}'
+          config['exporters']['otlp_grpc']['tls']['ca_pem'] = '{{   .test-secret.ca     }}'
         end
 
         it 'interpolates the config and renders it successfully' do
-          expect(rendered['exporters']['otlp']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
-          expect(rendered['exporters']['otlp']['tls']['key_pem']).to eq('bar')
-          expect(rendered['exporters']['otlp']['tls']['ca_pem']).to eq('baz')
-          expect(rendered['exporters']['otlp']['headers']['auth']).to eq('foobarbaz')
+          expect(rendered['exporters']['otlp_grpc']['tls']['cert_pem']).to eq("-----BEGIN CERTIFICATE-----\nMIIE4jCCAsqgAwIBAgIUO/DRqVeXUmewgpy33MkQpe0ME7YwDQYJKoZIhvcNAQEL\nBQAwgZkxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQH\nDA1TYW4gRnJhbmNpc2NvMQwwCgYDVQQKDANNQVAxDzANBgNVBAsMBlZNd2FyZTEV\nMBMGA1UEAwwMVG9vbHNtaXRoc0NBMScwJQYJKoZIhvcNAQkBFhhjZi10b29sc21p\ndGhzQHdtd2FyZS5jb20wHhcNMjQwODI3MjEzMDU3WhcNMjYwODI4MjEzMDU3WjAy\nMQswCQYDVQQGEwJVUzEQMA4GA1UECgwHUGl2b3RhbDERMA8GA1UEAwwIYmxhaC5j\nb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDT0qMGluiM2jrZ0k/3\nYjSy6/55NJttugG+RjfWXIPTti3ySHBgf5oOhgE1w/TMH8vQC1QBXSi3erw+WlZV\nGW7pSs1AwPiTDJWlCmsyabY3En5+V+yFTI7CtA5uxC8Yo6szfHxk+RlZUcE8S7vd\n0Lty0hahK0q+cNLqDfWDJ4jgJWKkoT9yGKSF+LLoUpJXqzI7d0soevzAolXEGb6X\nO8ORQDYbT/onCwq9MKb4jRVE+KYT2+ajdKI0MPR4/3JA8/o2O4BNTf6MOnSFKWLe\nCYXdtcqaDE2GqK3OUnlH2Tv2lS+1KCGq9800MfXJ/ln7kuetPBz7MelR6Ph9SWqk\nEv3NAgMBAAGjgYcwgYQwHQYDVR0OBBYEFPF+Zo5VBV/ZCDQk02HBER1j5WDtMB8G\nA1UdIwQYMBaAFMGM2idsRltlr/D2KjmlZE2sdFgVMB0GA1UdJQQWMBQGCCsGAQUF\nBwMCBggrBgEFBQcDATAOBgNVHQ8BAf8EBAMCBaAwEwYDVR0RBAwwCoIIYmxhaC5j\nb20wDQYJKoZIhvcNAQELBQADggIBALkKkStBbqSJmhAgXsfxMyX+ksuf0iKchP14\n/PIq9srwy6S6urc+9ajp7qNDvM+xaj8w2poUF4CPPVS7RqiRf5wJr2ZJDq0lcXbU\nM+qqKth+6VkOPUsOP+5b6j/aUoo1zTxqiP6q2bJ2igujHfSJ4H3JenD2VogqzrDS\nhNU0m4vupB79dlqPUWkkhkyQ+83GMLWzgwatmjj11jBeOPHNXZJikUODxvwVqscZ\niYYdVzzSqVJCxinwk1eGvGXeGsSR4EBsLpF9g18L57PPT8OfDHM7KnBdwhSFkLuU\ngtd7i3u9NSScr7g3beQIBEi+ho/FR/pPcU453ilECsza3esMKAubr1nE6Be3tlhL\nEZpwAdkj3lZVnAMcXyNo20mgYK7yVoVa+rS4E9oyTcldjqBUvFnFtqbB70h5ZZ/v\n71uRB07WqE6zdvslcHtgWls5mM4APKhxjuszmY4GgEEQ7SJObQSzC53avPhlu+TB\n3EWIdIjpvyNSEsC6yIVQrKJ6ejcqV9+OVPFQyHQ2yzyBDVSVVU6EqYFUJy3zmHp+\nmm95ZMr9Q04nwi5//MNW7Yuw7XmjFtTlN6ybHrc82jNWDJx5GvZkHj0Qmg6TMYu2\nhqmaUsNEA27fgk2HRuHUOJ+2EFFlCVZMLR7vN/JVE/LhZ2CdzoyMOkH0vtKophTg\nHqBTRxft\n-----END CERTIFICATE-----")
+          expect(rendered['exporters']['otlp_grpc']['tls']['key_pem']).to eq('bar')
+          expect(rendered['exporters']['otlp_grpc']['tls']['ca_pem']).to eq('baz')
+          expect(rendered['exporters']['otlp_grpc']['headers']['auth']).to eq('foobarbaz')
           expect(rendered['exporters']['prometheus/test']['tags'][0]).to eq('foobarbaz')
         end
       end
 
       context 'when template variables are not formatted correctly' do
         before do
-          config['exporters']['otlp']['tls']['cert_pem'] = '{{test-secret.cert}}'
-          config['exporters']['otlp']['tls']['key_pem'] = '{{ .test-secret }}'
-          config['exporters']['otlp']['tls']['ca_pem'] = "{{\n .test-secret.ca \n}}"
+          config['exporters']['otlp_grpc']['tls']['cert_pem'] = '{{test-secret.cert}}'
+          config['exporters']['otlp_grpc']['tls']['key_pem'] = '{{ .test-secret }}'
+          config['exporters']['otlp_grpc']['tls']['ca_pem'] = "{{\n .test-secret.ca \n}}"
         end
 
         it 'does not match secrets to those variables' do
