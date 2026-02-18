@@ -29,7 +29,7 @@ type SyntheticsTestDetails struct {
 	// Define whether you want to start (`live`) or pause (`paused`) a
 	// Synthetic test.
 	Status *SyntheticsTestPauseStatus `json:"status,omitempty"`
-	// For browser test, the steps of the test.
+	// The steps of the test if they exist.
 	Steps []SyntheticsStep `json:"steps,omitempty"`
 	// The subtype of the Synthetic API test, `http`, `ssl`, `tcp`,
 	// `dns`, `icmp`, `udp`, `websocket`, `grpc` or `multi`.
