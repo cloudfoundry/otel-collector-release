@@ -7,6 +7,7 @@ package datadogV2
 import (
 	_context "context"
 	_fmt "fmt"
+	_io "io"
 	_log "log"
 	_nethttp "net/http"
 	_neturl "net/url"
@@ -18,6 +19,94 @@ import (
 
 // SecurityMonitoringApi service type
 type SecurityMonitoringApi datadog.Service
+
+// ActivateContentPack Activate content pack.
+// Activate a security monitoring content pack. This operation configures the necessary
+// log filters or security filters depending on the pricing model and updates the content
+// pack activation state.
+func (a *SecurityMonitoringApi) ActivateContentPack(ctx _context.Context, contentPackId string) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodPut
+		localVarPostBody   interface{}
+	)
+
+	operationId := "v2.ActivateContentPack"
+	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
+	if !isOperationEnabled {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
+	}
+	if isOperationEnabled && a.Client.Cfg.Debug {
+		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
+	}
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.ActivateContentPack")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/content_packs/{content_pack_id}/activate"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{content_pack_id}", _neturl.PathEscape(datadog.ParameterToString(contentPackId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 {
+			var v JSONAPIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+			return localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
 
 // AttachCase Attach security findings to a case.
 // Attach security findings to a case.
@@ -111,15 +200,6 @@ func (a *SecurityMonitoringApi) AttachJiraIssue(ctx _context.Context, body Attac
 		localVarReturnValue FindingCaseResponse
 	)
 
-	operationId := "v2.AttachJiraIssue"
-	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
-	if !isOperationEnabled {
-		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
-	}
-	if isOperationEnabled && a.Client.Cfg.Debug {
-		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
-	}
-
 	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.AttachJiraIssue")
 	if err != nil {
 		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
@@ -187,6 +267,80 @@ func (a *SecurityMonitoringApi) AttachJiraIssue(ctx _context.Context, body Attac
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// BulkExportSecurityMonitoringRules Bulk export security monitoring rules.
+// Export a list of security monitoring rules as a ZIP file containing JSON rule definitions.
+// The endpoint accepts a list of rule IDs and returns a ZIP archive where each rule is
+// saved as a separate JSON file named after the rule.
+func (a *SecurityMonitoringApi) BulkExportSecurityMonitoringRules(ctx _context.Context, body SecurityMonitoringRuleBulkExportPayload) (_io.Reader, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPost
+		localVarPostBody    interface{}
+		localVarReturnValue _io.Reader
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.BulkExportSecurityMonitoringRules")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/rules/bulk_export"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+
+		localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+		if err != nil {
+			return localVarReturnValue, localVarHTTPResponse, err
+		}
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+	localVarReturnValue = localVarHTTPResponse.Body
 
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
@@ -688,15 +842,6 @@ func (a *SecurityMonitoringApi) CreateJiraIssues(ctx _context.Context, body Crea
 		localVarReturnValue FindingCaseResponseArray
 	)
 
-	operationId := "v2.CreateJiraIssues"
-	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
-	if !isOperationEnabled {
-		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
-	}
-	if isOperationEnabled && a.Client.Cfg.Debug {
-		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
-	}
-
 	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.CreateJiraIssues")
 	if err != nil {
 		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
@@ -786,6 +931,86 @@ func (a *SecurityMonitoringApi) CreateSecurityFilter(ctx _context.Context, body 
 	}
 
 	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/security_filters"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 409 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// CreateSecurityMonitoringCriticalAsset Create a critical asset.
+// Create a new critical asset.
+func (a *SecurityMonitoringApi) CreateSecurityMonitoringCriticalAsset(ctx _context.Context, body SecurityMonitoringCriticalAssetCreateRequest) (SecurityMonitoringCriticalAssetResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPost
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringCriticalAssetResponse
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.CreateSecurityMonitoringCriticalAsset")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -1171,6 +1396,93 @@ func (a *SecurityMonitoringApi) CreateVulnerabilityNotificationRule(ctx _context
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+// DeactivateContentPack Deactivate content pack.
+// Deactivate a security monitoring content pack. This operation removes the content pack's
+// configuration from log filters or security filters and updates the content pack activation state.
+func (a *SecurityMonitoringApi) DeactivateContentPack(ctx _context.Context, contentPackId string) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodPut
+		localVarPostBody   interface{}
+	)
+
+	operationId := "v2.DeactivateContentPack"
+	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
+	if !isOperationEnabled {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
+	}
+	if isOperationEnabled && a.Client.Cfg.Debug {
+		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
+	}
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.DeactivateContentPack")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/content_packs/{content_pack_id}/deactivate"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{content_pack_id}", _neturl.PathEscape(datadog.ParameterToString(contentPackId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 {
+			var v JSONAPIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+			return localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
 // DeleteCustomFramework Delete a custom framework.
 // Delete a custom framework.
 func (a *SecurityMonitoringApi) DeleteCustomFramework(ctx _context.Context, handle string, version string) (DeleteCustomFrameworkResponse, *_nethttp.Response, error) {
@@ -1265,6 +1577,74 @@ func (a *SecurityMonitoringApi) DeleteSecurityFilter(ctx _context.Context, secur
 
 	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/security_filters/{security_filter_id}"
 	localVarPath = datadog.ReplacePathParameter(localVarPath, "{security_filter_id}", _neturl.PathEscape(datadog.ParameterToString(securityFilterId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
+// DeleteSecurityMonitoringCriticalAsset Delete a critical asset.
+// Delete a specific critical asset.
+func (a *SecurityMonitoringApi) DeleteSecurityMonitoringCriticalAsset(ctx _context.Context, criticalAssetId string) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodDelete
+		localVarPostBody   interface{}
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.DeleteSecurityMonitoringCriticalAsset")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets/{critical_asset_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{critical_asset_id}", _neturl.PathEscape(datadog.ParameterToString(criticalAssetId, "")))
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -1981,6 +2361,181 @@ func (a *SecurityMonitoringApi) EditSecurityMonitoringSignalState(ctx _context.C
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+// GetContentPacksStates Get content pack states.
+// Get the activation and configuration states for all security monitoring content packs.
+// This endpoint returns status information about each content pack including activation state,
+// integration status, and log collection status.
+func (a *SecurityMonitoringApi) GetContentPacksStates(ctx _context.Context) (SecurityMonitoringContentPackStatesResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodGet
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringContentPackStatesResponse
+	)
+
+	operationId := "v2.GetContentPacksStates"
+	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
+	if !isOperationEnabled {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
+	}
+	if isOperationEnabled && a.Client.Cfg.Debug {
+		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
+	}
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.GetContentPacksStates")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/content_packs/states"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "application/json"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 {
+			var v JSONAPIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+			return localVarReturnValue, localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// GetCriticalAssetsAffectingRule Get critical assets affecting a specific rule.
+// Get the list of critical assets that affect a specific existing rule by the rule's ID.
+func (a *SecurityMonitoringApi) GetCriticalAssetsAffectingRule(ctx _context.Context, ruleId string) (SecurityMonitoringCriticalAssetsResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodGet
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringCriticalAssetsResponse
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.GetCriticalAssetsAffectingRule")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets/rules/{rule_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{rule_id}", _neturl.PathEscape(datadog.ParameterToString(ruleId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "application/json"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
 // GetCustomFramework Get a custom framework.
 // Get a custom framework.
 func (a *SecurityMonitoringApi) GetCustomFramework(ctx _context.Context, handle string, version string) (GetCustomFrameworkResponse, *_nethttp.Response, error) {
@@ -2466,15 +3021,6 @@ func (a *SecurityMonitoringApi) GetSBOM(ctx _context.Context, assetType AssetTyp
 		optionalParams = o[0]
 	}
 
-	operationId := "v2.GetSBOM"
-	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
-	if !isOperationEnabled {
-		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
-	}
-	if isOperationEnabled && a.Client.Cfg.Debug {
-		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
-	}
-
 	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.GetSBOM")
 	if err != nil {
 		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
@@ -2665,6 +3211,84 @@ func (a *SecurityMonitoringApi) GetSecurityFilter(ctx _context.Context, security
 
 	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/security_filters/{security_filter_id}"
 	localVarPath = datadog.ReplacePathParameter(localVarPath, "{security_filter_id}", _neturl.PathEscape(datadog.ParameterToString(securityFilterId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "application/json"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// GetSecurityMonitoringCriticalAsset Get a critical asset.
+// Get the details of a specific critical asset.
+func (a *SecurityMonitoringApi) GetSecurityMonitoringCriticalAsset(ctx _context.Context, criticalAssetId string) (SecurityMonitoringCriticalAssetResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodGet
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringCriticalAssetResponse
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.GetSecurityMonitoringCriticalAsset")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets/{critical_asset_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{critical_asset_id}", _neturl.PathEscape(datadog.ParameterToString(criticalAssetId, "")))
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}
@@ -3979,15 +4603,6 @@ func (a *SecurityMonitoringApi) ListAssetsSBOMs(ctx _context.Context, o ...ListA
 		optionalParams = o[0]
 	}
 
-	operationId := "v2.ListAssetsSBOMs"
-	isOperationEnabled := a.Client.Cfg.IsUnstableOperationEnabled(operationId)
-	if !isOperationEnabled {
-		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: _fmt.Sprintf("Unstable operation '%s' is disabled", operationId)}
-	}
-	if isOperationEnabled && a.Client.Cfg.Debug {
-		_log.Printf("WARNING: Using unstable operation '%s'", operationId)
-	}
-
 	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.ListAssetsSBOMs")
 	if err != nil {
 		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
@@ -4834,6 +5449,310 @@ func (a *SecurityMonitoringApi) ListSecurityFilters(ctx _context.Context) (Secur
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+// ListSecurityFindingsOptionalParameters holds optional parameters for ListSecurityFindings.
+type ListSecurityFindingsOptionalParameters struct {
+	FilterQuery *string
+	PageCursor  *string
+	PageLimit   *int64
+	Sort        *SecurityFindingsSort
+}
+
+// NewListSecurityFindingsOptionalParameters creates an empty struct for parameters.
+func NewListSecurityFindingsOptionalParameters() *ListSecurityFindingsOptionalParameters {
+	this := ListSecurityFindingsOptionalParameters{}
+	return &this
+}
+
+// WithFilterQuery sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityFindingsOptionalParameters) WithFilterQuery(filterQuery string) *ListSecurityFindingsOptionalParameters {
+	r.FilterQuery = &filterQuery
+	return r
+}
+
+// WithPageCursor sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityFindingsOptionalParameters) WithPageCursor(pageCursor string) *ListSecurityFindingsOptionalParameters {
+	r.PageCursor = &pageCursor
+	return r
+}
+
+// WithPageLimit sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityFindingsOptionalParameters) WithPageLimit(pageLimit int64) *ListSecurityFindingsOptionalParameters {
+	r.PageLimit = &pageLimit
+	return r
+}
+
+// WithSort sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityFindingsOptionalParameters) WithSort(sort SecurityFindingsSort) *ListSecurityFindingsOptionalParameters {
+	r.Sort = &sort
+	return r
+}
+
+// ListSecurityFindings List security findings.
+// Get a list of security findings that match a search query. [See the schema for security findings](https://docs.datadoghq.com/security/guide/findings-schema/).
+//
+// ### Query Syntax
+//
+// This endpoint uses the logs query syntax. Findings attributes (living in the attributes.attributes. namespace) are prefixed by @ when queried. Tags are queried without a prefix.
+//
+// Example: `@severity:(critical OR high) @status:open team:platform`
+func (a *SecurityMonitoringApi) ListSecurityFindings(ctx _context.Context, o ...ListSecurityFindingsOptionalParameters) (ListSecurityFindingsResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodGet
+		localVarPostBody    interface{}
+		localVarReturnValue ListSecurityFindingsResponse
+		optionalParams      ListSecurityFindingsOptionalParameters
+	)
+
+	if len(o) > 1 {
+		return localVarReturnValue, nil, datadog.ReportError("only one argument of type ListSecurityFindingsOptionalParameters is allowed")
+	}
+	if len(o) == 1 {
+		optionalParams = o[0]
+	}
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.ListSecurityFindings")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security/findings"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	if optionalParams.FilterQuery != nil {
+		localVarQueryParams.Add("filter[query]", datadog.ParameterToString(*optionalParams.FilterQuery, ""))
+	}
+	if optionalParams.PageCursor != nil {
+		localVarQueryParams.Add("page[cursor]", datadog.ParameterToString(*optionalParams.PageCursor, ""))
+	}
+	if optionalParams.PageLimit != nil {
+		localVarQueryParams.Add("page[limit]", datadog.ParameterToString(*optionalParams.PageLimit, ""))
+	}
+	if optionalParams.Sort != nil {
+		localVarQueryParams.Add("sort", datadog.ParameterToString(*optionalParams.Sort, ""))
+	}
+	localVarHeaderParams["Accept"] = "application/json"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// ListSecurityFindingsWithPagination provides a paginated version of ListSecurityFindings returning a channel with all items.
+func (a *SecurityMonitoringApi) ListSecurityFindingsWithPagination(ctx _context.Context, o ...ListSecurityFindingsOptionalParameters) (<-chan datadog.PaginationResult[SecurityFindingsData], func()) {
+	ctx, cancel := _context.WithCancel(ctx)
+	pageSize_ := int64(10)
+	if len(o) == 0 {
+		o = append(o, ListSecurityFindingsOptionalParameters{})
+	}
+	if o[0].PageLimit != nil {
+		pageSize_ = *o[0].PageLimit
+	}
+	o[0].PageLimit = &pageSize_
+
+	items := make(chan datadog.PaginationResult[SecurityFindingsData], pageSize_)
+	go func() {
+		for {
+			resp, _, err := a.ListSecurityFindings(ctx, o...)
+			if err != nil {
+				var returnItem SecurityFindingsData
+				items <- datadog.PaginationResult[SecurityFindingsData]{Item: returnItem, Error: err}
+				break
+			}
+			respData, ok := resp.GetDataOk()
+			if !ok {
+				break
+			}
+			results := *respData
+
+			for _, item := range results {
+				select {
+				case items <- datadog.PaginationResult[SecurityFindingsData]{Item: item, Error: nil}:
+				case <-ctx.Done():
+					close(items)
+					return
+				}
+			}
+			if len(results) < int(pageSize_) {
+				break
+			}
+			cursorMeta, ok := resp.GetMetaOk()
+			if !ok {
+				break
+			}
+			cursorMetaPage, ok := cursorMeta.GetPageOk()
+			if !ok {
+				break
+			}
+			cursorMetaPageAfter, ok := cursorMetaPage.GetAfterOk()
+			if !ok {
+				break
+			}
+
+			o[0].PageCursor = cursorMetaPageAfter
+		}
+		close(items)
+	}()
+	return items, cancel
+}
+
+// ListSecurityMonitoringCriticalAssetsOptionalParameters holds optional parameters for ListSecurityMonitoringCriticalAssets.
+type ListSecurityMonitoringCriticalAssetsOptionalParameters struct {
+	Query *string
+}
+
+// NewListSecurityMonitoringCriticalAssetsOptionalParameters creates an empty struct for parameters.
+func NewListSecurityMonitoringCriticalAssetsOptionalParameters() *ListSecurityMonitoringCriticalAssetsOptionalParameters {
+	this := ListSecurityMonitoringCriticalAssetsOptionalParameters{}
+	return &this
+}
+
+// WithQuery sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityMonitoringCriticalAssetsOptionalParameters) WithQuery(query string) *ListSecurityMonitoringCriticalAssetsOptionalParameters {
+	r.Query = &query
+	return r
+}
+
+// ListSecurityMonitoringCriticalAssets Get all critical assets.
+// Get the list of all critical assets.
+func (a *SecurityMonitoringApi) ListSecurityMonitoringCriticalAssets(ctx _context.Context, o ...ListSecurityMonitoringCriticalAssetsOptionalParameters) (SecurityMonitoringCriticalAssetsResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodGet
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringCriticalAssetsResponse
+		optionalParams      ListSecurityMonitoringCriticalAssetsOptionalParameters
+	)
+
+	if len(o) > 1 {
+		return localVarReturnValue, nil, datadog.ReportError("only one argument of type ListSecurityMonitoringCriticalAssetsOptionalParameters is allowed")
+	}
+	if len(o) == 1 {
+		optionalParams = o[0]
+	}
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.ListSecurityMonitoringCriticalAssets")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	if optionalParams.Query != nil {
+		localVarQueryParams.Add("query", datadog.ParameterToString(*optionalParams.Query, ""))
+	}
+	localVarHeaderParams["Accept"] = "application/json"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
 // ListSecurityMonitoringHistsignalsOptionalParameters holds optional parameters for ListSecurityMonitoringHistsignals.
 type ListSecurityMonitoringHistsignalsOptionalParameters struct {
 	FilterQuery *string
@@ -5002,6 +5921,7 @@ func (a *SecurityMonitoringApi) ListSecurityMonitoringHistsignals(ctx _context.C
 type ListSecurityMonitoringRulesOptionalParameters struct {
 	PageSize   *int64
 	PageNumber *int64
+	Query      *string
 }
 
 // NewListSecurityMonitoringRulesOptionalParameters creates an empty struct for parameters.
@@ -5019,6 +5939,12 @@ func (r *ListSecurityMonitoringRulesOptionalParameters) WithPageSize(pageSize in
 // WithPageNumber sets the corresponding parameter name and returns the struct.
 func (r *ListSecurityMonitoringRulesOptionalParameters) WithPageNumber(pageNumber int64) *ListSecurityMonitoringRulesOptionalParameters {
 	r.PageNumber = &pageNumber
+	return r
+}
+
+// WithQuery sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityMonitoringRulesOptionalParameters) WithQuery(query string) *ListSecurityMonitoringRulesOptionalParameters {
+	r.Query = &query
 	return r
 }
 
@@ -5054,6 +5980,9 @@ func (a *SecurityMonitoringApi) ListSecurityMonitoringRules(ctx _context.Context
 	}
 	if optionalParams.PageNumber != nil {
 		localVarQueryParams.Add("page[number]", datadog.ParameterToString(*optionalParams.PageNumber, ""))
+	}
+	if optionalParams.Query != nil {
+		localVarQueryParams.Add("query", datadog.ParameterToString(*optionalParams.Query, ""))
 	}
 	localVarHeaderParams["Accept"] = "application/json"
 
@@ -5330,7 +6259,10 @@ func (a *SecurityMonitoringApi) ListSecurityMonitoringSignalsWithPagination(ctx 
 
 // ListSecurityMonitoringSuppressionsOptionalParameters holds optional parameters for ListSecurityMonitoringSuppressions.
 type ListSecurityMonitoringSuppressionsOptionalParameters struct {
-	Query *string
+	Query      *string
+	Sort       *SecurityMonitoringSuppressionSort
+	PageSize   *int64
+	PageNumber *int64
 }
 
 // NewListSecurityMonitoringSuppressionsOptionalParameters creates an empty struct for parameters.
@@ -5345,13 +6277,31 @@ func (r *ListSecurityMonitoringSuppressionsOptionalParameters) WithQuery(query s
 	return r
 }
 
+// WithSort sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityMonitoringSuppressionsOptionalParameters) WithSort(sort SecurityMonitoringSuppressionSort) *ListSecurityMonitoringSuppressionsOptionalParameters {
+	r.Sort = &sort
+	return r
+}
+
+// WithPageSize sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityMonitoringSuppressionsOptionalParameters) WithPageSize(pageSize int64) *ListSecurityMonitoringSuppressionsOptionalParameters {
+	r.PageSize = &pageSize
+	return r
+}
+
+// WithPageNumber sets the corresponding parameter name and returns the struct.
+func (r *ListSecurityMonitoringSuppressionsOptionalParameters) WithPageNumber(pageNumber int64) *ListSecurityMonitoringSuppressionsOptionalParameters {
+	r.PageNumber = &pageNumber
+	return r
+}
+
 // ListSecurityMonitoringSuppressions Get all suppression rules.
 // Get the list of all suppression rules.
-func (a *SecurityMonitoringApi) ListSecurityMonitoringSuppressions(ctx _context.Context, o ...ListSecurityMonitoringSuppressionsOptionalParameters) (SecurityMonitoringSuppressionsResponse, *_nethttp.Response, error) {
+func (a *SecurityMonitoringApi) ListSecurityMonitoringSuppressions(ctx _context.Context, o ...ListSecurityMonitoringSuppressionsOptionalParameters) (SecurityMonitoringPaginatedSuppressionsResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodGet
 		localVarPostBody    interface{}
-		localVarReturnValue SecurityMonitoringSuppressionsResponse
+		localVarReturnValue SecurityMonitoringPaginatedSuppressionsResponse
 		optionalParams      ListSecurityMonitoringSuppressionsOptionalParameters
 	)
 
@@ -5374,6 +6324,15 @@ func (a *SecurityMonitoringApi) ListSecurityMonitoringSuppressions(ctx _context.
 	localVarFormParams := _neturl.Values{}
 	if optionalParams.Query != nil {
 		localVarQueryParams.Add("query", datadog.ParameterToString(*optionalParams.Query, ""))
+	}
+	if optionalParams.Sort != nil {
+		localVarQueryParams.Add("sort", datadog.ParameterToString(*optionalParams.Sort, ""))
+	}
+	if optionalParams.PageSize != nil {
+		localVarQueryParams.Add("page[size]", datadog.ParameterToString(*optionalParams.PageSize, ""))
+	}
+	if optionalParams.PageNumber != nil {
+		localVarQueryParams.Add("page[number]", datadog.ParameterToString(*optionalParams.PageNumber, ""))
 	}
 	localVarHeaderParams["Accept"] = "application/json"
 
@@ -6864,6 +7823,158 @@ func (a *SecurityMonitoringApi) RunThreatHuntingJob(ctx _context.Context, body R
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+// SearchSecurityFindings Search security findings.
+// Get a list of security findings that match a search query. [See the schema for security findings](https://docs.datadoghq.com/security/guide/findings-schema/).
+//
+// ### Query Syntax
+//
+// The API uses the logs query syntax. Findings attributes (living in the attributes.attributes. namespace) are prefixed by @ when queried. Tags are queried without a prefix.
+//
+// Example: `@severity:(critical OR high) @status:open team:platform`
+func (a *SecurityMonitoringApi) SearchSecurityFindings(ctx _context.Context, body SecurityFindingsSearchRequest) (ListSecurityFindingsResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPost
+		localVarPostBody    interface{}
+		localVarReturnValue ListSecurityFindingsResponse
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.SearchSecurityFindings")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security/findings/search"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// SearchSecurityFindingsWithPagination provides a paginated version of SearchSecurityFindings returning a channel with all items.
+func (a *SecurityMonitoringApi) SearchSecurityFindingsWithPagination(ctx _context.Context, body SecurityFindingsSearchRequest) (<-chan datadog.PaginationResult[SecurityFindingsData], func()) {
+	ctx, cancel := _context.WithCancel(ctx)
+	pageSize_ := int64(10)
+	if body.Data == nil {
+		body.Data = NewSecurityFindingsSearchRequestData()
+	}
+	if body.Data.Attributes == nil {
+		body.Data.Attributes = NewSecurityFindingsSearchRequestDataAttributes()
+	}
+	if body.Data.Attributes.Page == nil {
+		body.Data.Attributes.Page = NewSecurityFindingsSearchRequestPage()
+	}
+	if body.Data.Attributes.Page.Limit == nil {
+		// int64
+		body.Data.Attributes.Page.Limit = &pageSize_
+	} else {
+		pageSize_ = *body.Data.Attributes.Page.Limit
+	}
+
+	items := make(chan datadog.PaginationResult[SecurityFindingsData], pageSize_)
+	go func() {
+		for {
+			resp, _, err := a.SearchSecurityFindings(ctx, body)
+			if err != nil {
+				var returnItem SecurityFindingsData
+				items <- datadog.PaginationResult[SecurityFindingsData]{Item: returnItem, Error: err}
+				break
+			}
+			respData, ok := resp.GetDataOk()
+			if !ok {
+				break
+			}
+			results := *respData
+
+			for _, item := range results {
+				select {
+				case items <- datadog.PaginationResult[SecurityFindingsData]{Item: item, Error: nil}:
+				case <-ctx.Done():
+					close(items)
+					return
+				}
+			}
+			if len(results) < int(pageSize_) {
+				break
+			}
+			cursorMeta, ok := resp.GetMetaOk()
+			if !ok {
+				break
+			}
+			cursorMetaPage, ok := cursorMeta.GetPageOk()
+			if !ok {
+				break
+			}
+			cursorMetaPageAfter, ok := cursorMetaPage.GetAfterOk()
+			if !ok {
+				break
+			}
+
+			body.Data.Attributes.Page.Cursor = cursorMetaPageAfter
+		}
+		close(items)
+	}()
+	return items, cancel
+}
+
 // SearchSecurityMonitoringHistsignalsOptionalParameters holds optional parameters for SearchSecurityMonitoringHistsignals.
 type SearchSecurityMonitoringHistsignalsOptionalParameters struct {
 	Body *SecurityMonitoringSignalListRequest
@@ -7493,6 +8604,87 @@ func (a *SecurityMonitoringApi) UpdateSecurityFilter(ctx _context.Context, secur
 
 	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/security_filters/{security_filter_id}"
 	localVarPath = datadog.ReplacePathParameter(localVarPath, "{security_filter_id}", _neturl.PathEscape(datadog.ParameterToString(securityFilterId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 409 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// UpdateSecurityMonitoringCriticalAsset Update a critical asset.
+// Update a specific critical asset.
+func (a *SecurityMonitoringApi) UpdateSecurityMonitoringCriticalAsset(ctx _context.Context, criticalAssetId string, body SecurityMonitoringCriticalAssetUpdateRequest) (SecurityMonitoringCriticalAssetResponse, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPatch
+		localVarPostBody    interface{}
+		localVarReturnValue SecurityMonitoringCriticalAssetResponse
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.SecurityMonitoringApi.UpdateSecurityMonitoringCriticalAsset")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/security_monitoring/configuration/critical_assets/{critical_asset_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{critical_asset_id}", _neturl.PathEscape(datadog.ParameterToString(criticalAssetId, "")))
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := _neturl.Values{}

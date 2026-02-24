@@ -11,11 +11,17 @@ import (
 )
 
 // ObservabilityPipelineElasticsearchDestination The `elasticsearch` destination writes logs to an Elasticsearch cluster.
+//
+// **Supported pipeline types:** logs
 type ObservabilityPipelineElasticsearchDestination struct {
 	// The Elasticsearch API version to use. Set to `auto` to auto-detect.
 	ApiVersion *ObservabilityPipelineElasticsearchDestinationApiVersion `json:"api_version,omitempty"`
+	// Configuration for buffer settings on destination components.
+	Buffer *ObservabilityPipelineBufferOptions `json:"buffer,omitempty"`
 	// The index to write logs to in Elasticsearch.
 	BulkIndex *string `json:"bulk_index,omitempty"`
+	// Configuration options for writing to Elasticsearch Data Streams instead of a fixed index.
+	DataStream *ObservabilityPipelineElasticsearchDestinationDataStream `json:"data_stream,omitempty"`
 	// The unique identifier for this component.
 	Id string `json:"id"`
 	// A list of component IDs whose output is used as the `input` for this component.
@@ -77,6 +83,34 @@ func (o *ObservabilityPipelineElasticsearchDestination) SetApiVersion(v Observab
 	o.ApiVersion = &v
 }
 
+// GetBuffer returns the Buffer field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetBuffer() ObservabilityPipelineBufferOptions {
+	if o == nil || o.Buffer == nil {
+		var ret ObservabilityPipelineBufferOptions
+		return ret
+	}
+	return *o.Buffer
+}
+
+// GetBufferOk returns a tuple with the Buffer field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetBufferOk() (*ObservabilityPipelineBufferOptions, bool) {
+	if o == nil || o.Buffer == nil {
+		return nil, false
+	}
+	return o.Buffer, true
+}
+
+// HasBuffer returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasBuffer() bool {
+	return o != nil && o.Buffer != nil
+}
+
+// SetBuffer gets a reference to the given ObservabilityPipelineBufferOptions and assigns it to the Buffer field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetBuffer(v ObservabilityPipelineBufferOptions) {
+	o.Buffer = &v
+}
+
 // GetBulkIndex returns the BulkIndex field value if set, zero value otherwise.
 func (o *ObservabilityPipelineElasticsearchDestination) GetBulkIndex() string {
 	if o == nil || o.BulkIndex == nil {
@@ -103,6 +137,34 @@ func (o *ObservabilityPipelineElasticsearchDestination) HasBulkIndex() bool {
 // SetBulkIndex gets a reference to the given string and assigns it to the BulkIndex field.
 func (o *ObservabilityPipelineElasticsearchDestination) SetBulkIndex(v string) {
 	o.BulkIndex = &v
+}
+
+// GetDataStream returns the DataStream field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetDataStream() ObservabilityPipelineElasticsearchDestinationDataStream {
+	if o == nil || o.DataStream == nil {
+		var ret ObservabilityPipelineElasticsearchDestinationDataStream
+		return ret
+	}
+	return *o.DataStream
+}
+
+// GetDataStreamOk returns a tuple with the DataStream field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetDataStreamOk() (*ObservabilityPipelineElasticsearchDestinationDataStream, bool) {
+	if o == nil || o.DataStream == nil {
+		return nil, false
+	}
+	return o.DataStream, true
+}
+
+// HasDataStream returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasDataStream() bool {
+	return o != nil && o.DataStream != nil
+}
+
+// SetDataStream gets a reference to the given ObservabilityPipelineElasticsearchDestinationDataStream and assigns it to the DataStream field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetDataStream(v ObservabilityPipelineElasticsearchDestinationDataStream) {
+	o.DataStream = &v
 }
 
 // GetId returns the Id field value.
@@ -183,8 +245,14 @@ func (o ObservabilityPipelineElasticsearchDestination) MarshalJSON() ([]byte, er
 	if o.ApiVersion != nil {
 		toSerialize["api_version"] = o.ApiVersion
 	}
+	if o.Buffer != nil {
+		toSerialize["buffer"] = o.Buffer
+	}
 	if o.BulkIndex != nil {
 		toSerialize["bulk_index"] = o.BulkIndex
+	}
+	if o.DataStream != nil {
+		toSerialize["data_stream"] = o.DataStream
 	}
 	toSerialize["id"] = o.Id
 	toSerialize["inputs"] = o.Inputs
@@ -200,7 +268,9 @@ func (o ObservabilityPipelineElasticsearchDestination) MarshalJSON() ([]byte, er
 func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []byte) (err error) {
 	all := struct {
 		ApiVersion *ObservabilityPipelineElasticsearchDestinationApiVersion `json:"api_version,omitempty"`
+		Buffer     *ObservabilityPipelineBufferOptions                      `json:"buffer,omitempty"`
 		BulkIndex  *string                                                  `json:"bulk_index,omitempty"`
+		DataStream *ObservabilityPipelineElasticsearchDestinationDataStream `json:"data_stream,omitempty"`
 		Id         *string                                                  `json:"id"`
 		Inputs     *[]string                                                `json:"inputs"`
 		Type       *ObservabilityPipelineElasticsearchDestinationType       `json:"type"`
@@ -219,7 +289,7 @@ func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []by
 	}
 	additionalProperties := make(map[string]interface{})
 	if err = datadog.Unmarshal(bytes, &additionalProperties); err == nil {
-		datadog.DeleteKeys(additionalProperties, &[]string{"api_version", "bulk_index", "id", "inputs", "type"})
+		datadog.DeleteKeys(additionalProperties, &[]string{"api_version", "buffer", "bulk_index", "data_stream", "id", "inputs", "type"})
 	} else {
 		return err
 	}
@@ -230,7 +300,12 @@ func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []by
 	} else {
 		o.ApiVersion = all.ApiVersion
 	}
+	o.Buffer = all.Buffer
 	o.BulkIndex = all.BulkIndex
+	if all.DataStream != nil && all.DataStream.UnparsedObject != nil && o.UnparsedObject == nil {
+		hasInvalidField = true
+	}
+	o.DataStream = all.DataStream
 	o.Id = *all.Id
 	o.Inputs = *all.Inputs
 	if !all.Type.IsValid() {
