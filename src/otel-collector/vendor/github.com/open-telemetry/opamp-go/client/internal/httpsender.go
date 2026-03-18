@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/open-telemetry/opamp-go/client/internal/utils"
@@ -61,7 +62,7 @@ type HTTPSender struct {
 	logger             types.Logger
 	client             *http.Client
 	callbacks          types.Callbacks
-	pollingIntervalMs  int64
+	pollingIntervalMs  atomic.Int64
 	compressionEnabled bool
 
 	// Headers to send with all requests.
@@ -75,11 +76,11 @@ type HTTPSender struct {
 // with default settings.
 func NewHTTPSender(logger types.Logger) *HTTPSender {
 	h := &HTTPSender{
-		SenderCommon:      NewSenderCommon(),
-		logger:            logger,
-		client:            utils.NewHttpClient(),
-		pollingIntervalMs: defaultPollingIntervalMs,
+		SenderCommon: NewSenderCommon(),
+		logger:       logger,
+		client:       utils.NewHttpClient(),
 	}
+	h.pollingIntervalMs.Store(defaultPollingIntervalMs)
 	// initialize the headers with no additional headers
 	h.SetRequestHeader(nil, nil)
 	return h
@@ -142,7 +143,7 @@ func (h *HTTPSender) Run(
 	}
 
 	for {
-		pollingTimer := time.NewTimer(time.Millisecond * time.Duration(atomic.LoadInt64(&h.pollingIntervalMs)))
+		pollingTimer := time.NewTimer(time.Millisecond * time.Duration(h.pollingIntervalMs.Load()))
 		select {
 		case <-h.hasPendingMessage:
 			// Have something to send. Stop the polling timer and send what we have.
@@ -202,6 +203,14 @@ func (h *HTTPSender) makeOneRequestRoundtrip(ctx context.Context) {
 	h.receiveResponse(ctx, resp)
 }
 
+// requestResult represents the outcome of a single HTTP request attempt.
+type requestResult struct {
+	resp     *http.Response
+	err      error
+	retry    bool
+	interval time.Duration
+}
+
 func (h *HTTPSender) sendRequestWithRetries(ctx context.Context) (*http.Response, error) {
 	req, err := h.prepareRequest(ctx)
 	if err != nil {
@@ -230,35 +239,67 @@ func (h *HTTPSender) sendRequestWithRetries(ctx context.Context) (*http.Response
 
 		select {
 		case <-timer.C:
-			{
-				req.rewind(ctx)
-				resp, err := h.client.Do(req.Request)
-				if err == nil {
-					switch resp.StatusCode {
-					case http.StatusOK:
-						// We consider it connected if we receive 200 status from the Server.
-						h.callbacks.OnConnect(ctx)
-						return resp, nil
+			result := h.attemptRequest(ctx, req, interval)
 
-					case http.StatusTooManyRequests, http.StatusServiceUnavailable:
-						interval = recalculateInterval(interval, resp)
-						err = fmt.Errorf("server response code=%d", resp.StatusCode)
-
-					default:
-						return nil, fmt.Errorf("invalid response from server: %d", resp.StatusCode)
-					}
-				} else if errors.Is(err, context.Canceled) {
-					h.logger.Debugf(ctx, "Client is stopped, will not try anymore.")
-					return nil, err
-				}
-
-				h.logger.Errorf(ctx, "Failed to do HTTP request (%v), will retry", err)
-				h.callbacks.OnConnectFailed(ctx, err)
+			if !result.retry {
+				return result.resp, result.err
 			}
+
+			// Update interval if retry was requested with a specific interval.
+			if result.interval > 0 {
+				interval = result.interval
+			}
+
+			// Log and notify about the retryable failure.
+			h.logger.Errorf(ctx, "Failed to do HTTP request (%v), will retry", result.err)
+			h.callbacks.OnConnectFailed(ctx, result.err)
 
 		case <-ctx.Done():
 			h.logger.Debugf(ctx, "Client is stopped, will not try anymore.")
 			return nil, ctx.Err()
+		}
+	}
+}
+
+// attemptRequest performs a single HTTP request attempt and returns a result indicating
+// whether to retry or return.
+func (h *HTTPSender) attemptRequest(ctx context.Context, req *requestWrapper, currentInterval time.Duration) requestResult {
+	req.rewind(ctx)
+
+	resp, err := h.client.Do(req.Request)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			h.logger.Debugf(ctx, "Client is stopped, will not try anymore.")
+			return requestResult{resp: nil, err: err, retry: false}
+		}
+		// other errors are retryable.
+		return requestResult{resp: nil, err: err, retry: true}
+	}
+
+	// Handle HTTP response status codes.
+	switch resp.StatusCode {
+	case http.StatusOK:
+		h.callbacks.OnConnect(ctx)
+		return requestResult{resp: resp, err: nil, retry: false}
+
+	case http.StatusTooManyRequests, http.StatusServiceUnavailable:
+		retryInterval := recalculateInterval(currentInterval, resp)
+		_, _ = io.Copy(io.Discard, resp.Body) // to allow connection reuse.
+		_ = resp.Body.Close()
+		return requestResult{
+			resp:     nil,
+			err:      fmt.Errorf("server response code=%d", resp.StatusCode),
+			retry:    true,
+			interval: retryInterval,
+		}
+
+	default:
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
+		return requestResult{
+			resp:  nil,
+			err:   fmt.Errorf("invalid response from server: %d", resp.StatusCode),
+			retry: false,
 		}
 	}
 }
@@ -308,11 +349,17 @@ func (h *HTTPSender) prepareRequest(ctx context.Context) (*requestWrapper, error
 	} else {
 		req.bodyReader = bodyReader(data)
 	}
-	if err != nil {
-		return nil, err
-	}
 
 	req.Header = h.getHeader()
+
+	if msgToSend.InstanceUid != nil {
+		uid, err := uuid.FromBytes(msgToSend.InstanceUid)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set(headerOpAMPInstanceUID, uid.String())
+	}
+
 	return &req, nil
 }
 
@@ -349,7 +396,7 @@ func (h *HTTPSender) SetHeartbeatInterval(duration time.Duration) error {
 // SetPollingInterval sets the interval between polling. Has effect starting from the
 // next polling cycle.
 func (h *HTTPSender) SetPollingInterval(duration time.Duration) {
-	atomic.StoreInt64(&h.pollingIntervalMs, duration.Milliseconds())
+	h.pollingIntervalMs.Store(duration.Milliseconds())
 }
 
 // EnableCompression enables compression for the sender.
@@ -360,8 +407,13 @@ func (h *HTTPSender) EnableCompression() {
 
 func (h *HTTPSender) AddTLSConfig(config *tls.Config) {
 	if config != nil {
-		h.client.Transport = &http.Transport{
-			TLSClientConfig: config,
+		tlsTransport := &http.Transport{}
+		if h.client.Transport != nil {
+			if transport, ok := h.client.Transport.(*http.Transport); ok {
+				tlsTransport = transport.Clone()
+			}
 		}
+		tlsTransport.TLSClientConfig = config
+		h.client.Transport = tlsTransport
 	}
 }
