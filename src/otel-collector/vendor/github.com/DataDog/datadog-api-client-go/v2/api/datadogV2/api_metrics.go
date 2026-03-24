@@ -826,16 +826,17 @@ func (a *MetricsApi) ListTagConfigurationByName(ctx _context.Context, metricName
 
 // ListTagConfigurationsOptionalParameters holds optional parameters for ListTagConfigurations.
 type ListTagConfigurationsOptionalParameters struct {
-	FilterConfigured         *bool
-	FilterTagsConfigured     *string
-	FilterMetricType         *MetricTagConfigurationMetricTypeCategory
-	FilterIncludePercentiles *bool
-	FilterQueried            *bool
-	FilterTags               *string
-	FilterRelatedAssets      *bool
-	WindowSeconds            *int64
-	PageSize                 *int32
-	PageCursor               *string
+	FilterConfigured           *bool
+	FilterTagsConfigured       *string
+	FilterMetricType           *MetricTagConfigurationMetricTypeCategory
+	FilterIncludePercentiles   *bool
+	FilterQueried              *bool
+	FilterQueriedWindowSeconds *int64
+	FilterTags                 *string
+	FilterRelatedAssets        *bool
+	WindowSeconds              *int64
+	PageSize                   *int32
+	PageCursor                 *string
 }
 
 // NewListTagConfigurationsOptionalParameters creates an empty struct for parameters.
@@ -874,6 +875,12 @@ func (r *ListTagConfigurationsOptionalParameters) WithFilterQueried(filterQuerie
 	return r
 }
 
+// WithFilterQueriedWindowSeconds sets the corresponding parameter name and returns the struct.
+func (r *ListTagConfigurationsOptionalParameters) WithFilterQueriedWindowSeconds(filterQueriedWindowSeconds int64) *ListTagConfigurationsOptionalParameters {
+	r.FilterQueriedWindowSeconds = &filterQueriedWindowSeconds
+	return r
+}
+
 // WithFilterTags sets the corresponding parameter name and returns the struct.
 func (r *ListTagConfigurationsOptionalParameters) WithFilterTags(filterTags string) *ListTagConfigurationsOptionalParameters {
 	r.FilterTags = &filterTags
@@ -905,7 +912,7 @@ func (r *ListTagConfigurationsOptionalParameters) WithPageCursor(pageCursor stri
 }
 
 // ListTagConfigurations Get a list of metrics.
-// Returns all metrics that can be configured in the Metrics Summary page or with Metrics without Limits™ (matching additional filters if specified).
+// Returns all metrics for your organization that match the given filter parameters.
 // Optionally, paginate by using the `page[cursor]` and/or `page[size]` query parameters.
 // To fetch the first page, pass in a query parameter with either a valid `page[size]` or an empty cursor like `page[cursor]=`. To fetch the next page, pass in the `next_cursor` value from the response as the new `page[cursor]` value.
 // Once the `meta.pagination.next_cursor` value is null, all pages have been retrieved.
@@ -948,6 +955,9 @@ func (a *MetricsApi) ListTagConfigurations(ctx _context.Context, o ...ListTagCon
 	}
 	if optionalParams.FilterQueried != nil {
 		localVarQueryParams.Add("filter[queried]", datadog.ParameterToString(*optionalParams.FilterQueried, ""))
+	}
+	if optionalParams.FilterQueriedWindowSeconds != nil {
+		localVarQueryParams.Add("filter[queried][window][seconds]", datadog.ParameterToString(*optionalParams.FilterQueriedWindowSeconds, ""))
 	}
 	if optionalParams.FilterTags != nil {
 		localVarQueryParams.Add("filter[tags]", datadog.ParameterToString(*optionalParams.FilterTags, ""))
