@@ -1,1 +1,8 @@
---- {}
+golang-1.26-linux/f1678e1905765af79ad2c9baf765d8a8771a319b3ff226fed1f534f50255dbd4:
+  size: 66791587
+  object_id: 239356ad-2eab-40f5-736f-298fc9393c3a
+  sha: sha256:031f088e5d955bab8657ede27ad4e3bc5b7c1ba281f05f245bcc304f327c987a
+golang-1.26-windows/987bbe90caed5adcc65e1faa63247af1dfa6ba4782e7ac5bcfebb76a2b801f37:
+  size: 74832998
+  object_id: 20f83818-fb05-4e13-56b9-f7a9ec1ba149
+  sha: sha256:9b68112c913f45b7aebbf13c036721264bbba7e03a642f8f7490c561eebd1ecc
