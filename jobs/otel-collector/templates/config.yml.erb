@@ -125,6 +125,21 @@ def set_internal_receiver_as_only_receiver
   }
 end
 
+def set_exporter_tls_certificates
+  if_p("exporter.grpc.tls.ca_cert", "exporter.grpc.tls.cert", "exporter.grpc.tls.key") do
+    config.fetch('exporters', {}).each do |name, exporter_cfg|
+      exporter_type = name.split('/')[0]
+      next unless %w[otlp_grpc].include?(exporter_type)
+      next unless exporter_cfg.is_a?(Hash)
+
+      exporter_cfg['tls'] ||= {}
+      exporter_cfg['tls']['ca_file'] ||= '/var/vcap/jobs/otel-collector/config/certs/otel-collector-exporter-ca.crt'
+      exporter_cfg['tls']['cert_file'] ||= '/var/vcap/jobs/otel-collector/config/certs/otel-collector-exporter.crt'
+      exporter_cfg['tls']['key_file'] ||= '/var/vcap/jobs/otel-collector/config/certs/otel-collector-exporter.key'
+    end
+  end
+end
+
 def set_internal_receiver_on_all_pipelines
   config['service']['pipelines'].each_value do |pipeline|
     pipeline['receivers'] = ['otlp/cf-internal-local']
@@ -208,6 +223,7 @@ if_p('allow_list.extensions') do |prop|
   check_for_use_of_allowed_components!('extensions', included_extensions, prop)
 end
 set_internal_receiver_as_only_receiver
+set_exporter_tls_certificates
 add_nop_pipelines
 set_internal_receiver_on_all_pipelines
 expose_internal_telemetry

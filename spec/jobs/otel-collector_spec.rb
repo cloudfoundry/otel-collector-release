@@ -12,6 +12,95 @@ describe 'otel-collector' do
 
   it_behaves_like 'common config.yml'
 
+  describe 'config/config.yml' do
+    let(:template) { job.template('config/config.yml') }
+
+    context('when no TLS properties are provided for the grpc exporter') do
+      let(:properties) do
+        {
+          'config' => {
+            'exporters' => {
+              'otlp_grpc' => { 'endpoint' => 'otelcol:4317' },
+            },
+            'service' => {
+              'pipelines' => {
+                'metrics' => {
+                  'exporters' => ['otlp_grpc']
+                }
+              }
+            }
+          },
+        }
+      end
+      let(:rendered) { YAML.safe_load(template.render(properties)) }
+
+      it 'renders the otlp grpc endpoint without tls certificates' do
+        expect(rendered['exporters']['otlp_grpc']['endpoint']).to eq('otelcol:4317')
+        expect(rendered.dig('exporters', 'otlp_grpc', 'tls', 'ca_file')).to be_nil
+        expect(rendered.dig('exporters', 'otlp_grpc', 'tls', 'cert_file')).to be_nil
+        expect(rendered.dig('exporters', 'otlp_grpc', 'tls', 'key_file')).to be_nil
+      end
+    end
+
+    context('when TLS properties are provided for the grpc exporter') do
+      let(:properties) do
+        {
+          'config' => {
+            'exporters' => {
+              'otlp_grpc' => { 'endpoint' => 'otelcol:4317' },
+            },
+            'service' => {
+              'pipelines' => {
+                'metrics' => {
+                  'exporters' => ['otlp_grpc']
+                }
+              }
+            }
+          },
+          'exporter' => {
+            'grpc' => {
+              'tls' => {
+                'ca_cert' => 'dummy-ca',
+                'cert' => 'dummy-public-cert',
+                'key' => 'dummy-private-key',
+              }
+            }
+          }
+        }
+      end
+      let(:rendered) { YAML.safe_load(template.render(properties)) }
+
+      it 'adds tls file paths to the otlp_grpc exporter' do
+        expect(rendered['exporters']['otlp_grpc']['endpoint']).to eq('otelcol:4317')
+        expect(rendered['exporters']['otlp_grpc']['tls']).to eq(
+                                                               'ca_file' => "#{config_path}/certs/otel-collector-exporter-ca.crt",
+                                                               'cert_file' => "#{config_path}/certs/otel-collector-exporter.crt",
+                                                               'key_file' => "#{config_path}/certs/otel-collector-exporter.key"
+                                                             )
+      end
+
+      context('when exporter tls settings already exist in the config') do
+        before do
+          properties['config']['exporters']['otlp_grpc']['tls'] = {
+            'ca_file' => '/custom/ca.crt',
+            'cert_file' => '/custom/cert.crt',
+            'key_file' => '/custom/key.key',
+            'insecure' => false,
+          }
+        end
+
+        it 'preserves existing tls settings' do
+          expect(rendered['exporters']['otlp_grpc']['tls']).to eq(
+            'ca_file' => '/custom/ca.crt',
+            'cert_file' => '/custom/cert.crt',
+            'key_file' => '/custom/key.key',
+            'insecure' => false,
+          )
+        end
+      end
+    end
+  end
+
   describe 'config/bpm.yml' do
     let(:template) { job.template('config/bpm.yml') }
     let(:properties) { { 'limits' => { 'memory_mib' => '512', 'cpu' => '1' } } }
