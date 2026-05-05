@@ -8,6 +8,7 @@ import (
 	_context "context"
 	_nethttp "net/http"
 	_neturl "net/url"
+	"reflect"
 
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 )
@@ -264,11 +265,11 @@ func (a *CloudCostManagementApi) CreateCostGCPUsageCostConfig(ctx _context.Conte
 // - **PERCENT**: Allocates fixed percentages to specific tags. Requires: allocated_by (array of percentage allocations).
 //
 // **Filter Conditions:**
-// - Use **value** for single-value conditions: "is", "is not", "contains", "does not contain", "=", "!=", "like", "not like", "is all values", "is untagged"
+// - Use **value** for single-value conditions: "is", "is not", "contains", "=", "!=", "like", "not like"
 // - Use **values** for multi-value conditions: "in", "not in"
 // - Cannot use both value and values simultaneously.
 //
-// **Supported operators**: is, is not, is all values, is untagged, contains, does not contain, in, not in, =, !=, like, not like
+// **Supported operators**: is, is not, contains, in, not in, =, !=, like, not like
 func (a *CloudCostManagementApi) CreateCustomAllocationRule(ctx _context.Context, body ArbitraryCostUpsertRequest) (ArbitraryRuleResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPost
@@ -1836,10 +1837,12 @@ func (a *CloudCostManagementApi) ListCustomAllocationRules(ctx _context.Context)
 
 // ListCustomCostsFilesOptionalParameters holds optional parameters for ListCustomCostsFiles.
 type ListCustomCostsFilesOptionalParameters struct {
-	PageNumber   *int64
-	PageSize     *int64
-	FilterStatus *string
-	Sort         *string
+	PageNumber     *int64
+	PageSize       *int64
+	FilterStatus   *string
+	FilterName     *string
+	FilterProvider *[]string
+	Sort           *string
 }
 
 // NewListCustomCostsFilesOptionalParameters creates an empty struct for parameters.
@@ -1863,6 +1866,18 @@ func (r *ListCustomCostsFilesOptionalParameters) WithPageSize(pageSize int64) *L
 // WithFilterStatus sets the corresponding parameter name and returns the struct.
 func (r *ListCustomCostsFilesOptionalParameters) WithFilterStatus(filterStatus string) *ListCustomCostsFilesOptionalParameters {
 	r.FilterStatus = &filterStatus
+	return r
+}
+
+// WithFilterName sets the corresponding parameter name and returns the struct.
+func (r *ListCustomCostsFilesOptionalParameters) WithFilterName(filterName string) *ListCustomCostsFilesOptionalParameters {
+	r.FilterName = &filterName
+	return r
+}
+
+// WithFilterProvider sets the corresponding parameter name and returns the struct.
+func (r *ListCustomCostsFilesOptionalParameters) WithFilterProvider(filterProvider []string) *ListCustomCostsFilesOptionalParameters {
+	r.FilterProvider = &filterProvider
 	return r
 }
 
@@ -1907,6 +1922,20 @@ func (a *CloudCostManagementApi) ListCustomCostsFiles(ctx _context.Context, o ..
 	}
 	if optionalParams.FilterStatus != nil {
 		localVarQueryParams.Add("filter[status]", datadog.ParameterToString(*optionalParams.FilterStatus, ""))
+	}
+	if optionalParams.FilterName != nil {
+		localVarQueryParams.Add("filter[name]", datadog.ParameterToString(*optionalParams.FilterName, ""))
+	}
+	if optionalParams.FilterProvider != nil {
+		t := *optionalParams.FilterProvider
+		if reflect.TypeOf(t).Kind() == reflect.Slice {
+			s := reflect.ValueOf(t)
+			for i := 0; i < s.Len(); i++ {
+				localVarQueryParams.Add("filter[provider]", datadog.ParameterToString(s.Index(i), "multi"))
+			}
+		} else {
+			localVarQueryParams.Add("filter[provider]", datadog.ParameterToString(t, "multi"))
+		}
 	}
 	if optionalParams.Sort != nil {
 		localVarQueryParams.Add("sort", datadog.ParameterToString(*optionalParams.Sort, ""))
@@ -2445,11 +2474,11 @@ func (a *CloudCostManagementApi) UpdateCostGCPUsageCostConfig(ctx _context.Conte
 // - **USAGE_METRIC**: Allocates based on usage metrics (implementation varies).
 //
 // **Filter Conditions:**
-// - Use **value** for single-value conditions: "is", "is not", "contains", "does not contain", "=", "!=", "like", "not like", "is all values", "is untagged"
+// - Use **value** for single-value conditions: "is", "is not", "contains", "=", "!=", "like", "not like"
 // - Use **values** for multi-value conditions: "in", "not in"
 // - Cannot use both value and values simultaneously.
 //
-// **Supported operators**: is, is not, is all values, is untagged, contains, does not contain, in, not in, =, !=, like, not like
+// **Supported operators**: is, is not, contains, in, not in, =, !=, like, not like
 func (a *CloudCostManagementApi) UpdateCustomAllocationRule(ctx _context.Context, ruleId int64, body ArbitraryCostUpsertRequest) (ArbitraryRuleResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPatch
