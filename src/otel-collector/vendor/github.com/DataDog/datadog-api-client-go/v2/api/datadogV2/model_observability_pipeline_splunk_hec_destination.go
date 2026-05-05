@@ -27,12 +27,16 @@ type ObservabilityPipelineSplunkHecDestination struct {
 	Id string `json:"id"`
 	// Optional name of the Splunk index where logs are written.
 	Index *string `json:"index,omitempty"`
+	// List of log field names to send as indexed fields to Splunk HEC. Available only when `encoding` is `json`.
+	IndexedFields []string `json:"indexed_fields,omitempty"`
 	// A list of component IDs whose output is used as the `input` for this component.
 	Inputs []string `json:"inputs"`
 	// The Splunk sourcetype to assign to log events.
 	Sourcetype *string `json:"sourcetype,omitempty"`
 	// Name of the environment variable or secret that holds the Splunk HEC token.
 	TokenKey *string `json:"token_key,omitempty"`
+	// Controls how the Splunk HEC token is supplied. Use `custom` to provide a token with `token_key`, or `from_source` to forward the token received from an upstream Splunk HEC source.
+	TokenStrategy *ObservabilityPipelineSplunkHecDestinationTokenStrategy `json:"token_strategy,omitempty"`
 	// The destination type. Always `splunk_hec`.
 	Type ObservabilityPipelineSplunkHecDestinationType `json:"type"`
 	// UnparsedObject contains the raw value of the object if there was an error when deserializing into the struct
@@ -225,6 +229,34 @@ func (o *ObservabilityPipelineSplunkHecDestination) SetIndex(v string) {
 	o.Index = &v
 }
 
+// GetIndexedFields returns the IndexedFields field value if set, zero value otherwise.
+func (o *ObservabilityPipelineSplunkHecDestination) GetIndexedFields() []string {
+	if o == nil || o.IndexedFields == nil {
+		var ret []string
+		return ret
+	}
+	return o.IndexedFields
+}
+
+// GetIndexedFieldsOk returns a tuple with the IndexedFields field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineSplunkHecDestination) GetIndexedFieldsOk() (*[]string, bool) {
+	if o == nil || o.IndexedFields == nil {
+		return nil, false
+	}
+	return &o.IndexedFields, true
+}
+
+// HasIndexedFields returns a boolean if a field has been set.
+func (o *ObservabilityPipelineSplunkHecDestination) HasIndexedFields() bool {
+	return o != nil && o.IndexedFields != nil
+}
+
+// SetIndexedFields gets a reference to the given []string and assigns it to the IndexedFields field.
+func (o *ObservabilityPipelineSplunkHecDestination) SetIndexedFields(v []string) {
+	o.IndexedFields = v
+}
+
 // GetInputs returns the Inputs field value.
 func (o *ObservabilityPipelineSplunkHecDestination) GetInputs() []string {
 	if o == nil {
@@ -304,6 +336,34 @@ func (o *ObservabilityPipelineSplunkHecDestination) SetTokenKey(v string) {
 	o.TokenKey = &v
 }
 
+// GetTokenStrategy returns the TokenStrategy field value if set, zero value otherwise.
+func (o *ObservabilityPipelineSplunkHecDestination) GetTokenStrategy() ObservabilityPipelineSplunkHecDestinationTokenStrategy {
+	if o == nil || o.TokenStrategy == nil {
+		var ret ObservabilityPipelineSplunkHecDestinationTokenStrategy
+		return ret
+	}
+	return *o.TokenStrategy
+}
+
+// GetTokenStrategyOk returns a tuple with the TokenStrategy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineSplunkHecDestination) GetTokenStrategyOk() (*ObservabilityPipelineSplunkHecDestinationTokenStrategy, bool) {
+	if o == nil || o.TokenStrategy == nil {
+		return nil, false
+	}
+	return o.TokenStrategy, true
+}
+
+// HasTokenStrategy returns a boolean if a field has been set.
+func (o *ObservabilityPipelineSplunkHecDestination) HasTokenStrategy() bool {
+	return o != nil && o.TokenStrategy != nil
+}
+
+// SetTokenStrategy gets a reference to the given ObservabilityPipelineSplunkHecDestinationTokenStrategy and assigns it to the TokenStrategy field.
+func (o *ObservabilityPipelineSplunkHecDestination) SetTokenStrategy(v ObservabilityPipelineSplunkHecDestinationTokenStrategy) {
+	o.TokenStrategy = &v
+}
+
 // GetType returns the Type field value.
 func (o *ObservabilityPipelineSplunkHecDestination) GetType() ObservabilityPipelineSplunkHecDestinationType {
 	if o == nil {
@@ -349,12 +409,18 @@ func (o ObservabilityPipelineSplunkHecDestination) MarshalJSON() ([]byte, error)
 	if o.Index != nil {
 		toSerialize["index"] = o.Index
 	}
+	if o.IndexedFields != nil {
+		toSerialize["indexed_fields"] = o.IndexedFields
+	}
 	toSerialize["inputs"] = o.Inputs
 	if o.Sourcetype != nil {
 		toSerialize["sourcetype"] = o.Sourcetype
 	}
 	if o.TokenKey != nil {
 		toSerialize["token_key"] = o.TokenKey
+	}
+	if o.TokenStrategy != nil {
+		toSerialize["token_strategy"] = o.TokenStrategy
 	}
 	toSerialize["type"] = o.Type
 
@@ -367,16 +433,18 @@ func (o ObservabilityPipelineSplunkHecDestination) MarshalJSON() ([]byte, error)
 // UnmarshalJSON deserializes the given payload.
 func (o *ObservabilityPipelineSplunkHecDestination) UnmarshalJSON(bytes []byte) (err error) {
 	all := struct {
-		AutoExtractTimestamp *bool                                              `json:"auto_extract_timestamp,omitempty"`
-		Buffer               *ObservabilityPipelineBufferOptions                `json:"buffer,omitempty"`
-		Encoding             *ObservabilityPipelineSplunkHecDestinationEncoding `json:"encoding,omitempty"`
-		EndpointUrlKey       *string                                            `json:"endpoint_url_key,omitempty"`
-		Id                   *string                                            `json:"id"`
-		Index                *string                                            `json:"index,omitempty"`
-		Inputs               *[]string                                          `json:"inputs"`
-		Sourcetype           *string                                            `json:"sourcetype,omitempty"`
-		TokenKey             *string                                            `json:"token_key,omitempty"`
-		Type                 *ObservabilityPipelineSplunkHecDestinationType     `json:"type"`
+		AutoExtractTimestamp *bool                                                   `json:"auto_extract_timestamp,omitempty"`
+		Buffer               *ObservabilityPipelineBufferOptions                     `json:"buffer,omitempty"`
+		Encoding             *ObservabilityPipelineSplunkHecDestinationEncoding      `json:"encoding,omitempty"`
+		EndpointUrlKey       *string                                                 `json:"endpoint_url_key,omitempty"`
+		Id                   *string                                                 `json:"id"`
+		Index                *string                                                 `json:"index,omitempty"`
+		IndexedFields        []string                                                `json:"indexed_fields,omitempty"`
+		Inputs               *[]string                                               `json:"inputs"`
+		Sourcetype           *string                                                 `json:"sourcetype,omitempty"`
+		TokenKey             *string                                                 `json:"token_key,omitempty"`
+		TokenStrategy        *ObservabilityPipelineSplunkHecDestinationTokenStrategy `json:"token_strategy,omitempty"`
+		Type                 *ObservabilityPipelineSplunkHecDestinationType          `json:"type"`
 	}{}
 	if err = datadog.Unmarshal(bytes, &all); err != nil {
 		return datadog.Unmarshal(bytes, &o.UnparsedObject)
@@ -392,7 +460,7 @@ func (o *ObservabilityPipelineSplunkHecDestination) UnmarshalJSON(bytes []byte) 
 	}
 	additionalProperties := make(map[string]interface{})
 	if err = datadog.Unmarshal(bytes, &additionalProperties); err == nil {
-		datadog.DeleteKeys(additionalProperties, &[]string{"auto_extract_timestamp", "buffer", "encoding", "endpoint_url_key", "id", "index", "inputs", "sourcetype", "token_key", "type"})
+		datadog.DeleteKeys(additionalProperties, &[]string{"auto_extract_timestamp", "buffer", "encoding", "endpoint_url_key", "id", "index", "indexed_fields", "inputs", "sourcetype", "token_key", "token_strategy", "type"})
 	} else {
 		return err
 	}
@@ -408,9 +476,15 @@ func (o *ObservabilityPipelineSplunkHecDestination) UnmarshalJSON(bytes []byte) 
 	o.EndpointUrlKey = all.EndpointUrlKey
 	o.Id = *all.Id
 	o.Index = all.Index
+	o.IndexedFields = all.IndexedFields
 	o.Inputs = *all.Inputs
 	o.Sourcetype = all.Sourcetype
 	o.TokenKey = all.TokenKey
+	if all.TokenStrategy != nil && !all.TokenStrategy.IsValid() {
+		hasInvalidField = true
+	} else {
+		o.TokenStrategy = all.TokenStrategy
+	}
 	if !all.Type.IsValid() {
 		hasInvalidField = true
 	} else {
