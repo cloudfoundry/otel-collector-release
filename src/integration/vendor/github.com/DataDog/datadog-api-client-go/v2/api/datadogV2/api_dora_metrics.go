@@ -22,6 +22,7 @@ type DORAMetricsApi datadog.Service
 // - Deployment Frequency
 // - Change Lead Time
 // - Change Failure Rate
+// - Failed Deployment Recovery Time
 func (a *DORAMetricsApi) CreateDORADeployment(ctx _context.Context, body DORADeploymentRequest) (DORADeploymentResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPost
@@ -102,12 +103,10 @@ func (a *DORAMetricsApi) CreateDORADeployment(ctx _context.Context, body DORADep
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// CreateDORAFailure Send a failure event.
-// Use this API endpoint to provide failure data.
-//
-// This is necessary for:
-// - Change Failure Rate
-// - Time to Restore
+// CreateDORAFailure Send an incident event.
+// Use this API endpoint to provide incident data for DORA Metrics.
+// Note that change failure rate and failed deployment recovery time are computed from change failures detected on deployments, not from incident events sent through this endpoint.
+// Tracking incidents gives a side-by-side view of how failed deployments translate into real-world incidents, including their severity and frequency.
 func (a *DORAMetricsApi) CreateDORAFailure(ctx _context.Context, body DORAFailureRequest) (DORAFailureResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPost
@@ -188,14 +187,11 @@ func (a *DORAMetricsApi) CreateDORAFailure(ctx _context.Context, body DORAFailur
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// CreateDORAIncident Send an incident event.
+// CreateDORAIncident Send an incident event (legacy).
 // **Note**: This endpoint is deprecated. Please use `/api/v2/dora/failure` instead.
 //
-// Use this API endpoint to provide failure data.
-//
-// This is necessary for:
-// - Change Failure Rate
-// - Time to Restore
+// Use this API endpoint to provide incident data.
+// Tracking incidents gives a side-by-side view of how failed deployments translate into real-world incidents.
 //
 // Deprecated: This API is deprecated.
 func (a *DORAMetricsApi) CreateDORAIncident(ctx _context.Context, body DORAFailureRequest) (DORAFailureResponse, *_nethttp.Response, error) {
@@ -355,8 +351,8 @@ func (a *DORAMetricsApi) DeleteDORADeployment(ctx _context.Context, deploymentId
 	return localVarHTTPResponse, nil
 }
 
-// DeleteDORAFailure Delete a failure event.
-// Use this API endpoint to delete a failure event.
+// DeleteDORAFailure Delete an incident event.
+// Use this API endpoint to delete an incident event.
 func (a *DORAMetricsApi) DeleteDORAFailure(ctx _context.Context, failureId string) (*_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod = _nethttp.MethodDelete
@@ -519,8 +515,8 @@ func (a *DORAMetricsApi) GetDORADeployment(ctx _context.Context, deploymentId st
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// GetDORAFailure Get a failure event.
-// Use this API endpoint to get a failure event.
+// GetDORAFailure Get an incident event.
+// Use this API endpoint to get an incident event.
 func (a *DORAMetricsApi) GetDORAFailure(ctx _context.Context, failureId string) (DORAFailureFetchResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodGet
@@ -695,8 +691,8 @@ func (a *DORAMetricsApi) ListDORADeployments(ctx _context.Context, body DORAList
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-// ListDORAFailures Get a list of failure events.
-// Use this API endpoint to get a list of failure events.
+// ListDORAFailures Get a list of incident events.
+// Use this API endpoint to get a list of incident events.
 func (a *DORAMetricsApi) ListDORAFailures(ctx _context.Context, body DORAListFailuresRequest) (DORAFailuresListResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPost
@@ -782,6 +778,86 @@ func (a *DORAMetricsApi) ListDORAFailures(ctx _context.Context, body DORAListFai
 	}
 
 	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// PatchDORADeployment Patch a deployment event.
+// Update a deployment's change failure status. Use this to mark a deployment as a change failure or back to stable. You can optionally include remediation details to enable failed deployment recovery time calculation.
+func (a *DORAMetricsApi) PatchDORADeployment(ctx _context.Context, deploymentId string, body DORADeploymentPatchRequest) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodPatch
+		localVarPostBody   interface{}
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.DORAMetricsApi.PatchDORADeployment")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/dora/deployments/{deployment_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{deployment_id}", _neturl.PathEscape(datadog.ParameterToString(deploymentId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "*/*"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 {
+			var v JSONAPIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+			return localVarHTTPResponse, newErr
+		}
+		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
 }
 
 // NewDORAMetricsApi Returns NewDORAMetricsApi.

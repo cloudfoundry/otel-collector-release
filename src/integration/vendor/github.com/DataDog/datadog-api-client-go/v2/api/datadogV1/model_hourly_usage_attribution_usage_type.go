@@ -10,8 +10,8 @@ import (
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 )
 
-// HourlyUsageAttributionUsageType Supported products for hourly usage attribution requests.
-// The following values have been **deprecated**: `estimated_indexed_spans_usage`, `estimated_ingested_spans_usage`.
+// HourlyUsageAttributionUsageType Supported products for hourly usage attribution requests. Usage types are in the format `<usage_type>_usage`.
+// To obtain the complete list of valid usage types, make a request to the [Get usage attribution types API](https://docs.datadoghq.com/api/latest/usage-metering/#get-usage-attribution-types).
 type HourlyUsageAttributionUsageType string
 
 // List of HourlyUsageAttributionUsageType.
@@ -26,6 +26,8 @@ const (
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ASM_SERVERLESS_TRACED_INVOCATIONS_PERCENTAGE   HourlyUsageAttributionUsageType = "asm_serverless_traced_invocations_percentage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_BITS_AI_INVESTIGATIONS_USAGE                   HourlyUsageAttributionUsageType = "bits_ai_investigations_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_BROWSER_USAGE                                  HourlyUsageAttributionUsageType = "browser_usage"
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_CODE_COVERAGE_COMMITTERS_PERCENTAGE         HourlyUsageAttributionUsageType = "ci_code_coverage_committers_percentage"
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_CODE_COVERAGE_COMMITTERS_USAGE              HourlyUsageAttributionUsageType = "ci_code_coverage_committers_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_PIPELINE_INDEXED_SPANS_USAGE                HourlyUsageAttributionUsageType = "ci_pipeline_indexed_spans_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_TEST_INDEXED_SPANS_USAGE                    HourlyUsageAttributionUsageType = "ci_test_indexed_spans_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_VISIBILITY_ITR_USAGE                        HourlyUsageAttributionUsageType = "ci_visibility_itr_usage"
@@ -50,6 +52,7 @@ const (
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ESTIMATED_INDEXED_SPANS_USAGE                  HourlyUsageAttributionUsageType = "estimated_indexed_spans_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ESTIMATED_INGESTED_SPANS_USAGE                 HourlyUsageAttributionUsageType = "estimated_ingested_spans_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FARGATE_USAGE                                  HourlyUsageAttributionUsageType = "fargate_usage"
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FLEX_LOGS_STARTER                              HourlyUsageAttributionUsageType = "flex_logs_starter"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FLEX_STORED_LOGS                               HourlyUsageAttributionUsageType = "flex_stored_logs"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FUNCTIONS_USAGE                                HourlyUsageAttributionUsageType = "functions_usage"
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_INCIDENT_MANAGEMENT_MONTHLY_ACTIVE_USERS_USAGE HourlyUsageAttributionUsageType = "incident_management_monthly_active_users_usage"
@@ -111,6 +114,8 @@ var allowedHourlyUsageAttributionUsageTypeEnumValues = []HourlyUsageAttributionU
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ASM_SERVERLESS_TRACED_INVOCATIONS_PERCENTAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_BITS_AI_INVESTIGATIONS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_BROWSER_USAGE,
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_CODE_COVERAGE_COMMITTERS_PERCENTAGE,
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_CODE_COVERAGE_COMMITTERS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_PIPELINE_INDEXED_SPANS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_TEST_INDEXED_SPANS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_CI_VISIBILITY_ITR_USAGE,
@@ -135,6 +140,7 @@ var allowedHourlyUsageAttributionUsageTypeEnumValues = []HourlyUsageAttributionU
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ESTIMATED_INDEXED_SPANS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_ESTIMATED_INGESTED_SPANS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FARGATE_USAGE,
+	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FLEX_LOGS_STARTER,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FLEX_STORED_LOGS,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_FUNCTIONS_USAGE,
 	HOURLYUSAGEATTRIBUTIONUSAGETYPE_INCIDENT_MANAGEMENT_MONTHLY_ACTIVE_USERS_USAGE,

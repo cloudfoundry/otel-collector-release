@@ -10,7 +10,8 @@ import (
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 )
 
-// MonthlyUsageAttributionSupportedMetrics Supported metrics for monthly usage attribution requests.
+// MonthlyUsageAttributionSupportedMetrics Supported metrics for monthly usage attribution requests. Usage types are in the format `<usage_type>_usage`.
+// To obtain the complete list of valid usage types, make a request to the [Get usage attribution types API](https://docs.datadoghq.com/api/latest/usage-metering/#get-usage-attribution-types).
 type MonthlyUsageAttributionSupportedMetrics string
 
 // List of MonthlyUsageAttributionSupportedMetrics.
@@ -73,6 +74,8 @@ const (
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_ESTIMATED_INGESTED_SPANS_PERCENTAGE                 MonthlyUsageAttributionSupportedMetrics = "estimated_ingested_spans_percentage"
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FARGATE_USAGE                                       MonthlyUsageAttributionSupportedMetrics = "fargate_usage"
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FARGATE_PERCENTAGE                                  MonthlyUsageAttributionSupportedMetrics = "fargate_percentage"
+	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_LOGS_STARTER_USAGE                             MonthlyUsageAttributionSupportedMetrics = "flex_logs_starter_usage"
+	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_LOGS_STARTER_PERCENTAGE                        MonthlyUsageAttributionSupportedMetrics = "flex_logs_starter_percentage"
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_STORED_LOGS_USAGE                              MonthlyUsageAttributionSupportedMetrics = "flex_stored_logs_usage"
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_STORED_LOGS_PERCENTAGE                         MonthlyUsageAttributionSupportedMetrics = "flex_stored_logs_percentage"
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FUNCTIONS_USAGE                                     MonthlyUsageAttributionSupportedMetrics = "functions_usage"
@@ -237,6 +240,8 @@ var allowedMonthlyUsageAttributionSupportedMetricsEnumValues = []MonthlyUsageAtt
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_ESTIMATED_INGESTED_SPANS_PERCENTAGE,
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FARGATE_USAGE,
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FARGATE_PERCENTAGE,
+	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_LOGS_STARTER_USAGE,
+	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_LOGS_STARTER_PERCENTAGE,
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_STORED_LOGS_USAGE,
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FLEX_STORED_LOGS_PERCENTAGE,
 	MONTHLYUSAGEATTRIBUTIONSUPPORTEDMETRICS_FUNCTIONS_USAGE,

@@ -11,11 +11,22 @@ import (
 )
 
 // ObservabilityPipelineElasticsearchDestination The `elasticsearch` destination writes logs to an Elasticsearch cluster.
+//
+// **Supported pipeline types:** logs
 type ObservabilityPipelineElasticsearchDestination struct {
 	// The Elasticsearch API version to use. Set to `auto` to auto-detect.
 	ApiVersion *ObservabilityPipelineElasticsearchDestinationApiVersion `json:"api_version,omitempty"`
+	// Authentication settings for the Elasticsearch destination.
+	// When `strategy` is `basic`, use `username_key` and `password_key` to reference credentials stored in environment variables or secrets.
+	Auth *ObservabilityPipelineElasticsearchDestinationAuth `json:"auth,omitempty"`
+	// Configuration for buffer settings on destination components.
+	Buffer *ObservabilityPipelineBufferOptions `json:"buffer,omitempty"`
 	// The index to write logs to in Elasticsearch.
 	BulkIndex *string `json:"bulk_index,omitempty"`
+	// Configuration options for writing to Elasticsearch Data Streams instead of a fixed index.
+	DataStream *ObservabilityPipelineElasticsearchDestinationDataStream `json:"data_stream,omitempty"`
+	// Name of the environment variable or secret that holds the Elasticsearch endpoint URL.
+	EndpointUrlKey *string `json:"endpoint_url_key,omitempty"`
 	// The unique identifier for this component.
 	Id string `json:"id"`
 	// A list of component IDs whose output is used as the `input` for this component.
@@ -77,6 +88,62 @@ func (o *ObservabilityPipelineElasticsearchDestination) SetApiVersion(v Observab
 	o.ApiVersion = &v
 }
 
+// GetAuth returns the Auth field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetAuth() ObservabilityPipelineElasticsearchDestinationAuth {
+	if o == nil || o.Auth == nil {
+		var ret ObservabilityPipelineElasticsearchDestinationAuth
+		return ret
+	}
+	return *o.Auth
+}
+
+// GetAuthOk returns a tuple with the Auth field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetAuthOk() (*ObservabilityPipelineElasticsearchDestinationAuth, bool) {
+	if o == nil || o.Auth == nil {
+		return nil, false
+	}
+	return o.Auth, true
+}
+
+// HasAuth returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasAuth() bool {
+	return o != nil && o.Auth != nil
+}
+
+// SetAuth gets a reference to the given ObservabilityPipelineElasticsearchDestinationAuth and assigns it to the Auth field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetAuth(v ObservabilityPipelineElasticsearchDestinationAuth) {
+	o.Auth = &v
+}
+
+// GetBuffer returns the Buffer field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetBuffer() ObservabilityPipelineBufferOptions {
+	if o == nil || o.Buffer == nil {
+		var ret ObservabilityPipelineBufferOptions
+		return ret
+	}
+	return *o.Buffer
+}
+
+// GetBufferOk returns a tuple with the Buffer field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetBufferOk() (*ObservabilityPipelineBufferOptions, bool) {
+	if o == nil || o.Buffer == nil {
+		return nil, false
+	}
+	return o.Buffer, true
+}
+
+// HasBuffer returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasBuffer() bool {
+	return o != nil && o.Buffer != nil
+}
+
+// SetBuffer gets a reference to the given ObservabilityPipelineBufferOptions and assigns it to the Buffer field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetBuffer(v ObservabilityPipelineBufferOptions) {
+	o.Buffer = &v
+}
+
 // GetBulkIndex returns the BulkIndex field value if set, zero value otherwise.
 func (o *ObservabilityPipelineElasticsearchDestination) GetBulkIndex() string {
 	if o == nil || o.BulkIndex == nil {
@@ -103,6 +170,62 @@ func (o *ObservabilityPipelineElasticsearchDestination) HasBulkIndex() bool {
 // SetBulkIndex gets a reference to the given string and assigns it to the BulkIndex field.
 func (o *ObservabilityPipelineElasticsearchDestination) SetBulkIndex(v string) {
 	o.BulkIndex = &v
+}
+
+// GetDataStream returns the DataStream field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetDataStream() ObservabilityPipelineElasticsearchDestinationDataStream {
+	if o == nil || o.DataStream == nil {
+		var ret ObservabilityPipelineElasticsearchDestinationDataStream
+		return ret
+	}
+	return *o.DataStream
+}
+
+// GetDataStreamOk returns a tuple with the DataStream field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetDataStreamOk() (*ObservabilityPipelineElasticsearchDestinationDataStream, bool) {
+	if o == nil || o.DataStream == nil {
+		return nil, false
+	}
+	return o.DataStream, true
+}
+
+// HasDataStream returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasDataStream() bool {
+	return o != nil && o.DataStream != nil
+}
+
+// SetDataStream gets a reference to the given ObservabilityPipelineElasticsearchDestinationDataStream and assigns it to the DataStream field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetDataStream(v ObservabilityPipelineElasticsearchDestinationDataStream) {
+	o.DataStream = &v
+}
+
+// GetEndpointUrlKey returns the EndpointUrlKey field value if set, zero value otherwise.
+func (o *ObservabilityPipelineElasticsearchDestination) GetEndpointUrlKey() string {
+	if o == nil || o.EndpointUrlKey == nil {
+		var ret string
+		return ret
+	}
+	return *o.EndpointUrlKey
+}
+
+// GetEndpointUrlKeyOk returns a tuple with the EndpointUrlKey field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) GetEndpointUrlKeyOk() (*string, bool) {
+	if o == nil || o.EndpointUrlKey == nil {
+		return nil, false
+	}
+	return o.EndpointUrlKey, true
+}
+
+// HasEndpointUrlKey returns a boolean if a field has been set.
+func (o *ObservabilityPipelineElasticsearchDestination) HasEndpointUrlKey() bool {
+	return o != nil && o.EndpointUrlKey != nil
+}
+
+// SetEndpointUrlKey gets a reference to the given string and assigns it to the EndpointUrlKey field.
+func (o *ObservabilityPipelineElasticsearchDestination) SetEndpointUrlKey(v string) {
+	o.EndpointUrlKey = &v
 }
 
 // GetId returns the Id field value.
@@ -183,8 +306,20 @@ func (o ObservabilityPipelineElasticsearchDestination) MarshalJSON() ([]byte, er
 	if o.ApiVersion != nil {
 		toSerialize["api_version"] = o.ApiVersion
 	}
+	if o.Auth != nil {
+		toSerialize["auth"] = o.Auth
+	}
+	if o.Buffer != nil {
+		toSerialize["buffer"] = o.Buffer
+	}
 	if o.BulkIndex != nil {
 		toSerialize["bulk_index"] = o.BulkIndex
+	}
+	if o.DataStream != nil {
+		toSerialize["data_stream"] = o.DataStream
+	}
+	if o.EndpointUrlKey != nil {
+		toSerialize["endpoint_url_key"] = o.EndpointUrlKey
 	}
 	toSerialize["id"] = o.Id
 	toSerialize["inputs"] = o.Inputs
@@ -199,11 +334,15 @@ func (o ObservabilityPipelineElasticsearchDestination) MarshalJSON() ([]byte, er
 // UnmarshalJSON deserializes the given payload.
 func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []byte) (err error) {
 	all := struct {
-		ApiVersion *ObservabilityPipelineElasticsearchDestinationApiVersion `json:"api_version,omitempty"`
-		BulkIndex  *string                                                  `json:"bulk_index,omitempty"`
-		Id         *string                                                  `json:"id"`
-		Inputs     *[]string                                                `json:"inputs"`
-		Type       *ObservabilityPipelineElasticsearchDestinationType       `json:"type"`
+		ApiVersion     *ObservabilityPipelineElasticsearchDestinationApiVersion `json:"api_version,omitempty"`
+		Auth           *ObservabilityPipelineElasticsearchDestinationAuth       `json:"auth,omitempty"`
+		Buffer         *ObservabilityPipelineBufferOptions                      `json:"buffer,omitempty"`
+		BulkIndex      *string                                                  `json:"bulk_index,omitempty"`
+		DataStream     *ObservabilityPipelineElasticsearchDestinationDataStream `json:"data_stream,omitempty"`
+		EndpointUrlKey *string                                                  `json:"endpoint_url_key,omitempty"`
+		Id             *string                                                  `json:"id"`
+		Inputs         *[]string                                                `json:"inputs"`
+		Type           *ObservabilityPipelineElasticsearchDestinationType       `json:"type"`
 	}{}
 	if err = datadog.Unmarshal(bytes, &all); err != nil {
 		return datadog.Unmarshal(bytes, &o.UnparsedObject)
@@ -219,7 +358,7 @@ func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []by
 	}
 	additionalProperties := make(map[string]interface{})
 	if err = datadog.Unmarshal(bytes, &additionalProperties); err == nil {
-		datadog.DeleteKeys(additionalProperties, &[]string{"api_version", "bulk_index", "id", "inputs", "type"})
+		datadog.DeleteKeys(additionalProperties, &[]string{"api_version", "auth", "buffer", "bulk_index", "data_stream", "endpoint_url_key", "id", "inputs", "type"})
 	} else {
 		return err
 	}
@@ -230,7 +369,17 @@ func (o *ObservabilityPipelineElasticsearchDestination) UnmarshalJSON(bytes []by
 	} else {
 		o.ApiVersion = all.ApiVersion
 	}
+	if all.Auth != nil && all.Auth.UnparsedObject != nil && o.UnparsedObject == nil {
+		hasInvalidField = true
+	}
+	o.Auth = all.Auth
+	o.Buffer = all.Buffer
 	o.BulkIndex = all.BulkIndex
+	if all.DataStream != nil && all.DataStream.UnparsedObject != nil && o.UnparsedObject == nil {
+		hasInvalidField = true
+	}
+	o.DataStream = all.DataStream
+	o.EndpointUrlKey = all.EndpointUrlKey
 	o.Id = *all.Id
 	o.Inputs = *all.Inputs
 	if !all.Type.IsValid() {
