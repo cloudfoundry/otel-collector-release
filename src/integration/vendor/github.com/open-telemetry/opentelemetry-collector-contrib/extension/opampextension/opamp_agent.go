@@ -15,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
@@ -30,7 +31,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/service"
 	"go.opentelemetry.io/collector/service/hostcapabilities"
-	conventions "go.opentelemetry.io/otel/semconv/v1.38.0"
+	conventions "go.opentelemetry.io/otel/semconv/v1.40.0"
 	"go.uber.org/zap"
 	expmaps "golang.org/x/exp/maps"
 	"golang.org/x/text/cases"
@@ -147,6 +148,7 @@ func (o *opampAgent) Start(ctx context.Context, host component.Host) error {
 				return o.composeEffectiveConfig(), nil
 			},
 			OnMessage: o.onMessage,
+			OnCommand: o.onCommand,
 		},
 	}
 
@@ -464,6 +466,23 @@ func (o *opampAgent) onMessage(_ context.Context, msg *types.MessageData) {
 	if msg.CustomMessage != nil {
 		o.customCapabilityRegistry.ProcessMessage(msg.CustomMessage)
 	}
+}
+
+func (o *opampAgent) onCommand(_ context.Context, command *protobufs.ServerToAgentCommand) error {
+	if command.GetType() != protobufs.CommandType_CommandType_Restart {
+		o.logger.Debug("ignoring non-restart command")
+		return nil
+	}
+
+	if o.capabilities.AcceptsRestartCommand {
+		o.logger.Info("received restart command, sending SIGHUP to reload")
+		collectorProcess, err := os.FindProcess(os.Getpid())
+		if err != nil {
+			return fmt.Errorf("finding current process from pid: %w", err)
+		}
+		return collectorProcess.Signal(syscall.SIGHUP)
+	}
+	return nil
 }
 
 func (o *opampAgent) setHealth(ch *protobufs.ComponentHealth) {
