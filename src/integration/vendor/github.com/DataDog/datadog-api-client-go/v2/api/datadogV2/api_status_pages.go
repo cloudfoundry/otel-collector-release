@@ -381,7 +381,7 @@ func (r *CreateStatusPageOptionalParameters) WithInclude(include string) *Create
 }
 
 // CreateStatusPage Create status page.
-// Creates a new status page.
+// Creates a new status page. **Note**: Publishing a status page on creation via the `enabled` property will be deprecated. Use the dedicated [publish](#publish-status-page) status page endpoint after creation instead.
 func (a *StatusPagesApi) CreateStatusPage(ctx _context.Context, body CreateStatusPageRequest, o ...CreateStatusPageOptionalParameters) (StatusPage, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPost
@@ -1522,9 +1522,10 @@ func (a *StatusPagesApi) ListMaintenances(ctx _context.Context, o ...ListMainten
 
 // ListStatusPagesOptionalParameters holds optional parameters for ListStatusPages.
 type ListStatusPagesOptionalParameters struct {
-	PageOffset *int32
-	PageLimit  *int32
-	Include    *string
+	PageOffset         *int32
+	PageLimit          *int32
+	FilterDomainPrefix *string
+	Include            *string
 }
 
 // NewListStatusPagesOptionalParameters creates an empty struct for parameters.
@@ -1542,6 +1543,12 @@ func (r *ListStatusPagesOptionalParameters) WithPageOffset(pageOffset int32) *Li
 // WithPageLimit sets the corresponding parameter name and returns the struct.
 func (r *ListStatusPagesOptionalParameters) WithPageLimit(pageLimit int32) *ListStatusPagesOptionalParameters {
 	r.PageLimit = &pageLimit
+	return r
+}
+
+// WithFilterDomainPrefix sets the corresponding parameter name and returns the struct.
+func (r *ListStatusPagesOptionalParameters) WithFilterDomainPrefix(filterDomainPrefix string) *ListStatusPagesOptionalParameters {
+	r.FilterDomainPrefix = &filterDomainPrefix
 	return r
 }
 
@@ -1583,6 +1590,9 @@ func (a *StatusPagesApi) ListStatusPages(ctx _context.Context, o ...ListStatusPa
 	}
 	if optionalParams.PageLimit != nil {
 		localVarQueryParams.Add("page[limit]", datadog.ParameterToString(*optionalParams.PageLimit, ""))
+	}
+	if optionalParams.FilterDomainPrefix != nil {
+		localVarQueryParams.Add("filter[domain_prefix]", datadog.ParameterToString(*optionalParams.FilterDomainPrefix, ""))
 	}
 	if optionalParams.Include != nil {
 		localVarQueryParams.Add("include", datadog.ParameterToString(*optionalParams.Include, ""))
@@ -1643,6 +1653,142 @@ func (a *StatusPagesApi) ListStatusPages(ctx _context.Context, o ...ListStatusPa
 	}
 
 	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// PublishStatusPage Publish status page.
+// Publishes a status page. For pages of type `public`, makes the status page available on the public internet and requires the `status_pages_public_page_publish` permission. For pages of type `internal`, makes the status page available under the `status-pages/$domain_prefix/view` route within the Datadog organization and requires the `status_pages_internal_page_publish` permission. The `status_pages_settings_write` permission is temporarily honored as we migrate publishing functionality from the update status page endpoint to the publish status page endpoint.
+func (a *StatusPagesApi) PublishStatusPage(ctx _context.Context, pageId uuid.UUID) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodPost
+		localVarPostBody   interface{}
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.StatusPagesApi.PublishStatusPage")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/statuspages/{page_id}/publish"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{page_id}", _neturl.PathEscape(datadog.ParameterToString(pageId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
+// UnpublishStatusPage Unpublish status page.
+// Unpublishes a status page. For pages of type `public`, removes the status page from the public internet and requires the `status_pages_public_page_publish` permission. For pages of type `internal`, removes the `status-pages/$domain_prefix/view` route from the Datadog organization and requires the `status_pages_internal_page_publish` permission. The `status_pages_settings_write` permission is temporarily honored as we migrate unpublishing functionality from the update status page endpoint to the unpublish status page endpoint.
+func (a *StatusPagesApi) UnpublishStatusPage(ctx _context.Context, pageId uuid.UUID) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodPost
+		localVarPostBody   interface{}
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.StatusPagesApi.UnpublishStatusPage")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/statuspages/{page_id}/unpublish"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{page_id}", _neturl.PathEscape(datadog.ParameterToString(pageId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
 }
 
 // UpdateComponentOptionalParameters holds optional parameters for UpdateComponent.
@@ -2020,7 +2166,7 @@ func (r *UpdateStatusPageOptionalParameters) WithInclude(include string) *Update
 }
 
 // UpdateStatusPage Update status page.
-// Updates an existing status page's attributes.
+// Updates an existing status page's attributes. **Note**: Publishing and unpublishing via the `enabled` property will be deprecated on this endpoint. Use the dedicated [publish](#publish-status-page) and [unpublish](#unpublish-status-page) status page endpoints instead.
 func (a *StatusPagesApi) UpdateStatusPage(ctx _context.Context, pageId uuid.UUID, body PatchStatusPageRequest, o ...UpdateStatusPageOptionalParameters) (StatusPage, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodPatch

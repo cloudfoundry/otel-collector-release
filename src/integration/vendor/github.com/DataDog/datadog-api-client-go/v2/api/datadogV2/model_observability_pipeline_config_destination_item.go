@@ -10,15 +10,16 @@ import (
 
 // ObservabilityPipelineConfigDestinationItem - A destination for the pipeline.
 type ObservabilityPipelineConfigDestinationItem struct {
+	ObservabilityPipelineElasticsearchDestination          *ObservabilityPipelineElasticsearchDestination
 	ObservabilityPipelineHttpClientDestination             *ObservabilityPipelineHttpClientDestination
 	ObservabilityPipelineAmazonOpenSearchDestination       *ObservabilityPipelineAmazonOpenSearchDestination
 	ObservabilityPipelineAmazonS3Destination               *ObservabilityPipelineAmazonS3Destination
+	ObservabilityPipelineAmazonS3GenericDestination        *ObservabilityPipelineAmazonS3GenericDestination
 	ObservabilityPipelineAmazonSecurityLakeDestination     *ObservabilityPipelineAmazonSecurityLakeDestination
 	AzureStorageDestination                                *AzureStorageDestination
 	ObservabilityPipelineCloudPremDestination              *ObservabilityPipelineCloudPremDestination
 	ObservabilityPipelineCrowdStrikeNextGenSiemDestination *ObservabilityPipelineCrowdStrikeNextGenSiemDestination
 	ObservabilityPipelineDatadogLogsDestination            *ObservabilityPipelineDatadogLogsDestination
-	ObservabilityPipelineElasticsearchDestination          *ObservabilityPipelineElasticsearchDestination
 	ObservabilityPipelineGoogleChronicleDestination        *ObservabilityPipelineGoogleChronicleDestination
 	ObservabilityPipelineGoogleCloudStorageDestination     *ObservabilityPipelineGoogleCloudStorageDestination
 	ObservabilityPipelineGooglePubSubDestination           *ObservabilityPipelineGooglePubSubDestination
@@ -38,6 +39,11 @@ type ObservabilityPipelineConfigDestinationItem struct {
 	UnparsedObject interface{}
 }
 
+// ObservabilityPipelineElasticsearchDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineElasticsearchDestination wrapped in ObservabilityPipelineConfigDestinationItem.
+func ObservabilityPipelineElasticsearchDestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineElasticsearchDestination) ObservabilityPipelineConfigDestinationItem {
+	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineElasticsearchDestination: v}
+}
+
 // ObservabilityPipelineHttpClientDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineHttpClientDestination wrapped in ObservabilityPipelineConfigDestinationItem.
 func ObservabilityPipelineHttpClientDestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineHttpClientDestination) ObservabilityPipelineConfigDestinationItem {
 	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineHttpClientDestination: v}
@@ -51,6 +57,11 @@ func ObservabilityPipelineAmazonOpenSearchDestinationAsObservabilityPipelineConf
 // ObservabilityPipelineAmazonS3DestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineAmazonS3Destination wrapped in ObservabilityPipelineConfigDestinationItem.
 func ObservabilityPipelineAmazonS3DestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineAmazonS3Destination) ObservabilityPipelineConfigDestinationItem {
 	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineAmazonS3Destination: v}
+}
+
+// ObservabilityPipelineAmazonS3GenericDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineAmazonS3GenericDestination wrapped in ObservabilityPipelineConfigDestinationItem.
+func ObservabilityPipelineAmazonS3GenericDestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineAmazonS3GenericDestination) ObservabilityPipelineConfigDestinationItem {
+	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineAmazonS3GenericDestination: v}
 }
 
 // ObservabilityPipelineAmazonSecurityLakeDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineAmazonSecurityLakeDestination wrapped in ObservabilityPipelineConfigDestinationItem.
@@ -76,11 +87,6 @@ func ObservabilityPipelineCrowdStrikeNextGenSiemDestinationAsObservabilityPipeli
 // ObservabilityPipelineDatadogLogsDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineDatadogLogsDestination wrapped in ObservabilityPipelineConfigDestinationItem.
 func ObservabilityPipelineDatadogLogsDestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineDatadogLogsDestination) ObservabilityPipelineConfigDestinationItem {
 	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineDatadogLogsDestination: v}
-}
-
-// ObservabilityPipelineElasticsearchDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineElasticsearchDestination wrapped in ObservabilityPipelineConfigDestinationItem.
-func ObservabilityPipelineElasticsearchDestinationAsObservabilityPipelineConfigDestinationItem(v *ObservabilityPipelineElasticsearchDestination) ObservabilityPipelineConfigDestinationItem {
-	return ObservabilityPipelineConfigDestinationItem{ObservabilityPipelineElasticsearchDestination: v}
 }
 
 // ObservabilityPipelineGoogleChronicleDestinationAsObservabilityPipelineConfigDestinationItem is a convenience function that returns ObservabilityPipelineGoogleChronicleDestination wrapped in ObservabilityPipelineConfigDestinationItem.
@@ -157,6 +163,23 @@ func ObservabilityPipelineDatadogMetricsDestinationAsObservabilityPipelineConfig
 func (obj *ObservabilityPipelineConfigDestinationItem) UnmarshalJSON(data []byte) error {
 	var err error
 	match := 0
+	// try to unmarshal data into ObservabilityPipelineElasticsearchDestination
+	err = datadog.Unmarshal(data, &obj.ObservabilityPipelineElasticsearchDestination)
+	if err == nil {
+		if obj.ObservabilityPipelineElasticsearchDestination != nil && obj.ObservabilityPipelineElasticsearchDestination.UnparsedObject == nil {
+			jsonObservabilityPipelineElasticsearchDestination, _ := datadog.Marshal(obj.ObservabilityPipelineElasticsearchDestination)
+			if string(jsonObservabilityPipelineElasticsearchDestination) == "{}" { // empty struct
+				obj.ObservabilityPipelineElasticsearchDestination = nil
+			} else {
+				match++
+			}
+		} else {
+			obj.ObservabilityPipelineElasticsearchDestination = nil
+		}
+	} else {
+		obj.ObservabilityPipelineElasticsearchDestination = nil
+	}
+
 	// try to unmarshal data into ObservabilityPipelineHttpClientDestination
 	err = datadog.Unmarshal(data, &obj.ObservabilityPipelineHttpClientDestination)
 	if err == nil {
@@ -206,6 +229,23 @@ func (obj *ObservabilityPipelineConfigDestinationItem) UnmarshalJSON(data []byte
 		}
 	} else {
 		obj.ObservabilityPipelineAmazonS3Destination = nil
+	}
+
+	// try to unmarshal data into ObservabilityPipelineAmazonS3GenericDestination
+	err = datadog.Unmarshal(data, &obj.ObservabilityPipelineAmazonS3GenericDestination)
+	if err == nil {
+		if obj.ObservabilityPipelineAmazonS3GenericDestination != nil && obj.ObservabilityPipelineAmazonS3GenericDestination.UnparsedObject == nil {
+			jsonObservabilityPipelineAmazonS3GenericDestination, _ := datadog.Marshal(obj.ObservabilityPipelineAmazonS3GenericDestination)
+			if string(jsonObservabilityPipelineAmazonS3GenericDestination) == "{}" { // empty struct
+				obj.ObservabilityPipelineAmazonS3GenericDestination = nil
+			} else {
+				match++
+			}
+		} else {
+			obj.ObservabilityPipelineAmazonS3GenericDestination = nil
+		}
+	} else {
+		obj.ObservabilityPipelineAmazonS3GenericDestination = nil
 	}
 
 	// try to unmarshal data into ObservabilityPipelineAmazonSecurityLakeDestination
@@ -291,23 +331,6 @@ func (obj *ObservabilityPipelineConfigDestinationItem) UnmarshalJSON(data []byte
 		}
 	} else {
 		obj.ObservabilityPipelineDatadogLogsDestination = nil
-	}
-
-	// try to unmarshal data into ObservabilityPipelineElasticsearchDestination
-	err = datadog.Unmarshal(data, &obj.ObservabilityPipelineElasticsearchDestination)
-	if err == nil {
-		if obj.ObservabilityPipelineElasticsearchDestination != nil && obj.ObservabilityPipelineElasticsearchDestination.UnparsedObject == nil {
-			jsonObservabilityPipelineElasticsearchDestination, _ := datadog.Marshal(obj.ObservabilityPipelineElasticsearchDestination)
-			if string(jsonObservabilityPipelineElasticsearchDestination) == "{}" { // empty struct
-				obj.ObservabilityPipelineElasticsearchDestination = nil
-			} else {
-				match++
-			}
-		} else {
-			obj.ObservabilityPipelineElasticsearchDestination = nil
-		}
-	} else {
-		obj.ObservabilityPipelineElasticsearchDestination = nil
 	}
 
 	// try to unmarshal data into ObservabilityPipelineGoogleChronicleDestination
@@ -550,15 +573,16 @@ func (obj *ObservabilityPipelineConfigDestinationItem) UnmarshalJSON(data []byte
 
 	if match != 1 { // more than 1 match
 		// reset to nil
+		obj.ObservabilityPipelineElasticsearchDestination = nil
 		obj.ObservabilityPipelineHttpClientDestination = nil
 		obj.ObservabilityPipelineAmazonOpenSearchDestination = nil
 		obj.ObservabilityPipelineAmazonS3Destination = nil
+		obj.ObservabilityPipelineAmazonS3GenericDestination = nil
 		obj.ObservabilityPipelineAmazonSecurityLakeDestination = nil
 		obj.AzureStorageDestination = nil
 		obj.ObservabilityPipelineCloudPremDestination = nil
 		obj.ObservabilityPipelineCrowdStrikeNextGenSiemDestination = nil
 		obj.ObservabilityPipelineDatadogLogsDestination = nil
-		obj.ObservabilityPipelineElasticsearchDestination = nil
 		obj.ObservabilityPipelineGoogleChronicleDestination = nil
 		obj.ObservabilityPipelineGoogleCloudStorageDestination = nil
 		obj.ObservabilityPipelineGooglePubSubDestination = nil
@@ -580,6 +604,10 @@ func (obj *ObservabilityPipelineConfigDestinationItem) UnmarshalJSON(data []byte
 
 // MarshalJSON turns data from the first non-nil pointers in the struct to JSON.
 func (obj ObservabilityPipelineConfigDestinationItem) MarshalJSON() ([]byte, error) {
+	if obj.ObservabilityPipelineElasticsearchDestination != nil {
+		return datadog.Marshal(&obj.ObservabilityPipelineElasticsearchDestination)
+	}
+
 	if obj.ObservabilityPipelineHttpClientDestination != nil {
 		return datadog.Marshal(&obj.ObservabilityPipelineHttpClientDestination)
 	}
@@ -590,6 +618,10 @@ func (obj ObservabilityPipelineConfigDestinationItem) MarshalJSON() ([]byte, err
 
 	if obj.ObservabilityPipelineAmazonS3Destination != nil {
 		return datadog.Marshal(&obj.ObservabilityPipelineAmazonS3Destination)
+	}
+
+	if obj.ObservabilityPipelineAmazonS3GenericDestination != nil {
+		return datadog.Marshal(&obj.ObservabilityPipelineAmazonS3GenericDestination)
 	}
 
 	if obj.ObservabilityPipelineAmazonSecurityLakeDestination != nil {
@@ -610,10 +642,6 @@ func (obj ObservabilityPipelineConfigDestinationItem) MarshalJSON() ([]byte, err
 
 	if obj.ObservabilityPipelineDatadogLogsDestination != nil {
 		return datadog.Marshal(&obj.ObservabilityPipelineDatadogLogsDestination)
-	}
-
-	if obj.ObservabilityPipelineElasticsearchDestination != nil {
-		return datadog.Marshal(&obj.ObservabilityPipelineElasticsearchDestination)
 	}
 
 	if obj.ObservabilityPipelineGoogleChronicleDestination != nil {
@@ -680,6 +708,10 @@ func (obj ObservabilityPipelineConfigDestinationItem) MarshalJSON() ([]byte, err
 
 // GetActualInstance returns the actual instance.
 func (obj *ObservabilityPipelineConfigDestinationItem) GetActualInstance() interface{} {
+	if obj.ObservabilityPipelineElasticsearchDestination != nil {
+		return obj.ObservabilityPipelineElasticsearchDestination
+	}
+
 	if obj.ObservabilityPipelineHttpClientDestination != nil {
 		return obj.ObservabilityPipelineHttpClientDestination
 	}
@@ -690,6 +722,10 @@ func (obj *ObservabilityPipelineConfigDestinationItem) GetActualInstance() inter
 
 	if obj.ObservabilityPipelineAmazonS3Destination != nil {
 		return obj.ObservabilityPipelineAmazonS3Destination
+	}
+
+	if obj.ObservabilityPipelineAmazonS3GenericDestination != nil {
+		return obj.ObservabilityPipelineAmazonS3GenericDestination
 	}
 
 	if obj.ObservabilityPipelineAmazonSecurityLakeDestination != nil {
@@ -710,10 +746,6 @@ func (obj *ObservabilityPipelineConfigDestinationItem) GetActualInstance() inter
 
 	if obj.ObservabilityPipelineDatadogLogsDestination != nil {
 		return obj.ObservabilityPipelineDatadogLogsDestination
-	}
-
-	if obj.ObservabilityPipelineElasticsearchDestination != nil {
-		return obj.ObservabilityPipelineElasticsearchDestination
 	}
 
 	if obj.ObservabilityPipelineGoogleChronicleDestination != nil {
