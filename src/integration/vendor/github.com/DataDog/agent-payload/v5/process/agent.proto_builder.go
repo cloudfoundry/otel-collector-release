@@ -756,6 +756,12 @@ func (x *ECSTaskBuilder) SetContainerInstanceArn(v string) {
 	x.scratch = protowire.AppendString(x.scratch, v)
 	x.writer.Write(x.scratch)
 }
+func (x *ECSTaskBuilder) SetDaemonName(v string) {
+	x.scratch = x.scratch[:0]
+	x.scratch = protowire.AppendVarint(x.scratch, 0xb2)
+	x.scratch = protowire.AppendString(x.scratch, v)
+	x.writer.Write(x.scratch)
+}
 
 type ECSTask_LimitsEntryBuilder struct {
 	writer  io.Writer
@@ -3525,6 +3531,17 @@ func (x *ProcessBuilder) SetInjectionState(v uint64) {
 		x.scratch = protowire.AppendVarint(x.scratch, v)
 		x.writer.Write(x.scratch)
 	}
+}
+func (x *ProcessBuilder) SetZombieChildrenCount(v uint32) {
+	x.scratch = x.scratch[:0]
+	x.scratch = protowire.AppendVarint(x.scratch, 0xe0)
+	x.scratch = protowire.AppendVarint(x.scratch, uint64(v))
+	x.writer.Write(x.scratch)
+}
+func (x *ProcessBuilder) SetZombieNetRate(v float64) {
+	x.scratch = protowire.AppendVarint(x.scratch[:0], 0xe9)
+	x.scratch = protowire.AppendFixed64(x.scratch, math.Float64bits(v))
+	x.writer.Write(x.scratch)
 }
 
 type ServiceDiscoveryBuilder struct {
@@ -11034,6 +11051,11 @@ func (x *HTTPStats_DataBuilder) SetLatencies(cb func(b *bytes.Buffer)) {
 }
 func (x *HTTPStats_DataBuilder) SetFirstLatencySample(v float64) {
 	x.scratch = protowire.AppendVarint(x.scratch[:0], 0x21)
+	x.scratch = protowire.AppendFixed64(x.scratch, math.Float64bits(v))
+	x.writer.Write(x.scratch)
+}
+func (x *HTTPStats_DataBuilder) SetLatencySum(v float64) {
+	x.scratch = protowire.AppendVarint(x.scratch[:0], 0x29)
 	x.scratch = protowire.AppendFixed64(x.scratch, math.Float64bits(v))
 	x.writer.Write(x.scratch)
 }

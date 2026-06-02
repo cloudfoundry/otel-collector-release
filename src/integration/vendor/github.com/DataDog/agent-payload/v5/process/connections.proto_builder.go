@@ -1149,6 +1149,12 @@ func (x *ConnectionBuilder) SetTcpEcnNegotiated(v bool) {
 		x.writer.Write(x.scratch)
 	}
 }
+func (x *ConnectionBuilder) SetRemoteServiceTagsIdx(v int32) {
+	x.scratch = x.scratch[:0]
+	x.scratch = protowire.AppendVarint(x.scratch, 0x200)
+	x.scratch = protowire.AppendVarint(x.scratch, uint64(v))
+	x.writer.Write(x.scratch)
+}
 
 type Connection_DnsCountByRcodeEntryBuilder struct {
 	writer  io.Writer
@@ -1613,6 +1619,13 @@ func (x *AgentConfigurationBuilder) SetCsmEnabled(v bool) {
 func (x *AgentConfigurationBuilder) SetEudmEnabled(v bool) {
 	if v {
 		x.scratch = protowire.AppendVarint(x.scratch[:0], 0x30)
+		x.scratch = protowire.AppendVarint(x.scratch, 1)
+		x.writer.Write(x.scratch)
+	}
+}
+func (x *AgentConfigurationBuilder) SetDiscoveryServiceMapEnabled(v bool) {
+	if v {
+		x.scratch = protowire.AppendVarint(x.scratch[:0], 0x38)
 		x.scratch = protowire.AppendVarint(x.scratch, 1)
 		x.writer.Write(x.scratch)
 	}
