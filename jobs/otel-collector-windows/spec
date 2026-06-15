@@ -50,7 +50,7 @@ properties:
     example: ['batch']
   allow_list.exporters:
     description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
-    example: ['otlp', 'prometheus', 'prometheusremotewrite']
+    example: ['otlp', 'prometheus', 'prometheus_remote_write']
   allow_list.extensions:
     description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['pprof']
