@@ -73,8 +73,25 @@ properties:
     description: "Port to serve the collector's internal metrics"
     default: 14830
   secrets:
-    description: "Variables to interpolate into the configuration"
+    description: "List of named secret entries with four slots each (`cert`, `key`, `ca`, `secret`) interpolated into a YAML-string `config` at render time via `{{ .name.type }}` placeholders. E.g. use when `config` must stay a string and embeds values BOSH `((var))` substitution cannot inject (multi-line PEMs). Every declared secret must be used at least once or rendering fails."
     default: []
+    example: |
+      - name: prod-otlp
+        ca:   ((prod_ca))
+        cert: ((prod_cert))
+        key:  ((prod_key))
+      - name: vendor
+        secret: ((vendor_auth_token))
+      # Then reference from `config`:
+      #   exporters:
+      #     otlp_grpc/prod:
+      #       tls:
+      #         ca_pem:   '{{ .prod-otlp.ca }}'
+      #         cert_pem: '{{ .prod-otlp.cert }}'
+      #         key_pem:  '{{ .prod-otlp.key }}'
+      #     otlp_http/vendor:
+      #       headers:
+      #         authorization: '{{ .vendor.secret }}'
   metric_exporters:
     description: "Exporter configuration for aggregate metric egress. Deprecated, please use 'config' property."
     default: {}
