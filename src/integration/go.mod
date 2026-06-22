@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
-	code.cloudfoundry.org/tlsconfig v0.59.0
+	code.cloudfoundry.org/tlsconfig v0.60.0
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.31.0
 	github.com/onsi/gomega v1.42.0
@@ -446,7 +446,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.20.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.44.0 // indirect
 	go.opentelemetry.io/otel/trace v1.44.0 // indirect
-	go.step.sm/crypto v0.82.0 // indirect
+	go.step.sm/crypto v0.83.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/fx v1.24.0 // indirect
