@@ -828,6 +828,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterproces
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.155.0/go.mod h1:4fufxKqhKtkO/CYigbMX9Cx68b1vfy4vvixsTm6/flw=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.145.0 h1:12mxn+8YLeAjMZ1kLGulBcvHrdhRNUmxLVIDnaLkJbQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v0.145.0/go.mod h1:V87HYJpfmvCeQ6Cjy3Q4xylxfCn2wVSS80wvv5ECc0s=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.155.0 h1:4dgIqbcuWxq2SbrVXNb8gyXiEOVu3MSFzSpZEP9IqwA=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.155.0/go.mod h1:XDB6fYmjiUDLvAoZQ1wX+J9v9cV8x9n9oP+wQ+yxflI=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.155.0 h1:5mqgiclJLoClltrgn417u7Mdfg8oRS3L3jDpTayQITI=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.155.0/go.mod h1:8F9QDxK2nIJT6eOXHZrerycaXaD7JRHr8YxSZCDjjVw=
 github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.155.0 h1:iwbI95bt0uODjbRrrnBVpEd1+2UDsPS2mG01Q9+c1Ps=

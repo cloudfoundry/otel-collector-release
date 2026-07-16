@@ -15,6 +15,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.155.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/pprofextension v0.155.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.155.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v0.155.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.155.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver v0.155.0
 	go.opentelemetry.io/collector/component v1.61.0
