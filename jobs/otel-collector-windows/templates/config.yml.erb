@@ -160,7 +160,7 @@ end
 
 # Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_processors
-  %w[batch memory_limiter transform filter].sort
+  %w[batch memory_limiter transform filter tail_sampling].sort
 end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
