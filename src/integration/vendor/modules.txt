@@ -25,7 +25,7 @@ cloud.google.com/go/compute/metadata
 # code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0 => ../otel-collector
 ## explicit; go 1.25.0
 code.cloudfoundry.org/otel-collector-release/src/otel-collector
-# code.cloudfoundry.org/tlsconfig v0.61.0
+# code.cloudfoundry.org/tlsconfig v0.62.0
 ## explicit; go 1.25.8
 code.cloudfoundry.org/tlsconfig/certtest
 # filippo.io/edwards25519 v1.2.0
@@ -2239,7 +2239,7 @@ go.yaml.in/yaml/v2
 # go.yaml.in/yaml/v3 v3.0.4
 ## explicit; go 1.16
 go.yaml.in/yaml/v3
-# golang.org/x/crypto v0.53.0
+# golang.org/x/crypto v0.54.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -2297,11 +2297,11 @@ golang.org/x/oauth2/google/internal/stsexchange
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sync v0.21.0
+# golang.org/x/sync v0.22.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.46.0
+# golang.org/x/sys v0.47.0
 ## explicit; go 1.25.0
 golang.org/x/sys/cpu
 golang.org/x/sys/plan9
@@ -2311,10 +2311,10 @@ golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/eventlog
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/term v0.44.0
+# golang.org/x/term v0.45.0
 ## explicit; go 1.25.0
 golang.org/x/term
-# golang.org/x/text v0.38.0
+# golang.org/x/text v0.40.0
 ## explicit; go 1.25.0
 golang.org/x/text/cases
 golang.org/x/text/encoding
@@ -2342,7 +2342,7 @@ golang.org/x/text/unicode/norm
 # golang.org/x/time v0.15.0
 ## explicit; go 1.25.0
 golang.org/x/time/rate
-# golang.org/x/tools v0.46.0
+# golang.org/x/tools v0.47.0
 ## explicit; go 1.25.0
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/edge
