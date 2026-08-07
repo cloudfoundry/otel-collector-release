@@ -341,11 +341,12 @@ shared_examples_for 'common config.yml' do
 
         builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
         exporter_gomods = builder_config.fetch('exporters').map {|entry| entry.fetch('gomod').split(" ")[0]}
-        exporter_names = exporter_gomods.map do |gomod|
-          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        exporter_names = exporter_gomods.flat_map do |gomod|
+          metadata = YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml"))
+          metadata.values_at('type', 'deprecated_type').compact
         end
-        formatted_names = exporter_names.sort.map {|name| "\"#{name}\"" }.join(", ")
 
+        formatted_names = exporter_names.sort.map { |name| "\"#{name}\"" }.join(", ")
         expect { rendered }.to raise_error do |error|
           expect(error.message).to include("Available: [#{formatted_names}]")
         end
