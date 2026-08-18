@@ -12,8 +12,12 @@
     }
 
     if_p('limits.cpu') do |cpu|
-      bpm['processes'][0]['env']['GOMAXPROCS'] = cpu.to_i 
+      bpm['processes'][0]['env']['GOMAXPROCS'] = cpu.to_i
     end
-    
+
+    if_p('additional_volumes') do |volumes|
+      bpm['processes'][0]['additional_volumes'] = volumes unless volumes.empty?
+    end
+
     YAML.dump(bpm) 
 %>
