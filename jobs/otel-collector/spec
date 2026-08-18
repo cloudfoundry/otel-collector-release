@@ -73,6 +73,9 @@ properties:
   telemetry.metrics.port:
     description: "Port to serve the collector's internal metrics"
     default: 14830
+  inject_bosh_env:
+    description: "Injects BOSH spec metadata as environment variables into the BPM (Linux) or MONIT (Windows) process, making them available to OpenTelemetry transform processors."
+    default: false
   secrets:
     description: "List of named secret entries with four slots each (`cert`, `key`, `ca`, `secret`) interpolated into a YAML-string `config` at render time via `{{ .name.type }}` placeholders. E.g. use when `config` must stay a string and embeds values BOSH `((var))` substitution cannot inject (multi-line PEMs). Every declared secret must be used at least once or rendering fails."
     default: []
