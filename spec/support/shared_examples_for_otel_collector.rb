@@ -762,4 +762,41 @@ exporters:
       end
     end
   end
+
+  describe 'config/ingress_port.yml' do
+    let(:template) { job.template('config/ingress_port.yml') }
+    let(:properties) { {} }
+    let(:rendered) { template.render(properties) }
+
+    context 'when ingress.grpc.enabled is true (default)' do
+      it 'renders ingress port configuration' do
+        parsed = YAML.safe_load(rendered)
+        expect(parsed['ingress']).to eq(9100)
+        expect(parsed['protocol']).to eq('otelcol')
+      end
+    end
+
+    context 'when ingress.grpc.enabled is false' do
+      before do
+        properties['ingress'] = { 'grpc' => { 'enabled' => false } }
+      end
+
+      it 'renders empty content' do
+        expect(rendered.strip).to be_empty
+      end
+    end
+  end
+
+  describe 'certificate templates' do
+    context 'when ingress.grpc.enabled is false' do
+      let(:properties) { { 'ingress' => { 'grpc' => { 'enabled' => false } } } }
+
+      %w[config/certs/otel-collector-ca.crt config/certs/otel-collector.crt config/certs/otel-collector.key].each do |cert_template|
+        it "renders #{cert_template} as empty without requiring TLS properties" do
+          template = job.template(cert_template)
+          expect(template.render(properties).strip).to be_empty
+        end
+      end
+    end
+  end
 end
