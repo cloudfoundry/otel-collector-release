@@ -19,4 +19,10 @@ Pop-Location
 
 Copy-Item "otel-collector\otelcol-cf" -Destination "${env:BOSH_INSTALL_TARGET}\otel-collector.exe"
 
+# Generate a list of available Otel Collector components and put it into the config directory
+mkdir -p "${BOSH_INSTALL_TARGET}/config"
+ruby "${BOSH_COMPILE_TARGET}/src/lib/generate_available_components.rb" \
+     "${BOSH_COMPILE_TARGET}" \
+     "${BOSH_INSTALL_TARGET}/config/available_components.yml"
+
 Exit 0

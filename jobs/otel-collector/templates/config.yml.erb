@@ -1,4 +1,16 @@
 <%=
+
+def components_data
+  bosh_packages_root = ENV['BOSH_PACKAGES_DIR'] || (ENV['SYSTEMDRIVE'] ? "#{ENV['SYSTEMDRIVE']}/var/vcap/packages" : "/var/vcap/packages")
+  current_package = spec.job.name
+  manifest_path = File.join(bosh_packages_root, current_package, "config/available_components.yml")
+  return YAML.load_file(manifest_path) || {}
+end
+
+def extract_available_components(components_list)
+  components_list.flat_map { |c| [c['type'], c['deprecated_type']].compact }.uniq
+end
+
 def config
   @config ||= begin
     cfg = retrieve_property('config')
@@ -155,17 +167,20 @@ end
 
 # Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_exporters
-  %w[debug otlp_grpc file prometheus prometheus_remote_write nop splunk_hec datadog kafka syslog otlp_http].sort
+  return extract_available_components(components_data.fetch('exporters', ['my_exporter1']))
+  #%w[debug otlp_grpc file prometheus prometheus_remote_write nop splunk_hec datadog kafka syslog otlp_http].sort
 end
 
 # Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_processors
-  %w[batch memory_limiter transform filter tail_sampling].sort
+  return extract_available_components(components_data.fetch('processors', ['my_exporter2']))
+  # %w[batch memory_limiter transform filter tail_sampling].sort
 end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
 def included_extensions
-  %w[opamp pprof].sort
+  return extract_available_components(components_data.fetch('extensions', ['my_extension3']))
+  # %w[opamp pprof].sort
 end
 
 def check_for_use_of_valid_components!(component_kind, included_components)
