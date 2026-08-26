@@ -3,10 +3,31 @@
 require 'rspec'
 require 'bosh/template/test'
 require 'yaml'
+require 'tmpdir'
+require 'fileutils'
+require_relative '../../src/lib/generate_available_components'
 
 shared_examples_for 'common config.yml' do
   describe 'config/config.yml' do
     let(:template) { job.template('config/config.yml') }
+    let(:instance_spec) { Bosh::Template::Test::InstanceSpec.new(name: package_name) }
+
+    around do |example|
+      Dir.mktmpdir('bosh-packages') do |packages_dir|
+        @packages_dir = packages_dir
+        manifest_path = File.join(packages_dir, package_name, 'config', 'available_components.yml')
+        FileUtils.mkdir_p(File.dirname(manifest_path))
+        generate_component_map(release_dir, manifest_path) # real generator = true source of truth
+        prev = ENV['BOSH_PACKAGES_DIR']
+        ENV['BOSH_PACKAGES_DIR'] = packages_dir
+        begin
+          example.run
+        ensure
+          prev.nil? ? ENV.delete('BOSH_PACKAGES_DIR') : ENV['BOSH_PACKAGES_DIR'] = prev
+        end
+      end
+    end
+
     let(:config) do
       {
         'receivers' => {
@@ -46,11 +67,11 @@ shared_examples_for 'common config.yml' do
       }
     end
     let(:properties) { { 'config' => config } }
-    let(:rendered) { YAML.safe_load(template.render(properties)) }
+    let(:rendered) { YAML.safe_load(template.render(properties, spec: instance_spec)) }
 
     context 'when the config is provided as a string, not a hash' do
       let(:string_config) { YAML.dump(config) }
-      let(:rendered) { YAML.safe_load(template.render({ 'config' => string_config })) }
+      let(:rendered) { YAML.safe_load(template.render({ 'config' => string_config }, spec: instance_spec)) }
 
       def without_receivers(cfg)
         cfg.delete('receivers')
@@ -281,12 +302,10 @@ shared_examples_for 'common config.yml' do
       it 'list of available processors matches builder source of truth' do
         config['processors']['unavailable'] = nil
 
-        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
-        processor_gomods = builder_config.fetch('processors').map {|entry| entry.fetch('gomod').split(" ")[0]}
-        processor_names = processor_gomods.map do |gomod|
-          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
-        end
-        formatted_names = processor_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+        manifest = YAML.load_file(File.join(@packages_dir, package_name, 'config', 'available_components.yml'))
+        expected = manifest['available_components']['processors']
+                   .flat_map { |c| [c['type'], c['deprecated_type']] }.compact.uniq
+        formatted_names = expected.map { |name| "\"#{name}\"" }.join(', ')
 
         expect { rendered }.to raise_error do |error|
           expect(error.message).to include("Available: [#{formatted_names}]")
@@ -339,12 +358,10 @@ shared_examples_for 'common config.yml' do
       it 'list of available exporters matches builder source of truth' do
         config['exporters']['unavailable'] = nil
 
-        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
-        exporter_gomods = builder_config.fetch('exporters').map {|entry| entry.fetch('gomod').split(" ")[0]}
-        exporter_names = exporter_gomods.map do |gomod|
-          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
-        end
-        formatted_names = exporter_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+        manifest = YAML.load_file(File.join(@packages_dir, package_name, 'config', 'available_components.yml'))
+        expected = manifest['available_components']['exporters']
+                   .flat_map { |c| [c['type'], c['deprecated_type']] }.compact.uniq
+        formatted_names = expected.map { |name| "\"#{name}\"" }.join(', ')
 
         expect { rendered }.to raise_error do |error|
           expect(error.message).to include("Available: [#{formatted_names}]")
@@ -412,12 +429,10 @@ shared_examples_for 'common config.yml' do
       it 'list of available extensions matches builder source of truth' do
         config['extensions']['unavailable'] = nil
 
-        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
-        extension_gomods = builder_config.fetch('extensions').map {|entry| entry.fetch('gomod').split(" ")[0]}
-        extension_names = extension_gomods.map do |gomod|
-          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
-        end
-        formatted_names = extension_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+        manifest = YAML.load_file(File.join(@packages_dir, package_name, 'config', 'available_components.yml'))
+        expected = manifest['available_components']['extensions']
+                   .flat_map { |c| [c['type'], c['deprecated_type']] }.compact.uniq
+        formatted_names = expected.map { |name| "\"#{name}\"" }.join(', ')
 
         expect { rendered }.to raise_error do |error|
           expect(error.message).to include("Available: [#{formatted_names}]")

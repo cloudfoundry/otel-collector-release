@@ -9,6 +9,7 @@ describe 'otel-collector' do
   let(:release) { Bosh::Template::Test::ReleaseDir.new(release_dir) }
   let(:job) { release.job('otel-collector') }
   let(:config_path) { '/var/vcap/jobs/otel-collector/config' }
+  let(:package_name) { 'otel-collector' }
 
   it_behaves_like 'common config.yml'
 

@@ -1,4 +1,22 @@
 <%=
+
+# spec.job.name == the BOSH package name (true for both jobs today); the manifest is
+# packaged under that name. If a job ever vends a differently-named package, this breaks.
+def available_components
+  @available_components ||= begin
+    packages_root = ENV['BOSH_PACKAGES_DIR'] || (ENV['SYSTEMDRIVE'] ? "#{ENV['SYSTEMDRIVE']}/var/vcap/packages" : "/var/vcap/packages")
+    manifest_path = File.join(packages_root, spec.job.name, 'config', 'available_components.yml')
+    raise "Available components manifest not found at #{manifest_path}; this is a packaging bug" unless File.exist?(manifest_path)
+
+    (YAML.load_file(manifest_path) || {}).fetch('available_components', {})
+  end
+end
+
+# Names a user may configure for a component kind: each component's type plus any deprecated alias.
+def included_components(component_kind)
+  available_components.fetch(component_kind, []).flat_map { |c| [c['type'], c['deprecated_type']] }.compact.uniq
+end
+
 def config
   @config ||= begin
     cfg = retrieve_property('config')
@@ -153,21 +171,6 @@ def expose_internal_telemetry
   }
 end
 
-# Hardcoded list of exporters included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
-def included_exporters
-  %w[debug otlp_grpc file prometheus prometheus_remote_write nop splunk_hec datadog kafka syslog otlp_http].sort
-end
-
-# Hardcoded list of processors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
-def included_processors
-  %w[batch memory_limiter transform filter tail_sampling].sort
-end
-
-# Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
-def included_extensions
-  %w[opamp pprof].sort
-end
-
 def check_for_use_of_valid_components!(component_kind, included_components)
   user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
 
@@ -195,17 +198,17 @@ check_for_no_exporters!
 check_for_no_service_config!
 check_for_use_of_reserved_prefix!
 check_for_use_of_reserved_bbs_api_port!
-check_for_use_of_valid_components!('processors', included_processors)
-check_for_use_of_valid_components!('exporters', included_exporters)
-check_for_use_of_valid_components!('extensions', included_extensions)
+check_for_use_of_valid_components!('processors', included_components('processors'))
+check_for_use_of_valid_components!('exporters',  included_components('exporters'))
+check_for_use_of_valid_components!('extensions', included_components('extensions'))
 if_p('allow_list.processors') do |prop|
-  check_for_use_of_allowed_components!('processors', included_processors, prop)
+  check_for_use_of_allowed_components!('processors', included_components('processors'), prop)
 end
 if_p('allow_list.exporters') do |prop|
-  check_for_use_of_allowed_components!('exporters', included_exporters, prop)
+  check_for_use_of_allowed_components!('exporters', included_components('exporters'), prop)
 end
 if_p('allow_list.extensions') do |prop|
-  check_for_use_of_allowed_components!('extensions', included_extensions, prop)
+  check_for_use_of_allowed_components!('extensions', included_components('extensions'), prop)
 end
 set_internal_receiver_as_only_receiver
 add_nop_pipelines
