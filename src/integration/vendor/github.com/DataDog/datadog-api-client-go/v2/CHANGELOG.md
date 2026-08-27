@@ -1,5 +1,117 @@
 # CHANGELOG
 
+## 2.63.0/2026-08-06
+
+### Fixed
+* Fleet Automation v2 remove deprecated or redundant agent detail fields [#4410](https://github.com/DataDog/datadog-api-client-go/pull/4410)
+* Uppercase automation rule trigger and action type enum values [#4401](https://github.com/DataDog/datadog-api-client-go/pull/4401)
+* Fix broken JSON API shape for security monitoring rules bulk delete [#4377](https://github.com/DataDog/datadog-api-client-go/pull/4377)
+* Document CNM API authorization requirements [#4374](https://github.com/DataDog/datadog-api-client-go/pull/4374)
+* Fix incident user-defined role policy not required on create [#4360](https://github.com/DataDog/datadog-api-client-go/pull/4360)
+* Document 409 and 412 error codes for UpsertRows/DeleteRows [#4341](https://github.com/DataDog/datadog-api-client-go/pull/4341)
+* Add `template_variables` to Notebooks v1 API spec [#4311](https://github.com/DataDog/datadog-api-client-go/pull/4311)
+
+### Added
+* data quality monitor sensitivity definition [#4403](https://github.com/DataDog/datadog-api-client-go/pull/4403)
+* Add SSE-KMS encryption fields to ObservabilityPipelineAmazonS3Destination for datadog_archives [#4392](https://github.com/DataDog/datadog-api-client-go/pull/4392)
+* Adds documentation for historical metrics endpoints [#4390](https://github.com/DataDog/datadog-api-client-go/pull/4390)
+* Remove unit conversion notes from usage metering descriptions [#4385](https://github.com/DataDog/datadog-api-client-go/pull/4385)
+* Add impact_score and impact_level to Flaky Test Management API spec [#4381](https://github.com/DataDog/datadog-api-client-go/pull/4381)
+* Add list custom LLM Obs evaluator configs endpoint [#4379](https://github.com/DataDog/datadog-api-client-go/pull/4379)
+* Promote RUM Operations endpoints from private to public [#4373](https://github.com/DataDog/datadog-api-client-go/pull/4373)
+* Add TLS support and server_name SNI option to Observability Pipelines client components [#4372](https://github.com/DataDog/datadog-api-client-go/pull/4372)
+* Add workflow schedule overlap behavior [#4371](https://github.com/DataDog/datadog-api-client-go/pull/4371)
+* Add notice templates to the Status Pages API spec [#4369](https://github.com/DataDog/datadog-api-client-go/pull/4369)
+* Add `key-value` type in Logs Array processor [#4368](https://github.com/DataDog/datadog-api-client-go/pull/4368)
+* Expand incidents postmortem-templates spec to full CRUD contract [#4362](https://github.com/DataDog/datadog-api-client-go/pull/4362)
+* Remove unstable tags from Case Management APIs [#4361](https://github.com/DataDog/datadog-api-client-go/pull/4361)
+* Add CSM Ownership settings endpoints [#4358](https://github.com/DataDog/datadog-api-client-go/pull/4358)
+* Add DD_ENV filter to Feature Flags environments API [#4357](https://github.com/DataDog/datadog-api-client-go/pull/4357)
+* Add Exclude-mode tag usage fields to tag indexing rules [#4349](https://github.com/DataDog/datadog-api-client-go/pull/4349)
+* Add feature-flag type to restriction policies [#4348](https://github.com/DataDog/datadog-api-client-go/pull/4348)
+* Add public API spec for LLM Observability prompt registry CRUD endpoints [#4347](https://github.com/DataDog/datadog-api-client-go/pull/4347)
+* Add public DDSQL tabular query endpoints [#4346](https://github.com/DataDog/datadog-api-client-go/pull/4346)
+* Add function and cloud_function fields to Azure and GCP scan options [#4344](https://github.com/DataDog/datadog-api-client-go/pull/4344)
+* Add WAF custom rule file addresses [#4343](https://github.com/DataDog/datadog-api-client-go/pull/4343)
+* Make incident user-defined-roles API public but keep it unstable [#4340](https://github.com/DataDog/datadog-api-client-go/pull/4340)
+* Add OpenAPI spec for GET /api/v2/org_group_policy_suggestions [#4339](https://github.com/DataDog/datadog-api-client-go/pull/4339)
+* Add cloud-agnostic account filters endpoints to Cloud Cost Management [#4338](https://github.com/DataDog/datadog-api-client-go/pull/4338)
+* Add GET endpoint for custom forecast [#4334](https://github.com/DataDog/datadog-api-client-go/pull/4334)
+* Add OpenAPI specs for ListDatasetReportSchedules and PrintReport [#4332](https://github.com/DataDog/datadog-api-client-go/pull/4332)
+* Add editable field to critical assets attributes [#4331](https://github.com/DataDog/datadog-api-client-go/pull/4331)
+* Add GET /api/v2/on-call/schedules/schedule_id/responders spec [#4329](https://github.com/DataDog/datadog-api-client-go/pull/4329)
+* Add OpenAPI spec for hostmap widgwet DDSQL request shape, deprecate legacy metric shape [#4321](https://github.com/DataDog/datadog-api-client-go/pull/4321)
+* Document secmon-public-api Entra ID integration endpoints [#4319](https://github.com/DataDog/datadog-api-client-go/pull/4319)
+* Add AWS integration metric name filters and preview endpoints [#4315](https://github.com/DataDog/datadog-api-client-go/pull/4315)
+* Add public unstable spec for Security Findings Linear endpoints [#4310](https://github.com/DataDog/datadog-api-client-go/pull/4310)
+* Add workload activity rule type to notification rules [#4309](https://github.com/DataDog/datadog-api-client-go/pull/4309)
+* Add configuration attribute to incident type schema [#4308](https://github.com/DataDog/datadog-api-client-go/pull/4308)
+* Add OpenAPI spec for POST /api/v2/snapshot [#4307](https://github.com/DataDog/datadog-api-client-go/pull/4307)
+* Add SSE-KMS encryption fields to ObservabilityPipelineAmazonS3GenericDestination [#4306](https://github.com/DataDog/datadog-api-client-go/pull/4306)
+* Add included rows to batchrowsquery and pagination meta to listrows for reference tables responses [#4302](https://github.com/DataDog/datadog-api-client-go/pull/4302)
+* security-monitoring - add description field to critical assets API spec [#4301](https://github.com/DataDog/datadog-api-client-go/pull/4301)
+* Mark ServiceNow triage endpoints as stable [#4299](https://github.com/DataDog/datadog-api-client-go/pull/4299)
+* Add OpenAPI spec `version` attribute for Logs Transactions V2 Preview [#4296](https://github.com/DataDog/datadog-api-client-go/pull/4296)
+* Page related updates to synthetics  [#4295](https://github.com/DataDog/datadog-api-client-go/pull/4295)
+* Add Obs Pipeline Grok processor updates to OpenAPI Spec [#4293](https://github.com/DataDog/datadog-api-client-go/pull/4293)
+* Add UK1 [#4280](https://github.com/DataDog/datadog-api-client-go/pull/4280)
+* Add OpenAPI spec for identity providers and Authorized client apis [#4241](https://github.com/DataDog/datadog-api-client-go/pull/4241)
+* Add DashboardDefaultTimeframe schema and default_timeframe to Dashboard [#4199](https://github.com/DataDog/datadog-api-client-go/pull/4199)
+* Add OpenAPI spec for api v2 rum config [#4197](https://github.com/DataDog/datadog-api-client-go/pull/4197)
+* Add OpenAPI specifications for incidents-rapid-api endpoints [#4171](https://github.com/DataDog/datadog-api-client-go/pull/4171)
+
+### Changed
+* Fleet Automation promote ready v2 endpoints to public [#4396](https://github.com/DataDog/datadog-api-client-go/pull/4396)
+* Migrate tag-policies routes to snake_case [#4380](https://github.com/DataDog/datadog-api-client-go/pull/4380)
+* Deprecate report-related endpoints from SLO documentation [#4378](https://github.com/DataDog/datadog-api-client-go/pull/4378)
+* Update documentation according to new content pack states endpoint response shape [#4359](https://github.com/DataDog/datadog-api-client-go/pull/4359)
+* Mark Linear security findings endpoints as stable [#4351](https://github.com/DataDog/datadog-api-client-go/pull/4351)
+* Mark custom forecast endpoints as generally available [#4350](https://github.com/DataDog/datadog-api-client-go/pull/4350)
+* Change TopologyMapWidgetDefinition to oneOf with TopologyMapServiceMapDefinitionServiceMap [#4322](https://github.com/DataDog/datadog-api-client-go/pull/4322)
+* Update ListAssetsSBOMs spec - require asset_type on first page, add ServerlessFunction asset type [#4313](https://github.com/DataDog/datadog-api-client-go/pull/4313)
+* Fix DORA deployment and incident read responses to use date-time timestamps [#4312](https://github.com/DataDog/datadog-api-client-go/pull/4312)
+* Allow using access key to specify AWS s3 integration in create / update logs archives [#4248](https://github.com/DataDog/datadog-api-client-go/pull/4248)
+* Add saved filters endpoints to the Feature Flags API [#4227](https://github.com/DataDog/datadog-api-client-go/pull/4227)
+
+### Removed
+* Remove prerequisite, table_id, and attached_to fields from incident user-defined field API [#4318](https://github.com/DataDog/datadog-api-client-go/pull/4318)
+
+## 2.62.0/2026-06-30
+
+### Added
+* Add the uk1 data center. [#4294](https://github.com/DataDog/datadog-api-client-go/pull/4294)
+* [obs-pipelines] Add TLS support to cloud_prem destination [#4287](https://github.com/DataDog/datadog-api-client-go/pull/4287)
+* Add OpenAPI spec for k9-integration-api security findings and vulnerabilities [#4284](https://github.com/DataDog/datadog-api-client-go/pull/4284)
+* Document metrics volume includes [#4282](https://github.com/DataDog/datadog-api-client-go/pull/4282)
+* Add buffer configuration to ClickHouse destination [#4281](https://github.com/DataDog/datadog-api-client-go/pull/4281)
+* Add public API endpoints for feature flag variant create, update, and delete [#4279](https://github.com/DataDog/datadog-api-client-go/pull/4279)
+* Add public v2 OpenAPI operations for governance controls [#4277](https://github.com/DataDog/datadog-api-client-go/pull/4277)
+* Add ObservabilityPipelineClickhouseDestination to OpenAPI spec [#4276](https://github.com/DataDog/datadog-api-client-go/pull/4276)
+* Add ObservabilityPipelineWebsocketSource to schema [#4274](https://github.com/DataDog/datadog-api-client-go/pull/4274)
+* Add security_filters and rules resource types to terraform export endpoints [#4272](https://github.com/DataDog/datadog-api-client-go/pull/4272)
+* Add OpenAPI for Cloud Cost Management custom forecast endpoints [#4271](https://github.com/DataDog/datadog-api-client-go/pull/4271)
+* Add Edit and Delete Notice Update and Slack icon support in API spec [#4266](https://github.com/DataDog/datadog-api-client-go/pull/4266)
+* Add OpenAPI spec for RUM Remote Config endpoints [#4263](https://github.com/DataDog/datadog-api-client-go/pull/4263)
+* Add OpenAPI spec for code-coverage PR summary and files endpoints [#4262](https://github.com/DataDog/datadog-api-client-go/pull/4262)
+* Add public API for security findings automation rules [#4259](https://github.com/DataDog/datadog-api-client-go/pull/4259)
+* Add OpenAPI spec for governance insights [#4252](https://github.com/DataDog/datadog-api-client-go/pull/4252)
+* Add OpenAPI specs for reporting schedule endpoints [#4246](https://github.com/DataDog/datadog-api-client-go/pull/4246)
+* Add LogsArrayMapProcessor to OpenAPI v1 spec [#4218](https://github.com/DataDog/datadog-api-client-go/pull/4218)
+* Update GetBudget API spec with cost query parameters and custom forecast fields [#4217](https://github.com/DataDog/datadog-api-client-go/pull/4217)
+
+### Changed
+* Update worked_by param to accept handle instead of UUID [#4292](https://github.com/DataDog/datadog-api-client-go/pull/4292)
+* Add support for running CI jobs [#4278](https://github.com/DataDog/datadog-api-client-go/pull/4278)
+* feat(test-optimization): update service settings API with override and inherit fields [#4261](https://github.com/DataDog/datadog-api-client-go/pull/4261)
+* Mark tag indexing rule endpoints as Preview in API spec [#4260](https://github.com/DataDog/datadog-api-client-go/pull/4260)
+
+### Fixed
+* Fix zero-delay retries when HTTPClient.Timeout is unset [#4290](https://github.com/DataDog/datadog-api-client-go/pull/4290)
+* Fix test by adding on_missing_data options to the req payload [#4286](https://github.com/DataDog/datadog-api-client-go/pull/4286)
+
+### Deprecated
+* Remove Compliance Findings rule-based view endpoint from OpenAPI v2 [#4288](https://github.com/DataDog/datadog-api-client-go/pull/4288)
+
 ## 2.61.0/2026-06-17
 
 ### Added

@@ -337,6 +337,93 @@ func (a *FeatureFlagsApi) CreateFeatureFlagsEnvironment(ctx _context.Context, bo
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
+// CreateVariantForFeatureFlag Add a variant to a feature flag.
+// Adds a single new variant to an existing feature flag. This endpoint is
+// additive-only: it never modifies existing variants. A request whose `key`
+// already exists on the flag is rejected with `409 Conflict`; a `value`
+// whose type does not match the flag's `value_type` is rejected with `400`.
+// The server generates the variant UUID and returns it in the response body;
+// callers (for example, the flag-migration tool) need this UUID to reference
+// the new variant in subsequent allocation syncs.
+func (a *FeatureFlagsApi) CreateVariantForFeatureFlag(ctx _context.Context, featureFlagId uuid.UUID, body CreateVariant) (Variant, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPost
+		localVarPostBody    interface{}
+		localVarReturnValue Variant
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.FeatureFlagsApi.CreateVariantForFeatureFlag")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/feature-flags/{feature_flag_id}/variants"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{feature_flag_id}", _neturl.PathEscape(datadog.ParameterToString(featureFlagId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 409 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
 // DeleteFeatureFlagsEnvironment Delete an environment.
 // Deletes an environment. This operation cannot be undone.
 func (a *FeatureFlagsApi) DeleteFeatureFlagsEnvironment(ctx _context.Context, environmentId uuid.UUID) (*_nethttp.Response, error) {
@@ -392,6 +479,77 @@ func (a *FeatureFlagsApi) DeleteFeatureFlagsEnvironment(ctx _context.Context, en
 			ErrorMessage: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
+// DeleteVariantFromFeatureFlag Delete a variant.
+// Deletes a variant from a feature flag.
+//
+// When backend approvals are enabled and the flag requires approval, this endpoint creates and returns a `FlagSuggestion` with `201 Created` instead of deleting the variant immediately. If a pending suggestion already exists for this flag's variant property, the endpoint returns `409 Conflict`.
+func (a *FeatureFlagsApi) DeleteVariantFromFeatureFlag(ctx _context.Context, featureFlagId uuid.UUID, variantId uuid.UUID) (*_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod = _nethttp.MethodDelete
+		localVarPostBody   interface{}
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.FeatureFlagsApi.DeleteVariantFromFeatureFlag")
+	if err != nil {
+		return nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/feature-flags/{feature_flag_id}/variants/{variant_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{feature_flag_id}", _neturl.PathEscape(datadog.ParameterToString(featureFlagId, "")))
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{variant_id}", _neturl.PathEscape(datadog.ParameterToString(variantId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Accept"] = "*/*"
+
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 409 || localVarHTTPResponse.StatusCode == 429 {
 			var v APIErrorResponse
 			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
@@ -840,6 +998,7 @@ func (a *FeatureFlagsApi) ListFeatureFlags(ctx _context.Context, o ...ListFeatur
 type ListFeatureFlagsEnvironmentsOptionalParameters struct {
 	Name   *string
 	Key    *string
+	DdEnv  *string
 	Limit  *int64
 	Offset *int64
 }
@@ -862,6 +1021,12 @@ func (r *ListFeatureFlagsEnvironmentsOptionalParameters) WithKey(key string) *Li
 	return r
 }
 
+// WithDdEnv sets the corresponding parameter name and returns the struct.
+func (r *ListFeatureFlagsEnvironmentsOptionalParameters) WithDdEnv(ddEnv string) *ListFeatureFlagsEnvironmentsOptionalParameters {
+	r.DdEnv = &ddEnv
+	return r
+}
+
 // WithLimit sets the corresponding parameter name and returns the struct.
 func (r *ListFeatureFlagsEnvironmentsOptionalParameters) WithLimit(limit int64) *ListFeatureFlagsEnvironmentsOptionalParameters {
 	r.Limit = &limit
@@ -876,7 +1041,7 @@ func (r *ListFeatureFlagsEnvironmentsOptionalParameters) WithOffset(offset int64
 
 // ListFeatureFlagsEnvironments List environments.
 // Returns a list of environments for the organization.
-// Supports filtering by name and key.
+// Supports filtering by name, key, and DD_ENV.
 func (a *FeatureFlagsApi) ListFeatureFlagsEnvironments(ctx _context.Context, o ...ListFeatureFlagsEnvironmentsOptionalParameters) (ListEnvironmentsResponse, *_nethttp.Response, error) {
 	var (
 		localVarHTTPMethod  = _nethttp.MethodGet
@@ -907,6 +1072,9 @@ func (a *FeatureFlagsApi) ListFeatureFlagsEnvironments(ctx _context.Context, o .
 	}
 	if optionalParams.Key != nil {
 		localVarQueryParams.Add("key", datadog.ParameterToString(*optionalParams.Key, ""))
+	}
+	if optionalParams.DdEnv != nil {
+		localVarQueryParams.Add("dd_env", datadog.ParameterToString(*optionalParams.DdEnv, ""))
 	}
 	if optionalParams.Limit != nil {
 		localVarQueryParams.Add("limit", datadog.ParameterToString(*optionalParams.Limit, ""))
@@ -1590,6 +1758,90 @@ func (a *FeatureFlagsApi) UpdateFeatureFlagsEnvironment(ctx _context.Context, en
 			ErrorMessage: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 429 {
+			var v APIErrorResponse
+			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				return localVarReturnValue, localVarHTTPResponse, newErr
+			}
+			newErr.ErrorModel = v
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	err = a.Client.Decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+	if err != nil {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: err.Error(),
+		}
+		return localVarReturnValue, localVarHTTPResponse, newErr
+	}
+
+	return localVarReturnValue, localVarHTTPResponse, nil
+}
+
+// UpdateVariantForFeatureFlag Update a variant.
+// Updates the name and value of an existing variant on a feature flag.
+//
+// When backend approvals are enabled and the flag requires approval, this endpoint creates and returns a `FlagSuggestion` with `201 Created` instead of applying the change immediately. Use the returned suggestion `id` to approve or reject the change. If a pending suggestion already exists for this flag's variant property, the endpoint returns `409 Conflict`.
+func (a *FeatureFlagsApi) UpdateVariantForFeatureFlag(ctx _context.Context, featureFlagId uuid.UUID, variantId uuid.UUID, body UpdateVariantRequest) (Variant, *_nethttp.Response, error) {
+	var (
+		localVarHTTPMethod  = _nethttp.MethodPut
+		localVarPostBody    interface{}
+		localVarReturnValue Variant
+	)
+
+	localBasePath, err := a.Client.Cfg.ServerURLWithContext(ctx, "v2.FeatureFlagsApi.UpdateVariantForFeatureFlag")
+	if err != nil {
+		return localVarReturnValue, nil, datadog.GenericOpenAPIError{ErrorMessage: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/api/v2/feature-flags/{feature_flag_id}/variants/{variant_id}"
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{feature_flag_id}", _neturl.PathEscape(datadog.ParameterToString(featureFlagId, "")))
+	localVarPath = datadog.ReplacePathParameter(localVarPath, "{variant_id}", _neturl.PathEscape(datadog.ParameterToString(variantId, "")))
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := _neturl.Values{}
+	localVarFormParams := _neturl.Values{}
+	localVarHeaderParams["Content-Type"] = "application/json"
+	localVarHeaderParams["Accept"] = "application/json"
+
+	// body params
+	localVarPostBody = &body
+	if a.Client.Cfg.DelegatedTokenConfig != nil {
+		err = datadog.UseDelegatedTokenAuth(ctx, &localVarHeaderParams, a.Client.Cfg.DelegatedTokenConfig)
+		if err != nil {
+			return localVarReturnValue, nil, err
+		}
+	} else {
+		datadog.SetAuthKeys(
+			ctx,
+			&localVarHeaderParams,
+			[2]string{"apiKeyAuth", "DD-API-KEY"},
+			[2]string{"appKeyAuth", "DD-APPLICATION-KEY"},
+		)
+	}
+	req, err := a.Client.PrepareRequest(ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, nil)
+	if err != nil {
+		return localVarReturnValue, nil, err
+	}
+
+	localVarHTTPResponse, err := a.Client.CallAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	localVarBody, err := datadog.ReadBody(localVarHTTPResponse)
+	if err != nil {
+		return localVarReturnValue, localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := datadog.GenericOpenAPIError{
+			ErrorBody:    localVarBody,
+			ErrorMessage: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 400 || localVarHTTPResponse.StatusCode == 403 || localVarHTTPResponse.StatusCode == 404 || localVarHTTPResponse.StatusCode == 409 || localVarHTTPResponse.StatusCode == 429 {
 			var v APIErrorResponse
 			err = a.Client.Decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {

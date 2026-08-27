@@ -78,7 +78,8 @@ func NewTraceWriterV1(
 	telemetryCollector telemetry.TelemetryCollector,
 	statsd statsd.ClientInterface,
 	timing timing.Reporter,
-	compressor compression.Component) *TraceWriterV1 {
+	compressor compression.Component,
+) *TraceWriterV1 {
 	tw := &TraceWriterV1{
 		prioritySampler:    prioritySampler,
 		errorsSampler:      errorsSampler,
@@ -126,9 +127,9 @@ func NewTraceWriterV1(
 // UpdateAPIKey updates the API Key, if needed, on Trace Writer senders.
 func (w *TraceWriterV1) UpdateAPIKey(oldKey, newKey string) {
 	for _, s := range w.senders {
-		if oldKey == s.cfg.apiKey {
+		if oldKey == s.apiKeyManager.Get() {
+			s.apiKeyManager.Update(newKey)
 			log.Debugf("API Key updated for traces endpoint=%s", s.cfg.url)
-			s.cfg.apiKey = newKey
 		}
 	}
 }
@@ -306,12 +307,12 @@ func (w *TraceWriterV1) serializePrepared(pl *pb.AgentPayload, prepared []*pb.Pr
 		return
 	}
 
-	w.stats.BytesUncompressed.Add(int64(len(b)))
 	p := newPayload(map[string]string{
 		"Content-Type":     "application/x-protobuf",
 		"Content-Encoding": w.compressor.Encoding(),
 		headerLanguages:    strings.Join(info.Languages(), "|"),
 	})
+	p.uncompressedSize = len(b)
 	p.body.Grow(len(b) / 2)
 	writer, err := w.compressor.NewWriter(p.body)
 	if err != nil {
@@ -360,6 +361,7 @@ func (w *TraceWriterV1) recordEvent(t eventType, data *eventData) {
 		log.Debugf("Flushed traces to the API; time: %s, bytes: %d", data.duration, data.bytes)
 		w.timing.Since("datadog.trace_agent.trace_writer.flush_duration", time.Now().Add(-data.duration))
 		w.stats.Bytes.Add(int64(data.bytes))
+		w.stats.BytesUncompressed.Add(int64(data.uncompressedBytes))
 		w.stats.Payloads.Inc()
 		if !w.telemetryCollector.SentFirstTrace() {
 			go w.telemetryCollector.SendFirstTrace()

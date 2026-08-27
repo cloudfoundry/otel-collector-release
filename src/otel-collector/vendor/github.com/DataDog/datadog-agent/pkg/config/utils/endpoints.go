@@ -33,7 +33,7 @@ const (
 
 func getResolvedDDUrl(c pkgconfigmodel.Reader, urlKey string) string {
 	resolvedDDURL := c.GetString(urlKey)
-	if c.IsSet("site") {
+	if c.IsConfigured("site") {
 		log.Debugf("'site' and '%s' are both set in config: setting main endpoint to '%s': \"%s\"", urlKey, urlKey, c.GetString(urlKey))
 	}
 	return resolvedDDURL
@@ -63,10 +63,10 @@ func newAPIKeyset(path string, keys ...string) []APIKeys {
 
 // GetMainEndpointBackwardCompatible implements the logic to extract the DD URL from a config, based on `site`,ddURLKey and a backward compatible key
 func GetMainEndpointBackwardCompatible(c pkgconfigmodel.Reader, prefix string, ddURLKey string, backwardKey string) string {
-	if c.IsSet(ddURLKey) && c.GetString(ddURLKey) != "" {
+	if c.IsConfigured(ddURLKey) && c.GetString(ddURLKey) != "" {
 		// value under ddURLKey takes precedence over backwardKey and 'site'
 		return getResolvedDDUrl(c, ddURLKey)
-	} else if c.IsSet(backwardKey) && c.GetString(backwardKey) != "" {
+	} else if c.IsConfigured(backwardKey) && c.GetString(backwardKey) != "" {
 		// value under backwardKey takes precedence over 'site'
 		return getResolvedDDUrl(c, backwardKey)
 	} else if c.GetString("site") != "" {
@@ -197,7 +197,49 @@ func GetMultipleEndpoints(c pkgconfigmodel.Reader) (EndpointDescriptorSet, error
 	return eds, nil
 }
 
-var wellKnownSitesRe = regexp.MustCompile(`(?:datadoghq|datad0g)\.(?:com|eu)$|ddog-gov\.com$`)
+// ddDomainPattern matches known Datadog domains (e.g., datadoghq.com,
+// datad0g.eu, ddog-gov.com). This is the shared building block for
+// wellKnownSitesRe, ddSitePattern, ddSiteFromHostnameRe, and ddURLRegexp.
+const ddDomainPattern = `datad(?:oghq|0g)\.(?:com|eu)|ddog-gov\.com`
+
+var wellKnownSitesRe = regexp.MustCompile(`(?:` + ddDomainPattern + `)$`)
+
+// ddSitePattern matches a Datadog site: an optional datacenter subdomain
+// (e.g., us3, ap1) followed by a known Datadog domain.
+const ddSitePattern = `([a-z]{2,}\d{1,2}\.)?(` + ddDomainPattern + `)`
+
+// ddSiteFromHostnameRe extracts the Datadog site from the end of a hostname.
+// The (?:^|\.) prefix ensures the match starts at a label boundary so that,
+// e.g., "notdatadoghq.com" is not mistaken for "datadoghq.com".
+var ddSiteFromHostnameRe = regexp.MustCompile(`(?:^|\.)` + ddSitePattern + `\.?$`)
+
+// ExtractSiteFromURL extracts the Datadog site from a URL.
+// For example:
+//
+//	"https://intake.profile.us3.datadoghq.com/v1/input" returns "us3.datadoghq.com"
+//	"https://intake.profile.datadoghq.com/v1/input" returns "datadoghq.com"
+//	"https://intake.profile.datadoghq.eu/v1/input" returns "datadoghq.eu"
+//
+// Returns an empty string if the URL cannot be parsed or does not contain a
+// recognized Datadog domain.
+func ExtractSiteFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	hostname := strings.ToLower(strings.TrimRight(u.Hostname(), "."))
+	if hostname == "" {
+		return ""
+	}
+
+	matches := ddSiteFromHostnameRe.FindStringSubmatch(hostname)
+	if matches == nil {
+		return ""
+	}
+	// matches[1] is the DC label with trailing dot (e.g., "us3.") or empty
+	// matches[2] is the known domain (e.g., "datadoghq.com")
+	return matches[1] + matches[2]
+}
 
 // BuildURLWithPrefix will return an HTTP(s) URL for a site given a certain prefix.
 // If the site is a datadog well-known one, it is suffixed with a dot to make it a FQDN.
@@ -217,7 +259,7 @@ func BuildURLWithPrefix(prefix, site string) string {
 // GetMainEndpoint returns the main DD URL defined in the config, based on `site` and the prefix, or ddURLKey
 func GetMainEndpoint(c pkgconfigmodel.Reader, prefix string, ddURLKey string) string {
 	// value under ddURLKey takes precedence over 'site'
-	if c.IsSet(ddURLKey) && c.GetString(ddURLKey) != "" {
+	if c.IsConfigured(ddURLKey) && c.GetString(ddURLKey) != "" {
 		return getResolvedDDUrl(c, ddURLKey)
 	} else if c.GetString("site") != "" {
 		return BuildURLWithPrefix(prefix, c.GetString("site"))
@@ -231,7 +273,7 @@ func GetMainEndpoint(c pkgconfigmodel.Reader, prefix string, ddURLKey string) st
 // lookup key in the configuration. If a valid is set at the given key, it is used as an override URL that takes
 // precedence over `multi_region_failover.site`.
 func GetMRFEndpoint(c pkgconfigmodel.Reader, prefix, ddMRFURLKey string) (string, error) {
-	if c.IsSet(ddMRFURLKey) && c.GetString(ddMRFURLKey) != "" {
+	if c.IsConfigured(ddMRFURLKey) && c.GetString(ddMRFURLKey) != "" {
 		return getResolvedMRFDDURL(c, ddMRFURLKey), nil
 	} else if c.GetString("multi_region_failover.site") != "" {
 		return BuildURLWithPrefix(prefix, c.GetString("multi_region_failover.site")), nil
@@ -258,7 +300,7 @@ func GetMRFLogsEndpoint(c pkgconfigmodel.Reader, prefix string) (string, error) 
 
 func getResolvedMRFDDURL(c pkgconfigmodel.Reader, mrfURLKey string) string {
 	resolvedMRFDDURL := c.GetString(mrfURLKey)
-	if c.IsSet("multi_region_failover.site") {
+	if c.IsConfigured("multi_region_failover.site") {
 		log.Infof("'multi_region_failover.site' and '%s' are both set in config: setting main endpoint to '%s': \"%s\"", mrfURLKey, mrfURLKey, resolvedMRFDDURL)
 	}
 	return resolvedMRFDDURL
@@ -281,7 +323,20 @@ func GetMRFInfraEndpoint(c pkgconfigmodel.Reader) (string, error) {
 
 // ddURLRegexp determines if an URL belongs to Datadog or not. If the URL belongs to Datadog it's prefixed with the Agent
 // version (see AddAgentVersionToDomain).
-var ddURLRegexp = regexp.MustCompile(`^app(\.mrf)?(\.[a-z]{2,}\d{1,2})?\.(datad(oghq|0g)\.(com|eu)|ddog-gov\.com)(\.)?$`)
+var ddURLRegexp = regexp.MustCompile(`^app(\.mrf)?\.` + ddSitePattern + `\.?$`)
+
+// IsDatadogURL reports whether the given URL is a well-known Datadog destination.
+func IsDatadogURL(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(strings.TrimRight(u.Hostname(), "."))
+	if host == "" {
+		return false
+	}
+	return ddURLRegexp.MatchString(host)
+}
 
 // getDomainPrefix provides the right prefix for agent X.Y.Z
 func getDomainPrefix(app string) string {

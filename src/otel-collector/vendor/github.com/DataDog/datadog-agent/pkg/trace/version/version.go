@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/DataDog/datadog-agent/pkg/proto/pbgo/trace"
-	"github.com/DataDog/datadog-agent/pkg/proto/pbgo/trace/idx"
 )
 
 const (
@@ -18,10 +17,11 @@ const (
 	gitCommitShaField     = "_dd.git.commit.sha"
 	gitCommitShaTagPrefix = "git.commit.sha:"
 	imageTagPrefix        = "image_tag:"
+	versionTagPrefix      = "version:"
 )
 
-// GetVersionDataFromContainerTags will return the git commit sha and image tag from container tags, if present.
-func GetVersionDataFromContainerTags(cTags []string) (gitCommitSha, imageTag string) {
+// GetVersionDataFromContainerTags will return the git commit sha, image tag, and app version from container tags, if present.
+func GetVersionDataFromContainerTags(cTags []string) (gitCommitSha, imageTag, appVersion string) {
 	for _, t := range cTags {
 		if gitCommitSha == "" {
 			if sha, ok := strings.CutPrefix(t, gitCommitShaTagPrefix); ok {
@@ -33,22 +33,21 @@ func GetVersionDataFromContainerTags(cTags []string) (gitCommitSha, imageTag str
 				imageTag = image
 			}
 		}
-		if gitCommitSha != "" && imageTag != "" {
+		if appVersion == "" {
+			if v, ok := strings.CutPrefix(t, versionTagPrefix); ok {
+				appVersion = v
+			}
+		}
+		if gitCommitSha != "" && imageTag != "" && appVersion != "" {
 			break
 		}
 	}
-	return gitCommitSha, imageTag
+	return gitCommitSha, imageTag, appVersion
 }
 
 // GetGitCommitShaFromTrace returns the first "git_commit_sha" tag found in trace t.
 func GetGitCommitShaFromTrace(root *trace.Span, t *trace.TraceChunk) string {
 	return searchTraceForField(root, t, gitCommitShaField)
-}
-
-// GetGitCommitShaFromTraceV1 returns the "git_commit_sha" tag found in a trace chunk.
-func GetGitCommitShaFromTraceV1(chunk *idx.InternalTraceChunk) string {
-	sha, _ := chunk.GetAttributeAsString(gitCommitShaField)
-	return sha
 }
 
 // GetAppVersionFromTrace returns the first "version" tag found in trace t.
