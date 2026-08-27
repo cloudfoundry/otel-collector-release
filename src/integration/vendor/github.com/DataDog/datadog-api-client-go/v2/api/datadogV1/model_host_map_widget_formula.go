@@ -15,7 +15,7 @@ import (
 type HostMapWidgetFormula struct {
 	// Expression alias.
 	Alias *string `json:"alias,omitempty"`
-	// Visual dimension driven by a formula in the infrastructure host map widget.
+	// Visual dimension for the host map widget. Used both by infrastructure-backed formulas and by DDSQL projection columns; `group` is only meaningful for DDSQL projection columns, where repeated entries define the grouping hierarchy.
 	Dimension HostMapWidgetDimension `json:"dimension"`
 	// String expression built from queries, formulas, and functions.
 	Formula string `json:"formula"`
