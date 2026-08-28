@@ -452,6 +452,47 @@ shared_examples_for 'common config.yml' do
       end
     end
 
+    describe 'connectors' do
+      before do
+        config['connectors'] = { 'routing' => nil }
+      end
+
+      it 'list of available connectors matches builder source of truth' do
+        config['connectors']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        connector_gomods = builder_config.fetch('connectors').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        connector_names = connector_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = connector_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
+      it 'includes the configured connectors in the config' do
+        expect(rendered.keys).to include 'connectors'
+        expect(rendered['connectors']).to eq(config['connectors'])
+      end
+
+      it 'allows no connectors with empty allow list' do
+        properties['allow_list'] = {'connectors' => []}
+        expect { rendered }.to raise_error(/The following configured connectors are not allowed: \["routing"\]/)
+      end
+
+      it 'errors when an unrecognized connector is in allow list' do
+        properties['allow_list'] = {'connectors' => ['routing', 'unrecognized-connector']}
+        expect { rendered }.to raise_error(/The following connectors specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-connector"\]/)
+      end
+
+      it 'errors when an unavailable connector is configured' do
+        config['connectors']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured connectors are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
+      end
+    end
+
     describe 'internal telemetry' do
       it 'exposes telemetry at the default port' do
         expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['host']).to eq('127.0.0.1')
