@@ -255,6 +255,51 @@ shared_examples_for 'common config.yml' do
           end
         end
 
+        context 'when a pipeline is fed by a connector' do
+          before do
+            config['connectors'] = { 'routing' => nil }
+            config['service']['pipelines'] = {
+              # real ingress: exports into the connector
+              'metrics/router-inbound' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => ['routing']
+              },
+              # connector-fed downstream pipelines
+              'metrics/team-a' => {
+                'receivers' => ['routing'],
+                'exporters' => ['otlp_grpc']
+              },
+              'metrics/team-b' => {
+                'receivers' => ['routing/2'],
+                'exporters' => ['otlp_grpc']
+              },
+              # mixed: operator receiver alongside the connector
+              'metrics/mixed' => {
+                'receivers' => ['otlp/placeholder', 'routing'],
+                'exporters' => ['otlp_grpc']
+              }
+            }
+          end
+
+          it 'forces the internal receiver on the ingress pipeline' do
+            expect(rendered['service']['pipelines']['metrics/router-inbound']['receivers']).to eq(['otlp/cf-internal-local'])
+          end
+
+          it 'preserves connector-fed receivers so the connector stays consumed' do
+            expect(rendered['service']['pipelines']['metrics/team-a']['receivers']).to eq(['routing'])
+            expect(rendered['service']['pipelines']['metrics/team-b']['receivers']).to eq(['routing/2'])
+          end
+
+          it 'keeps the connector receiver but forces the internal receiver on a mixed pipeline' do
+            expect(rendered['service']['pipelines']['metrics/mixed']['receivers']).to eq(['routing', 'otlp/cf-internal-local'])
+          end
+
+          it 'still forces the internal receiver on injected nop pipelines' do
+            expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
+            expect(rendered['service']['pipelines']['logs']['receivers']).to eq(['otlp/cf-internal-local'])
+          end
+        end
+
         context 'when ingress.grpc.port is set' do
           before do
             properties['ingress'] = { 'grpc' => { 'port' => 1234 } }
@@ -449,6 +494,47 @@ shared_examples_for 'common config.yml' do
       it 'errors when an unavailable extension is configured' do
         config['extensions']['unavailable'] = nil
         expect { rendered }.to raise_error(/The following configured extensions are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
+      end
+    end
+
+    describe 'connectors' do
+      before do
+        config['connectors'] = { 'routing' => nil }
+      end
+
+      it 'list of available connectors matches builder source of truth' do
+        config['connectors']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        connector_gomods = builder_config.fetch('connectors').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        connector_names = connector_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = connector_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
+      it 'includes the configured connectors in the config' do
+        expect(rendered.keys).to include 'connectors'
+        expect(rendered['connectors']).to eq(config['connectors'])
+      end
+
+      it 'allows no connectors with empty allow list' do
+        properties['allow_list'] = {'connectors' => []}
+        expect { rendered }.to raise_error(/The following configured connectors are not allowed: \["routing"\]/)
+      end
+
+      it 'errors when an unrecognized connector is in allow list' do
+        properties['allow_list'] = {'connectors' => ['routing', 'unrecognized-connector']}
+        expect { rendered }.to raise_error(/The following connectors specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-connector"\]/)
+      end
+
+      it 'errors when an unavailable connector is configured' do
+        config['connectors']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured connectors are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
       end
     end
 

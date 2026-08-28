@@ -126,8 +126,19 @@ def set_internal_receiver_as_only_receiver
 end
 
 def set_internal_receiver_on_all_pipelines
+  connectors = (config['connectors'] || {}).keys.map { |k| k.split('/')[0] }
   config['service']['pipelines'].each_value do |pipeline|
-    pipeline['receivers'] = ['otlp/cf-internal-local']
+    receivers = pipeline['receivers'] || []
+    connector_receivers = receivers.select { |r| connectors.include?(r.split('/')[0]) }
+    # Preserve connector-fed receivers so the connector stays consumed. Any other pipeline
+    # (real ingress, incl. nop pipelines with no receivers) is forced onto the internal mTLS
+    # receiver; a mixed pipeline keeps its connector receivers and has the rest collapsed to it.
+    pipeline['receivers'] =
+      if receivers == connector_receivers && !connector_receivers.empty?
+        connector_receivers
+      else
+        connector_receivers + ['otlp/cf-internal-local']
+      end
   end
 end
 
@@ -168,6 +179,11 @@ def included_extensions
   %w[opamp pprof].sort
 end
 
+# Hardcoded list of connectors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_connectors
+  %w[routing].sort
+end
+
 def check_for_use_of_valid_components!(component_kind, included_components)
   user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
 
@@ -198,6 +214,7 @@ check_for_use_of_reserved_bbs_api_port!
 check_for_use_of_valid_components!('processors', included_processors)
 check_for_use_of_valid_components!('exporters', included_exporters)
 check_for_use_of_valid_components!('extensions', included_extensions)
+check_for_use_of_valid_components!('connectors', included_connectors)
 if_p('allow_list.processors') do |prop|
   check_for_use_of_allowed_components!('processors', included_processors, prop)
 end
@@ -206,6 +223,9 @@ if_p('allow_list.exporters') do |prop|
 end
 if_p('allow_list.extensions') do |prop|
   check_for_use_of_allowed_components!('extensions', included_extensions, prop)
+end
+if_p('allow_list.connectors') do |prop|
+  check_for_use_of_allowed_components!('connectors', included_connectors, prop)
 end
 set_internal_receiver_as_only_receiver
 add_nop_pipelines
