@@ -1,14 +1,23 @@
 <%=
+require 'json'
+
+# The config currently being rendered. render_one sets this; every check/rewrite
+# helper below operates on it. Legacy single-config and each configs[] entry are
+# rendered by pointing this at the relevant dict.
 def config
-  @config ||= begin
-    cfg = retrieve_property('config')
-    secrets = retrieve_property('secrets').to_h { |x| [x['name'], { 'cert' => x['cert'], 'key' => x['key'], 'ca' => x['ca'], 'secret' => x['secret'] }] }
-    used_secrets = {}
-    interpolate_secrets!(cfg, secrets, used_secrets)
-    check_for_unused_secrets!(secrets, used_secrets)
-    cfg = handle_old_properties(cfg) if cfg.empty?
-    cfg
-  end
+  @current_config
+end
+
+# Resolve the legacy single `config` property: interpolate secrets, verify all
+# secrets are used, and fall back to the deprecated metric/trace_exporters props.
+def config_from_property
+  cfg = retrieve_property('config')
+  secrets = retrieve_property('secrets').to_h { |x| [x['name'], { 'cert' => x['cert'], 'key' => x['key'], 'ca' => x['ca'], 'secret' => x['secret'] }] }
+  used_secrets = {}
+  interpolate_secrets!(cfg, secrets, used_secrets)
+  check_for_unused_secrets!(secrets, used_secrets)
+  cfg = handle_old_properties(cfg) if cfg.empty?
+  cfg
 end
 
 def interpolate_secrets!(cfg, secrets, used_secrets)
@@ -206,31 +215,62 @@ def check_for_use_of_allowed_components!(component_kind, included_components, al
   raise "The following configured #{component_kind} are not allowed: #{disallowed_components}. Allowed: #{allowed_components}." unless disallowed_components.empty?
 end
 
-check_for_new_and_old_properties!
-check_for_no_exporters!
-check_for_no_service_config!
-check_for_use_of_reserved_prefix!
-check_for_use_of_reserved_bbs_api_port!
-check_for_use_of_valid_components!('processors', included_processors)
-check_for_use_of_valid_components!('exporters', included_exporters)
-check_for_use_of_valid_components!('extensions', included_extensions)
-check_for_use_of_valid_components!('connectors', included_connectors)
-if_p('allow_list.processors') do |prop|
-  check_for_use_of_allowed_components!('processors', included_processors, prop)
+# Run every validation and rewrite on a single config dict and return it.
+def render_one(cfg)
+  @current_config = cfg
+  check_for_no_exporters!
+  check_for_no_service_config!
+  check_for_use_of_reserved_prefix!
+  check_for_use_of_reserved_bbs_api_port!
+  check_for_use_of_valid_components!('processors', included_processors)
+  check_for_use_of_valid_components!('exporters', included_exporters)
+  check_for_use_of_valid_components!('extensions', included_extensions)
+  check_for_use_of_valid_components!('connectors', included_connectors)
+  if_p('allow_list.processors') do |prop|
+    check_for_use_of_allowed_components!('processors', included_processors, prop)
+  end
+  if_p('allow_list.exporters') do |prop|
+    check_for_use_of_allowed_components!('exporters', included_exporters, prop)
+  end
+  if_p('allow_list.extensions') do |prop|
+    check_for_use_of_allowed_components!('extensions', included_extensions, prop)
+  end
+  if_p('allow_list.connectors') do |prop|
+    check_for_use_of_allowed_components!('connectors', included_connectors, prop)
+  end
+  set_internal_receiver_as_only_receiver
+  add_nop_pipelines
+  set_internal_receiver_on_all_pipelines
+  expose_internal_telemetry
+  config
 end
-if_p('allow_list.exporters') do |prop|
-  check_for_use_of_allowed_components!('exporters', included_exporters, prop)
-end
-if_p('allow_list.extensions') do |prop|
-  check_for_use_of_allowed_components!('extensions', included_extensions, prop)
-end
-if_p('allow_list.connectors') do |prop|
-  check_for_use_of_allowed_components!('connectors', included_connectors, prop)
-end
-set_internal_receiver_as_only_receiver
-add_nop_pipelines
-set_internal_receiver_on_all_pipelines
-expose_internal_telemetry
 
-YAML.dump(config)
+check_for_new_and_old_properties!
+configs = retrieve_property('configs')
+if configs.nil? || configs.empty?
+  # Legacy single-config path: render one config, emit YAML (unchanged behaviour).
+  YAML.dump(render_one(config_from_property))
+else
+  # Multi-config path (option G): `configs` fans out to N `--config` files. It is
+  # mutually exclusive with the single-config `config` and the deprecated exporter
+  # properties. pre-start splits the emitted JSON manifest into per-entry files.
+  raise "Can not provide 'configs' together with 'config', 'metric_exporters' or 'trace_exporters'" \
+    unless p('config').empty? && p('metric_exporters').empty? && p('trace_exporters').empty?
+
+  secrets = retrieve_property('secrets').to_h { |x| [x['name'], { 'cert' => x['cert'], 'key' => x['key'], 'ca' => x['ca'], 'secret' => x['secret'] }] }
+  used_secrets = {}
+  manifest = configs.each_with_index.map do |entry, i|
+    name = (entry['name'] || "cfg#{i}").gsub(/[^a-zA-Z0-9_-]/, '_')
+    cfg = entry['config']
+    interpolate_secrets!(cfg, secrets, used_secrets)
+    {
+      'file' => format('config-%03d-%s.yml', i, name),
+      'content' => YAML.dump(render_one(cfg))
+    }
+  end
+  # Verify secret usage across the union of all entries, not per entry.
+  check_for_unused_secrets!(secrets, used_secrets)
+
+  JSON.dump(manifest)
+end
 %>

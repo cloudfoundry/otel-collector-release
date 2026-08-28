@@ -3,6 +3,7 @@ name: otel-collector-windows
 
 templates:
   config.yml.erb: config/config.yml
+  pre-start.ps1.erb: bin/pre-start.ps1
   ingress_port.yml.erb: config/ingress_port.yml
   otel-collector.crt.erb: config/certs/otel-collector.crt
   otel-collector.key.erb: config/certs/otel-collector.key
@@ -45,6 +46,35 @@ properties:
             receivers: [otlp/placeholder]
             processors: [batch]
             exporters: [otlp]
+  configs:
+    description: |
+      Ordered list of config fragments, each rendered to its own file and
+      passed to the collector as a separate `--config` argument (the collector
+      merges them natively: maps deep-merge, lists replace, later wins). When
+      non-empty, one file is written per entry and `--config` is passed N times.
+      Mutually exclusive with `config`, `metric_exporters` and `trace_exporters`.
+      Each entry is a map with an optional `name` (used in the rendered filename)
+      and a `config` holding the same shape as the `config` property.
+    default: []
+    example: |
+      - name: platform
+        config:
+          exporters:
+            otlp/platform:
+              endpoint: platform-otelcol:4317
+          service:
+            pipelines:
+              metrics:
+                exporters: [otlp/platform]
+      - name: team-a
+        config:
+          exporters:
+            otlp/team-a:
+              endpoint: team-a-otelcol:4317
+          service:
+            pipelines:
+              metrics:
+                exporters: [otlp/team-a]
   allow_list.processors:
     description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['batch']

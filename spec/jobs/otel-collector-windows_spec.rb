@@ -21,6 +21,10 @@ describe 'otel-collector-windows' do
       windows_spec['name'] = 'otel-collector'
       windows_spec['packages'] = ['otel-collector']
       windows_spec['templates'].merge!({ 'bpm.yml.erb' => 'config/bpm.yml' })
+      # Windows uses a PowerShell pre-start (bin/pre-start.ps1) where Linux uses a bash one
+      # (bin/pre-start); normalize the Windows template entry to the Linux one before comparing.
+      windows_spec['templates'].delete('pre-start.ps1.erb')
+      windows_spec['templates']['pre-start.erb'] = 'bin/pre-start'
 
       expect(windows_spec).to eq(linux_spec)
     end
@@ -55,7 +59,6 @@ describe 'otel-collector-windows' do
             expect(rendered['processes'][0]['env']['GOMEMLIMIT']).to eq('409MiB')
           end
         end
-
         context 'when a custom memory limit is provided' do
           before do
             properties['limits']['memory_mib'] = '1000'
@@ -86,6 +89,32 @@ describe 'otel-collector-windows' do
           it 'sets GOMAXPROCS' do
             expect(rendered['processes'][0]['env']['GOMAXPROCS']).to eq(2)
           end
+        end
+      end
+    end
+
+    describe 'config args' do
+      context 'when configs is a non-empty list' do
+        before do
+          properties['configs'] = [
+            { 'name' => 'platform', 'config' => {} },
+            { 'name' => 'team a!', 'config' => {} }
+          ]
+        end
+
+        it 'passes one --config per entry, ordered, with the manifest filenames' do
+          expect(rendered['processes'][0]['args']).to eq([
+            '--config', '/var/vcap/jobs/otel-collector-windows/config/config-000-platform.yml',
+            '--config', '/var/vcap/jobs/otel-collector-windows/config/config-001-team_a_.yml'
+          ])
+        end
+      end
+
+      context 'when configs is empty (legacy single-config)' do
+        it 'passes a single --config pointing at config.yml' do
+          expect(rendered['processes'][0]['args']).to eq([
+            '--config', '/var/vcap/jobs/otel-collector-windows/config/config.yml'
+          ])
         end
       end
     end

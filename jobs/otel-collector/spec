@@ -4,6 +4,7 @@ name: otel-collector
 templates:
   bpm.yml.erb: config/bpm.yml
   config.yml.erb: config/config.yml
+  pre-start.erb: bin/pre-start
   ingress_port.yml.erb: config/ingress_port.yml
   otel-collector.crt.erb: config/certs/otel-collector.crt
   otel-collector.key.erb: config/certs/otel-collector.key
@@ -58,6 +59,35 @@ properties:
             receivers: [otlp/placeholder]
             processors: [batch]
             exporters: [otlp]
+  configs:
+    description: |
+      Ordered list of config fragments, each rendered to its own file and
+      passed to the collector as a separate `--config` argument (the collector
+      merges them natively: maps deep-merge, lists replace, later wins). When
+      non-empty, one file is written per entry and `--config` is passed N times.
+      Mutually exclusive with `config`, `metric_exporters` and `trace_exporters`.
+      Each entry is a map with an optional `name` (used in the rendered filename)
+      and a `config` holding the same shape as the `config` property.
+    default: []
+    example: |
+      - name: platform
+        config:
+          exporters:
+            otlp/platform:
+              endpoint: platform-otelcol:4317
+          service:
+            pipelines:
+              metrics:
+                exporters: [otlp/platform]
+      - name: team-a
+        config:
+          exporters:
+            otlp/team-a:
+              endpoint: team-a-otelcol:4317
+          service:
+            pipelines:
+              metrics:
+                exporters: [otlp/team-a]
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1

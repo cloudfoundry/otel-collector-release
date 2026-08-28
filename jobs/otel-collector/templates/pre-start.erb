@@ -1,0 +1,34 @@
+<%=
+  configs = p('configs')
+  if configs.empty?
+    # Legacy single-config: config.yml is the collector config itself; nothing to split.
+    "#!/usr/bin/env bash\nexit 0\n"
+  else
+    <<~'SCRIPT'
+      #!/usr/bin/env bash
+      set -eu
+
+      CFG_DIR=/var/vcap/jobs/otel-collector/config
+      MANIFEST="${CFG_DIR}/config.yml"
+
+      # config.yml.erb emits a JSON array manifest ([{file, content}, ...]) when the
+      # `configs` property is set. Split it into the per-entry files the collector is
+      # started with (see bpm.yml). If it is not a JSON array (legacy single-config),
+      # leave it untouched.
+      if [ "$(tr -d '[:space:]' < "$MANIFEST" | head -c 1)" != "[" ]; then
+        exit 0
+      fi
+
+      python3 - "$MANIFEST" "$CFG_DIR" <<'PY'
+      import json, os, sys
+
+      with open(sys.argv[1]) as f:
+          manifest = json.load(f)
+      out_dir = sys.argv[2]
+      for entry in manifest:
+          with open(os.path.join(out_dir, entry["file"]), "w") as f:
+              f.write(entry["content"])
+      PY
+    SCRIPT
+  end
+%>

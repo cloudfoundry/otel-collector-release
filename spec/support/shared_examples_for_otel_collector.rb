@@ -848,5 +848,97 @@ exporters:
         end
       end
     end
+
+    context 'when configs is a non-empty list' do
+      def entry_config(exporter)
+        {
+          'exporters' => { exporter => { 'endpoint' => "#{exporter}:4317" } },
+          'service' => {
+            'pipelines' => {
+              'metrics' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => [exporter]
+              }
+            }
+          }
+        }
+      end
+
+      let(:properties) do
+        {
+          'configs' => [
+            { 'name' => 'platform', 'config' => entry_config('otlp_grpc') },
+            { 'name' => 'team a!', 'config' => entry_config('otlp_grpc/team') }
+          ]
+        }
+      end
+      # `rendered` (from the enclosing describe) YAML.safe_loads the template output; the
+      # multi-config path emits a JSON array, and YAML is a superset of JSON so it parses
+      # into the manifest array of {file, content} entries.
+      let(:manifest) { rendered }
+
+      it 'emits a JSON array manifest with one entry per config' do
+        expect(manifest).to be_an(Array)
+        expect(manifest.length).to eq(2)
+      end
+
+      it 'derives an indexed, sanitized filename per entry' do
+        expect(manifest[0]['file']).to eq('config-000-platform.yml')
+        expect(manifest[1]['file']).to eq('config-001-team_a_.yml')
+      end
+
+      it 'falls back to cfN when an entry has no name' do
+        properties['configs'][1].delete('name')
+        expect(manifest[1]['file']).to eq('config-001-cfg1.yml')
+      end
+
+      it 'renders each entry through the same rewrites (internal receiver + nop pipelines)' do
+        first = YAML.safe_load(manifest[0]['content'])
+        expect(first['receivers'].keys).to eq(['otlp/cf-internal-local'])
+        expect(first['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+        # nop pipelines injected for the signals the entry does not define
+        expect(first['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+        expect(first['service']['pipelines']['logs']['exporters']).to eq(['nop'])
+      end
+
+      it 'preserves connector-fed receivers within an entry' do
+        properties['configs'][0]['config'] = {
+          'connectors' => { 'routing' => nil },
+          'exporters' => { 'otlp_grpc' => { 'endpoint' => 'otelcol:4317' } },
+          'service' => {
+            'pipelines' => {
+              'metrics/in' => { 'receivers' => ['otlp/placeholder'], 'exporters' => ['routing'] },
+              'metrics/out' => { 'receivers' => ['routing'], 'exporters' => ['otlp_grpc'] }
+            }
+          }
+        }
+        first = YAML.safe_load(manifest[0]['content'])
+        expect(first['service']['pipelines']['metrics/in']['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(first['service']['pipelines']['metrics/out']['receivers']).to eq(['routing'])
+      end
+
+      it 'is mutually exclusive with config' do
+        properties['config'] = { 'some' => 'thing' }
+        expect { rendered }.to raise_error(/Can not provide 'configs' together with 'config'/)
+      end
+
+      it 'is mutually exclusive with the deprecated metric_exporters' do
+        properties['metric_exporters'] = { 'otlp_grpc' => { 'endpoint' => 'otelcol:4317' } }
+        expect { rendered }.to raise_error(/Can not provide 'configs' together with 'config'/)
+      end
+
+      it 'checks secret usage across the union of all entries' do
+        properties['configs'][0]['config']['exporters']['otlp_grpc']['headers'] =
+          { 'auth' => '{{ .shared.secret }}' }
+        properties['secrets'] = [{ 'name' => 'shared', 'secret' => 'tok' }]
+        expect { rendered }.to_not raise_error
+        expect(YAML.safe_load(manifest[0]['content'])['exporters']['otlp_grpc']['headers']['auth']).to eq('tok')
+      end
+
+      it 'raises when a declared secret is unused by any entry' do
+        properties['secrets'] = [{ 'name' => 'orphan', 'secret' => 'tok' }]
+        expect { rendered }.to raise_error(/The following secrets are unused: \['orphan.secret'\]/)
+      end
+    end
   end
 end
