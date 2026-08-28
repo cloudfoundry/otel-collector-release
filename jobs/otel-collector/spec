@@ -26,6 +26,9 @@ properties:
   allow_list.extensions:
     description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['pprof']
+  allow_list.connectors:
+    description: "Connectors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    example: ['routing']
   limits.memory_mib:
     description: "Memory limit to apply to this process, in mebibytes."
     default: 512
