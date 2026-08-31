@@ -940,5 +940,129 @@ exporters:
         expect { rendered }.to raise_error(/The following secrets are unused: \['orphan.secret'\]/)
       end
     end
+
+    describe 'inject_internal_receiver' do
+      def entry_config_for_inject(exporter)
+        {
+          'exporters' => { exporter => { 'endpoint' => "#{exporter}:4317" } },
+          'service' => {
+            'pipelines' => {
+              'metrics' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => [exporter]
+              }
+            }
+          }
+        }
+      end
+
+      context 'all (default)' do
+        let(:properties) { { 'config' => config } }
+
+        it 'injects the internal receiver (regression guard)' do
+          expect(rendered['receivers'].keys).to eq(['otlp/cf-internal-local'])
+        end
+
+        it 'adds nop pipelines for missing signals' do
+          cfg = config.dup
+          cfg['service'] = cfg['service'].dup
+          cfg['service']['pipelines'] = cfg['service']['pipelines'].reject { |k, _| k.start_with?('traces') }
+          r = YAML.safe_load(template.render({ 'config' => cfg }))
+          expect(r['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+        end
+      end
+
+      context 'first with 2 configs' do
+        let(:properties) do
+          {
+            'inject_internal_receiver' => 'first',
+            'configs' => [
+              { 'name' => 'ingress', 'config' => entry_config_for_inject('otlp_grpc') },
+              {
+                'name' => 'egress',
+                'config' => {
+                  'receivers' => { 'prometheus/scrape' => { 'config' => { 'scrape_interval' => '15s' } } },
+                  'exporters' => { 'otlp_grpc/out' => { 'endpoint' => 'out:4317' } },
+                  'service' => {
+                    'pipelines' => {
+                      'metrics' => {
+                        'receivers' => ['prometheus/scrape'],
+                        'exporters' => ['otlp_grpc/out']
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        end
+        let(:manifest) { rendered }
+
+        it 'injects the internal receiver into config-000 only' do
+          first = YAML.safe_load(manifest[0]['content'])
+          expect(first['receivers'].keys).to eq(['otlp/cf-internal-local'])
+          expect(first['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+        end
+
+        it 'adds nop pipelines to config-000' do
+          first = YAML.safe_load(manifest[0]['content'])
+          expect(first['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+          expect(first['service']['pipelines']['logs']['exporters']).to eq(['nop'])
+        end
+
+        it 'renders config-001 verbatim (operator receivers preserved, no internal receiver)' do
+          second = YAML.safe_load(manifest[1]['content'])
+          expect(second['receivers'].keys).to eq(['prometheus/scrape'])
+          expect(second['service']['pipelines']['metrics']['receivers']).to eq(['prometheus/scrape'])
+        end
+
+        it 'does not inject nop pipelines into config-001' do
+          second = YAML.safe_load(manifest[1]['content'])
+          expect(second['service']['pipelines'].keys).to eq(['metrics'])
+        end
+      end
+
+      context 'none' do
+        let(:none_config) do
+          {
+            'receivers' => { 'prometheus/scrape' => { 'config' => { 'scrape_interval' => '15s' } } },
+            'exporters' => { 'otlp_grpc' => { 'endpoint' => 'out:4317' } },
+            'service' => {
+              'pipelines' => {
+                'metrics' => {
+                  'receivers' => ['prometheus/scrape'],
+                  'exporters' => ['otlp_grpc']
+                }
+              }
+            }
+          }
+        end
+        let(:properties) { { 'inject_internal_receiver' => 'none', 'config' => none_config } }
+
+        it 'preserves the operator receiver' do
+          expect(rendered['receivers'].keys).to eq(['prometheus/scrape'])
+        end
+
+        it 'does not inject the internal receiver' do
+          expect(rendered['receivers'].keys).not_to include('otlp/cf-internal-local')
+        end
+
+        it 'does not inject nop pipelines' do
+          expect(rendered['service']['pipelines'].keys).to eq(['metrics'])
+        end
+
+        it 'still emits self-telemetry' do
+          expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['port']).to eq(14830)
+        end
+      end
+
+      context 'invalid value' do
+        let(:properties) { { 'inject_internal_receiver' => 'bogus', 'config' => config } }
+
+        it 'raises a descriptive error' do
+          expect { rendered }.to raise_error(/inject_internal_receiver must be one of all\|first\|none/)
+        end
+      end
+    end
   end
 end

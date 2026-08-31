@@ -215,8 +215,23 @@ def check_for_use_of_allowed_components!(component_kind, included_components, al
   raise "The following configured #{component_kind} are not allowed: #{disallowed_components}. Allowed: #{allowed_components}." unless disallowed_components.empty?
 end
 
-# Run every validation and rewrite on a single config dict and return it.
-def render_one(cfg)
+def inject_internal_receiver_mode
+  m = p('inject_internal_receiver', 'all')
+  raise "inject_internal_receiver must be one of all|first|none, got #{m.inspect}" \
+    unless %w[all first none].include?(m)
+  m
+end
+
+def inject_internal?(index)
+  case inject_internal_receiver_mode
+  when 'all'   then true
+  when 'first' then index.zero?
+  when 'none'  then false
+  end
+end
+
+# Run all validations on a single config dict (without mutating it).
+def validate_one(cfg)
   @current_config = cfg
   check_for_no_exporters!
   check_for_no_service_config!
@@ -238,18 +253,30 @@ def render_one(cfg)
   if_p('allow_list.connectors') do |prop|
     check_for_use_of_allowed_components!('connectors', included_connectors, prop)
   end
+end
+
+# Apply the internal receiver injection and nop pipeline rewrites to cfg.
+def apply_internal_receiver(cfg)
+  @current_config = cfg
   set_internal_receiver_as_only_receiver
   add_nop_pipelines
   set_internal_receiver_on_all_pipelines
-  expose_internal_telemetry
-  config
 end
 
 check_for_new_and_old_properties!
 configs = retrieve_property('configs')
 if configs.nil? || configs.empty?
-  # Legacy single-config path: render one config, emit YAML (unchanged behaviour).
-  YAML.dump(render_one(config_from_property))
+  # Legacy single-config path (index 0).
+  cfg = config_from_property
+  validate_one(cfg)
+  if inject_internal?(0)
+    apply_internal_receiver(cfg)
+    expose_internal_telemetry
+  else
+    @current_config = cfg
+    expose_internal_telemetry
+  end
+  YAML.dump(cfg)
 else
   # Multi-config path (option G): `configs` fans out to N `--config` files. It is
   # mutually exclusive with the single-config `config` and the deprecated exporter
@@ -263,9 +290,14 @@ else
     name = (entry['name'] || "cfg#{i}").gsub(/[^a-zA-Z0-9_-]/, '_')
     cfg = entry['config']
     interpolate_secrets!(cfg, secrets, used_secrets)
+    validate_one(cfg)
+    if inject_internal?(i)
+      apply_internal_receiver(cfg)
+    end
+    expose_internal_telemetry if i.zero?
     {
       'file' => format('config-%03d-%s.yml', i, name),
-      'content' => YAML.dump(render_one(cfg))
+      'content' => YAML.dump(cfg)
     }
   end
   # Verify secret usage across the union of all entries, not per entry.
