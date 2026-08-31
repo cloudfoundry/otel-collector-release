@@ -94,6 +94,16 @@ properties:
         first         - inject into the first config only; others rendered verbatim
         none          - never inject; operator supplies their own receivers
     default: all
+  validate_configs:
+    description: |
+      Controls which config entries must pass completeness checks (exporters + service present):
+        all (default) - every entry must be complete
+        first         - only the first entry must be complete; later entries are treated as
+                        merge fragments that resolve missing keys at merge time
+        none          - no completeness check; useful when all entries are fragments
+      Safety checks (reserved namespace, BBS port 8889, compiled components, allow_list.*)
+      always run for every entry regardless of this setting.
+    default: all
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1

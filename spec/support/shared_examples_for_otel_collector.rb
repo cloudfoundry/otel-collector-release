@@ -976,6 +976,7 @@ exporters:
         let(:properties) do
           {
             'inject_internal_receiver' => 'first',
+            'validate_configs' => 'first',
             'configs' => [
               { 'name' => 'ingress', 'config' => entry_config_for_inject('otlp_grpc') },
               {
@@ -1020,6 +1021,53 @@ exporters:
           second = YAML.safe_load(manifest[1]['content'])
           expect(second['service']['pipelines'].keys).to eq(['metrics'])
         end
+
+        it 'renders a fragment with no exporters map verbatim (no completeness error)' do
+          properties['configs'] << {
+            'name' => 'fragment',
+            'config' => {
+              'service' => {
+                'pipelines' => {
+                  'metrics/bosh' => {
+                    'receivers' => ['routing'],
+                    'exporters' => ['otlp']
+                  }
+                }
+              }
+            }
+          }
+          expect { rendered }.not_to raise_error
+          fragment = YAML.safe_load(manifest[2]['content'])
+          expect(fragment['exporters']).to be_nil
+        end
+
+        it 'renders a fragment with no service map verbatim (no completeness error)' do
+          properties['configs'] << {
+            'name' => 'ext-fragment',
+            'config' => {
+              'extensions' => { 'pprof' => nil }
+            }
+          }
+          expect { rendered }.not_to raise_error
+        end
+
+        it 'still raises for a fragment referencing a disallowed exporter' do
+          properties['allow_list'] = { 'exporters' => ['otlp_grpc'] }
+          properties['configs'] << {
+            'name' => 'bad-fragment',
+            'config' => {
+              'exporters' => { 'debug' => nil },
+              'service' => {
+                'pipelines' => {
+                  'metrics/dbg' => {
+                    'exporters' => ['debug']
+                  }
+                }
+              }
+            }
+          }
+          expect { rendered }.to raise_error(/The following configured exporters are not allowed/)
+        end
       end
 
       context 'none' do
@@ -1054,6 +1102,11 @@ exporters:
         it 'still emits self-telemetry' do
           expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['port']).to eq(14830)
         end
+
+        it 'still raises when exporters are missing (completeness is governed by validate_configs, not inject_internal_receiver)' do
+          properties['config'] = none_config.reject { |k, _| k == 'exporters' }
+          expect { rendered }.to raise_error(/Exporter configuration must be provided/)
+        end
       end
 
       context 'invalid value' do
@@ -1061,6 +1114,14 @@ exporters:
 
         it 'raises a descriptive error' do
           expect { rendered }.to raise_error(/inject_internal_receiver must be one of all\|first\|none/)
+        end
+      end
+
+      context 'validate_configs invalid value' do
+        let(:properties) { { 'validate_configs' => 'bogus', 'config' => config } }
+
+        it 'raises a descriptive error' do
+          expect { rendered }.to raise_error(/validate_configs must be one of all\|first\|none/)
         end
       end
     end

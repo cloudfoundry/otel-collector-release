@@ -230,11 +230,30 @@ def inject_internal?(index)
   end
 end
 
+def validate_configs_mode
+  m = p('validate_configs', 'all')
+  raise "validate_configs must be one of all|first|none, got #{m.inspect}" \
+    unless %w[all first none].include?(m)
+  m
+end
+
+def standalone_config?(index)
+  case validate_configs_mode
+  when 'all'   then true
+  when 'first' then index.zero?
+  when 'none'  then false
+  end
+end
+
 # Run all validations on a single config dict (without mutating it).
-def validate_one(cfg)
+# standalone: true means this entry must be self-contained (has own exporters/service);
+# false for fragments that only make sense post-merge.
+def validate_one(cfg, standalone:)
   @current_config = cfg
-  check_for_no_exporters!
-  check_for_no_service_config!
+  if standalone
+    check_for_no_exporters!
+    check_for_no_service_config!
+  end
   check_for_use_of_reserved_prefix!
   check_for_use_of_reserved_bbs_api_port!
   check_for_use_of_valid_components!('processors', included_processors)
@@ -268,7 +287,7 @@ configs = retrieve_property('configs')
 if configs.nil? || configs.empty?
   # Legacy single-config path (index 0).
   cfg = config_from_property
-  validate_one(cfg)
+  validate_one(cfg, standalone: standalone_config?(0))
   if inject_internal?(0)
     apply_internal_receiver(cfg)
     expose_internal_telemetry
@@ -290,7 +309,7 @@ else
     name = (entry['name'] || "cfg#{i}").gsub(/[^a-zA-Z0-9_-]/, '_')
     cfg = entry['config']
     interpolate_secrets!(cfg, secrets, used_secrets)
-    validate_one(cfg)
+    validate_one(cfg, standalone: standalone_config?(i))
     if inject_internal?(i)
       apply_internal_receiver(cfg)
     end
