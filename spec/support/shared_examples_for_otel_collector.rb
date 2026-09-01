@@ -410,6 +410,11 @@ shared_examples_for 'common config.yml' do
     end
 
     describe 'extensions' do
+      # health_check is compiled into the distribution for the k8s deployment (the upstream
+      # opentelemetry-collector Helm chart wires it to liveness/readiness probes), but is
+      # intentionally not exposed via the BOSH job template — BOSH uses monit for health.
+      bosh_excluded_extensions = %w[health_check]
+
       it 'list of available extensions matches builder source of truth' do
         config['extensions']['unavailable'] = nil
 
@@ -418,6 +423,7 @@ shared_examples_for 'common config.yml' do
         extension_names = extension_gomods.map do |gomod|
           YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
         end
+        extension_names -= bosh_excluded_extensions
         formatted_names = extension_names.sort.map {|name| "\"#{name}\"" }.join(", ")
 
         expect { rendered }.to raise_error do |error|
