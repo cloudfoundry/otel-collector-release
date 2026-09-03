@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+RUN_DIR=/var/vcap/sys/run/otel-collector
+LOG_DIR=/var/vcap/sys/log/otel-collector
+PIDFILE=$RUN_DIR/otel-collector.pid
+
+mkdir -p $RUN_DIR $LOG_DIR
+chown -R vcap:vcap $RUN_DIR $LOG_DIR
+
+case $1 in
+start)
+export GOMEMLIMIT=<%= (p('limits.memory_mib').to_i * 0.80).floor %>MiB
+<% if_p('limits.cpu') do |cpu| %>
+  export GOMAXPROCS=<%= cpu.to_i %>
+<% end %>
+
+echo $$ > $PIDFILE
+
+exec /var/vcap/packages/otel-collector/otel-collector \
+--config /var/vcap/jobs/otel-collector/config/config.yml \
+>>$LOG_DIR/otel-collector.stdout.log \
+2>>$LOG_DIR/otel-collector.stderr.log
+;;
+
+stop)
+if [ -f $PIDFILE ]; then
+kill $(cat $PIDFILE) || true
+rm -f $PIDFILE
+fi
+;;
+
+*)
+echo "Usage: ctl {start|stop}"
+exit 1
+;;
+esac

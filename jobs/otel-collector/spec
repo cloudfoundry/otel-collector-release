@@ -2,6 +2,7 @@
 name: otel-collector
 
 templates:
+  ctl.erb: bin/ctl
   bpm.yml.erb: config/bpm.yml
   config.yml.erb: config/config.yml
   ingress_port.yml.erb: config/ingress_port.yml
@@ -17,6 +18,9 @@ properties:
   enabled:
     description: "Enable OTel Collector"
     default: true
+  bpm.disabled:
+    description: "Disable BOSH Process Manager and use native process control"
+    default: false
   allow_list.exporters:
     description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['otlp', 'prometheus', 'prometheus_remote_write']
