@@ -275,6 +275,30 @@ shared_examples_for 'common config.yml' do
           end
         end
       end
+
+      context 'when custom_receiver_enabled is true' do
+        before do
+          properties['custom_receiver_enabled'] = true
+          config['receivers']['otlp/custom-receiver'] = {
+            'protocols' => {
+              'grpc' => { 'endpoint' => '0.0.0.0:4317' }
+            }
+          }
+          config['service']['pipelines']['traces']['receivers'] = ['otlp/custom-receiver']
+        end
+
+        it 'preserves custom receivers and does not inject built-in otlp/cf-internal-local receiver' do
+          expect(rendered['receivers']).to include('otlp/custom-receiver')
+          expect(rendered['receivers']).not_to include('otlp/cf-internal-local')
+          expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/custom-receiver'])
+        end
+
+        it 'does not add nop pipelines for missing signals' do
+          config['service']['pipelines'].delete('logs')
+          expect(rendered['service']['pipelines']).not_to have_key('logs')
+          expect(rendered['exporters'].keys).not_to include('nop')
+        end
+      end
     end
 
     describe 'processors' do
