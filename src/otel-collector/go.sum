@@ -726,6 +726,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding v0.159.0/go.mod h1:otM3uy9Ib170fIu3mHajV9ZEMmbX9XT+6v0BQxfbMtk=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.159.0 h1:Y0HVYChomT1KLvVquZ1qSjBjp0CR+q9rn6pThaLWVwk=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/encoding/otlpencodingextension v0.159.0/go.mod h1:cFolDw37Lj+OQAXR0Ni2iNmsilQl+QAxp4IsZEzhYV4=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.159.0 h1:IXFoitbK+lwdX5Gwiq0MgW0oEWKQH+E3KpWdtlv96+8=
+github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.159.0/go.mod h1:G7SyiB6wP5mt/kiK5Wowh59LhnYhhUJ7U90Pd7RN35E=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.159.0 h1:TFrC0x4hAZ7K4n/hyTF5K7qf6gja7nfJW1ePY+qqCvk=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.159.0/go.mod h1:cCs8yIxZMSpl1DGXKkTqa7uzGUVdkfGY7QnmyiRINMk=
 github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension v0.159.0 h1:DlD3IPr+RNEpxsivEqPuYQjwi1IMGjsj4/Unsa3IdaI=
@@ -746,6 +748,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/internal/exp/metrics v
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/exp/metrics v0.159.0/go.mod h1:Je3kRZN9zpEGmVuABetkybgpuC7ptSu/4Kzzt1zxPY0=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.159.0 h1:c+C2xXYEzSlDsJ3YgW7g2T9i9w0gvx+dF9UprIUeMmg=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/filter v0.159.0/go.mod h1:FQj1HmrQpYoewm1eBaDzyybbXNujBMR72BAvYFGmQDg=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v0.159.0 h1:7qbCYnaLn6bje+BKRkNGOXKY4OCJROSGbO34WfRnj28=
+github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck v0.159.0/go.mod h1:ASd7/pjUxbEM+V4qSnggHVUgKsRaXPwzkBO9/Xygp/g=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.159.0 h1:i+CxS4XsYIM2XceExC3zNs4jSsrJxbA1BZ9fpLTbVaQ=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/k8sconfig v0.159.0/go.mod h1:HTGkqGhZ2seYhjsw/AklfoF5FmNjYth1tlSA3Gh9INI=
 github.com/open-telemetry/opentelemetry-collector-contrib/internal/kafka v0.159.0 h1:MK09u0VYcypFqc0OaIcErpEWCt/MAxs7Y2aegKAhyC4=
