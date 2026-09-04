@@ -5,6 +5,7 @@ module code.cloudfoundry.org/otel-collector-release/src/otel-collector
 go 1.25.7
 
 require (
+	github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.159.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.159.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.159.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/kafkaexporter v0.159.0

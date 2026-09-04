@@ -1122,6 +1122,14 @@ github.com/open-telemetry/opamp-go/client/types
 github.com/open-telemetry/opamp-go/internal
 github.com/open-telemetry/opamp-go/internal/testhelpers
 github.com/open-telemetry/opamp-go/protobufs
+# github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector v0.159.0
+## explicit; go 1.25.0
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector/internal/metadata
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector/internal/pdatautil
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector/internal/plogutil
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector/internal/pmetricutil
+github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector/internal/ptraceutil
 # github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter v0.159.0
 ## explicit; go 1.25.7
 github.com/open-telemetry/opentelemetry-collector-contrib/exporter/datadogexporter
@@ -1276,6 +1284,7 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottl
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlexemplar
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottllog
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlmetric
+github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlotelcol
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlprofile
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlresource
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/contexts/ottlscope

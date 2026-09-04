@@ -1,8 +1,19 @@
 <%=
+  configs = p('configs')
+  config_args =
+    if configs.empty?
+      ["--config", "/var/vcap/jobs/otel-collector-windows/config/config.yml"]
+    else
+      configs.each_with_index.flat_map do |entry, i|
+        name = (entry['name'] || "cfg#{i}").gsub(/[^a-zA-Z0-9_-]/, '_')
+        ["--config", format('/var/vcap/jobs/otel-collector-windows/config/config-%03d-%s.yml', i, name)]
+      end
+    end
+
   process = {
     "name" => "otel-collector",
     "executable" => "/var/vcap/packages/otel-collector-windows/otel-collector.exe",
-    "args" => ["--config", "/var/vcap/jobs/otel-collector-windows/config/config.yml"],
+    "args" => config_args,
     "env" => {
       "NO_WINDOWS_SERVICE" => "1",
       'GOMEMLIMIT'         => "#{(p('limits.memory_mib').to_i * 0.80).floor}MiB"

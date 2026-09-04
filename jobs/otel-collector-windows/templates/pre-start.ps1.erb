@@ -1,0 +1,32 @@
+<%=
+  configs = p('configs')
+  if configs.empty?
+    # Legacy single-config: config.yml is the collector config itself; nothing to split.
+    "exit 0\r\n"
+  else
+    <<~'SCRIPT'
+      $ErrorActionPreference = "Stop"
+
+      $CfgDir = "C:\var\vcap\jobs\otel-collector-windows\config"
+      $Manifest = Join-Path $CfgDir "config.yml"
+
+      # config.yml.erb emits a JSON array manifest ([{file, content}, ...]) when the
+      # `configs` property is set. Split it into the per-entry files the collector is
+      # started with (see monit). If it is not a JSON array (legacy single-config),
+      # leave it untouched.
+      $Raw = (Get-Content -Raw -Path $Manifest)
+      if ($Raw.TrimStart().Substring(0, 1) -ne "[") {
+        exit 0
+      }
+
+      $Entries = $Raw | ConvertFrom-Json
+      foreach ($Entry in $Entries) {
+        $Path = Join-Path $CfgDir $Entry.file
+        # Write bytes to avoid a UTF-8 BOM that the collector's YAML parser rejects.
+        [System.IO.File]::WriteAllText($Path, $Entry.content, (New-Object System.Text.UTF8Encoding $false))
+      }
+
+      exit 0
+    SCRIPT
+  end
+%>
