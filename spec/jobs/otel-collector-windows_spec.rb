@@ -22,6 +22,8 @@ describe 'otel-collector-windows' do
       windows_spec['packages'] = ['otel-collector']
       windows_spec['templates'].merge!({ 'bpm.yml.erb' => 'config/bpm.yml' })
 
+      linux_spec['properties'].delete('additional_volumes')
+
       expect(windows_spec).to eq(linux_spec)
     end
   end

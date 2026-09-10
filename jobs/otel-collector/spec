@@ -31,6 +31,12 @@ properties:
     default: 512
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
+  additional_volumes:
+    description: "Additional volumes to mount into the BPM container"
+    default: []
+    example:
+      - path: /var/vcap/sys/log/uaa
+        writable: false
   config:
     description: "Collector configuration"
     default: {}
