@@ -45,6 +45,9 @@ properties:
             receivers: [otlp/placeholder]
             processors: [batch]
             exporters: [otlp]
+  ingress.grpc.enabled:
+    description: "Enable gRPC ingress"
+    default: true
   allow_list.processors:
     description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
     example: ['batch']

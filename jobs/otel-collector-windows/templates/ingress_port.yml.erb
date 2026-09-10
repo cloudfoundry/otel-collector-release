@@ -1,4 +1,4 @@
-<% if p('enabled') %>
+<% if p('enabled') and p('ingress.grpc.enabled') %>
 ---
 ingress: <%= p('ingress.grpc.port') %>
 protocol: otelcol
