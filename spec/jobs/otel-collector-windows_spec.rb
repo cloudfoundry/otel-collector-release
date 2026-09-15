@@ -89,5 +89,36 @@ describe 'otel-collector-windows' do
         end
       end
     end
+
+    describe 'inject_bosh_env' do
+      context 'when inject_bosh_env is false (default)' do
+        it 'does not set BOSH environment variables' do
+          env = rendered['processes'][0]['env']
+          expect(env.keys).not_to include(
+            'BOSH_DEPLOYMENT', 'BOSH_NAME', 'BOSH_ID',
+            'BOSH_INDEX', 'BOSH_AZ', 'BOSH_ADDRESS', 'BOSH_IP'
+          )
+        end
+      end
+
+      context 'when inject_bosh_env is true' do
+        before do
+          properties['inject_bosh_env'] = true
+        end
+
+        it 'injects all BOSH spec environment variables into monit env' do
+          env = rendered['processes'][0]['env']
+          expect(env).to include(
+            'BOSH_DEPLOYMENT' => 'my-deployment',
+            'BOSH_NAME' => 'me',
+            'BOSH_ID' => 'xxxxxx-xxxxxxxx-xxxxx',
+            'BOSH_INDEX' => '0',
+            'BOSH_AZ' => 'az1',
+            'BOSH_ADDRESS' => 'my.bosh.com',
+            'BOSH_IP' => '192.168.0.0'
+          )
+        end
+      end
+    end
   end
 end

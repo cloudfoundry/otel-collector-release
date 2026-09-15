@@ -1,19 +1,30 @@
 <%=
+  env_vars = { 'GOMEMLIMIT' => "#{(p('limits.memory_mib').to_i * 0.80).floor}MiB" }
+  if_p('limits.cpu') { |cpu| env_vars['GOMAXPROCS'] = cpu.to_i }
+
+  if p('inject_bosh_env')
+    env_vars.merge!({
+      'BOSH_DEPLOYMENT' => spec.deployment.to_s,
+      'BOSH_NAME' => spec.name.to_s,
+      'BOSH_ID' => spec.id.to_s,
+      'BOSH_INDEX' => spec.index.to_s,
+      'BOSH_AZ' => spec.az.to_s,
+      'BOSH_ADDRESS' => spec.address.to_s,
+      'BOSH_IP' => spec.ip.to_s
+    })
+  end
+
   bpm = {
     'processes' => [
         {
           'name' => 'otel-collector',
           'executable' => '/var/vcap/packages/otel-collector/otel-collector',
           'args' => ['--config', '/var/vcap/jobs/otel-collector/config/config.yml'],
-          'env' => { 'GOMEMLIMIT' => "#{(p('limits.memory_mib').to_i * 0.80).floor}MiB" },
+          'env' => env_vars,
           'limits' => { 'memory' => "#{p('limits.memory_mib')}MiB" }
         }
       ]
     }
 
-    if_p('limits.cpu') do |cpu|
-      bpm['processes'][0]['env']['GOMAXPROCS'] = cpu.to_i 
-    end
-    
     YAML.dump(bpm) 
 %>
