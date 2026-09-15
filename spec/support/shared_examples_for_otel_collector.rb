@@ -255,6 +255,51 @@ shared_examples_for 'common config.yml' do
           end
         end
 
+        context 'when a pipeline is fed by a connector' do
+          before do
+            config['connectors'] = { 'routing' => nil }
+            config['service']['pipelines'] = {
+              # real ingress: exports into the connector
+              'metrics/router-inbound' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => ['routing']
+              },
+              # connector-fed downstream pipelines
+              'metrics/team-a' => {
+                'receivers' => ['routing'],
+                'exporters' => ['otlp_grpc']
+              },
+              'metrics/team-b' => {
+                'receivers' => ['routing/2'],
+                'exporters' => ['otlp_grpc']
+              },
+              # mixed: operator receiver alongside the connector
+              'metrics/mixed' => {
+                'receivers' => ['otlp/placeholder', 'routing'],
+                'exporters' => ['otlp_grpc']
+              }
+            }
+          end
+
+          it 'forces the internal receiver on the ingress pipeline' do
+            expect(rendered['service']['pipelines']['metrics/router-inbound']['receivers']).to eq(['otlp/cf-internal-local'])
+          end
+
+          it 'preserves connector-fed receivers so the connector stays consumed' do
+            expect(rendered['service']['pipelines']['metrics/team-a']['receivers']).to eq(['routing'])
+            expect(rendered['service']['pipelines']['metrics/team-b']['receivers']).to eq(['routing/2'])
+          end
+
+          it 'keeps the connector receiver but forces the internal receiver on a mixed pipeline' do
+            expect(rendered['service']['pipelines']['metrics/mixed']['receivers']).to eq(['routing', 'otlp/cf-internal-local'])
+          end
+
+          it 'still forces the internal receiver on injected nop pipelines' do
+            expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
+            expect(rendered['service']['pipelines']['logs']['receivers']).to eq(['otlp/cf-internal-local'])
+          end
+        end
+
         context 'when ingress.grpc.port is set' do
           before do
             properties['ingress'] = { 'grpc' => { 'port' => 1234 } }
@@ -449,6 +494,47 @@ shared_examples_for 'common config.yml' do
       it 'errors when an unavailable extension is configured' do
         config['extensions']['unavailable'] = nil
         expect { rendered }.to raise_error(/The following configured extensions are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
+      end
+    end
+
+    describe 'connectors' do
+      before do
+        config['connectors'] = { 'routing' => nil }
+      end
+
+      it 'list of available connectors matches builder source of truth' do
+        config['connectors']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        connector_gomods = builder_config.fetch('connectors').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        connector_names = connector_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = connector_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
+      it 'includes the configured connectors in the config' do
+        expect(rendered.keys).to include 'connectors'
+        expect(rendered['connectors']).to eq(config['connectors'])
+      end
+
+      it 'allows no connectors with empty allow list' do
+        properties['allow_list'] = {'connectors' => []}
+        expect { rendered }.to raise_error(/The following configured connectors are not allowed: \["routing"\]/)
+      end
+
+      it 'errors when an unrecognized connector is in allow list' do
+        properties['allow_list'] = {'connectors' => ['routing', 'unrecognized-connector']}
+        expect { rendered }.to raise_error(/The following connectors specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-connector"\]/)
+      end
+
+      it 'errors when an unavailable connector is configured' do
+        config['connectors']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured connectors are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
       end
     end
 
@@ -759,6 +845,283 @@ exporters:
 
         it 'does not match secrets to those variables' do
           expect { rendered }.to raise_error(/The following secrets are unused: \['test.secret'\]/)
+        end
+      end
+    end
+
+    context 'when configs is a non-empty list' do
+      def entry_config(exporter)
+        {
+          'exporters' => { exporter => { 'endpoint' => "#{exporter}:4317" } },
+          'service' => {
+            'pipelines' => {
+              'metrics' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => [exporter]
+              }
+            }
+          }
+        }
+      end
+
+      let(:properties) do
+        {
+          'configs' => [
+            { 'name' => 'platform', 'config' => entry_config('otlp_grpc') },
+            { 'name' => 'team a!', 'config' => entry_config('otlp_grpc/team') }
+          ]
+        }
+      end
+      # `rendered` (from the enclosing describe) YAML.safe_loads the template output; the
+      # multi-config path emits a JSON array, and YAML is a superset of JSON so it parses
+      # into the manifest array of {file, content} entries.
+      let(:manifest) { rendered }
+
+      it 'emits a JSON array manifest with one entry per config' do
+        expect(manifest).to be_an(Array)
+        expect(manifest.length).to eq(2)
+      end
+
+      it 'derives an indexed, sanitized filename per entry' do
+        expect(manifest[0]['file']).to eq('config-000-platform.yml')
+        expect(manifest[1]['file']).to eq('config-001-team_a_.yml')
+      end
+
+      it 'falls back to cfN when an entry has no name' do
+        properties['configs'][1].delete('name')
+        expect(manifest[1]['file']).to eq('config-001-cfg1.yml')
+      end
+
+      it 'renders each entry through the same rewrites (internal receiver + nop pipelines)' do
+        first = YAML.safe_load(manifest[0]['content'])
+        expect(first['receivers'].keys).to eq(['otlp/cf-internal-local'])
+        expect(first['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+        # nop pipelines injected for the signals the entry does not define
+        expect(first['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+        expect(first['service']['pipelines']['logs']['exporters']).to eq(['nop'])
+      end
+
+      it 'preserves connector-fed receivers within an entry' do
+        properties['configs'][0]['config'] = {
+          'connectors' => { 'routing' => nil },
+          'exporters' => { 'otlp_grpc' => { 'endpoint' => 'otelcol:4317' } },
+          'service' => {
+            'pipelines' => {
+              'metrics/in' => { 'receivers' => ['otlp/placeholder'], 'exporters' => ['routing'] },
+              'metrics/out' => { 'receivers' => ['routing'], 'exporters' => ['otlp_grpc'] }
+            }
+          }
+        }
+        first = YAML.safe_load(manifest[0]['content'])
+        expect(first['service']['pipelines']['metrics/in']['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(first['service']['pipelines']['metrics/out']['receivers']).to eq(['routing'])
+      end
+
+      it 'is mutually exclusive with config' do
+        properties['config'] = { 'some' => 'thing' }
+        expect { rendered }.to raise_error(/Can not provide 'configs' together with 'config'/)
+      end
+
+      it 'is mutually exclusive with the deprecated metric_exporters' do
+        properties['metric_exporters'] = { 'otlp_grpc' => { 'endpoint' => 'otelcol:4317' } }
+        expect { rendered }.to raise_error(/Can not provide 'configs' together with 'config'/)
+      end
+
+      it 'checks secret usage across the union of all entries' do
+        properties['configs'][0]['config']['exporters']['otlp_grpc']['headers'] =
+          { 'auth' => '{{ .shared.secret }}' }
+        properties['secrets'] = [{ 'name' => 'shared', 'secret' => 'tok' }]
+        expect { rendered }.to_not raise_error
+        expect(YAML.safe_load(manifest[0]['content'])['exporters']['otlp_grpc']['headers']['auth']).to eq('tok')
+      end
+
+      it 'raises when a declared secret is unused by any entry' do
+        properties['secrets'] = [{ 'name' => 'orphan', 'secret' => 'tok' }]
+        expect { rendered }.to raise_error(/The following secrets are unused: \['orphan.secret'\]/)
+      end
+    end
+
+    describe 'inject_internal_receiver' do
+      def entry_config_for_inject(exporter)
+        {
+          'exporters' => { exporter => { 'endpoint' => "#{exporter}:4317" } },
+          'service' => {
+            'pipelines' => {
+              'metrics' => {
+                'receivers' => ['otlp/placeholder'],
+                'exporters' => [exporter]
+              }
+            }
+          }
+        }
+      end
+
+      context 'all (default)' do
+        let(:properties) { { 'config' => config } }
+
+        it 'injects the internal receiver (regression guard)' do
+          expect(rendered['receivers'].keys).to eq(['otlp/cf-internal-local'])
+        end
+
+        it 'adds nop pipelines for missing signals' do
+          cfg = config.dup
+          cfg['service'] = cfg['service'].dup
+          cfg['service']['pipelines'] = cfg['service']['pipelines'].reject { |k, _| k.start_with?('traces') }
+          r = YAML.safe_load(template.render({ 'config' => cfg }))
+          expect(r['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+        end
+      end
+
+      context 'first with 2 configs' do
+        let(:properties) do
+          {
+            'inject_internal_receiver' => 'first',
+            'validate_configs' => 'first',
+            'configs' => [
+              { 'name' => 'ingress', 'config' => entry_config_for_inject('otlp_grpc') },
+              {
+                'name' => 'egress',
+                'config' => {
+                  'receivers' => { 'prometheus/scrape' => { 'config' => { 'scrape_interval' => '15s' } } },
+                  'exporters' => { 'otlp_grpc/out' => { 'endpoint' => 'out:4317' } },
+                  'service' => {
+                    'pipelines' => {
+                      'metrics' => {
+                        'receivers' => ['prometheus/scrape'],
+                        'exporters' => ['otlp_grpc/out']
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        end
+        let(:manifest) { rendered }
+
+        it 'injects the internal receiver into config-000 only' do
+          first = YAML.safe_load(manifest[0]['content'])
+          expect(first['receivers'].keys).to eq(['otlp/cf-internal-local'])
+          expect(first['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+        end
+
+        it 'adds nop pipelines to config-000' do
+          first = YAML.safe_load(manifest[0]['content'])
+          expect(first['service']['pipelines']['traces']['exporters']).to eq(['nop'])
+          expect(first['service']['pipelines']['logs']['exporters']).to eq(['nop'])
+        end
+
+        it 'renders config-001 verbatim (operator receivers preserved, no internal receiver)' do
+          second = YAML.safe_load(manifest[1]['content'])
+          expect(second['receivers'].keys).to eq(['prometheus/scrape'])
+          expect(second['service']['pipelines']['metrics']['receivers']).to eq(['prometheus/scrape'])
+        end
+
+        it 'does not inject nop pipelines into config-001' do
+          second = YAML.safe_load(manifest[1]['content'])
+          expect(second['service']['pipelines'].keys).to eq(['metrics'])
+        end
+
+        it 'renders a fragment with no exporters map verbatim (no completeness error)' do
+          properties['configs'] << {
+            'name' => 'fragment',
+            'config' => {
+              'service' => {
+                'pipelines' => {
+                  'metrics/bosh' => {
+                    'receivers' => ['routing'],
+                    'exporters' => ['otlp']
+                  }
+                }
+              }
+            }
+          }
+          expect { rendered }.not_to raise_error
+          fragment = YAML.safe_load(manifest[2]['content'])
+          expect(fragment['exporters']).to be_nil
+        end
+
+        it 'renders a fragment with no service map verbatim (no completeness error)' do
+          properties['configs'] << {
+            'name' => 'ext-fragment',
+            'config' => {
+              'extensions' => { 'pprof' => nil }
+            }
+          }
+          expect { rendered }.not_to raise_error
+        end
+
+        it 'still raises for a fragment referencing a disallowed exporter' do
+          properties['allow_list'] = { 'exporters' => ['otlp_grpc'] }
+          properties['configs'] << {
+            'name' => 'bad-fragment',
+            'config' => {
+              'exporters' => { 'debug' => nil },
+              'service' => {
+                'pipelines' => {
+                  'metrics/dbg' => {
+                    'exporters' => ['debug']
+                  }
+                }
+              }
+            }
+          }
+          expect { rendered }.to raise_error(/The following configured exporters are not allowed/)
+        end
+      end
+
+      context 'none' do
+        let(:none_config) do
+          {
+            'receivers' => { 'prometheus/scrape' => { 'config' => { 'scrape_interval' => '15s' } } },
+            'exporters' => { 'otlp_grpc' => { 'endpoint' => 'out:4317' } },
+            'service' => {
+              'pipelines' => {
+                'metrics' => {
+                  'receivers' => ['prometheus/scrape'],
+                  'exporters' => ['otlp_grpc']
+                }
+              }
+            }
+          }
+        end
+        let(:properties) { { 'inject_internal_receiver' => 'none', 'config' => none_config } }
+
+        it 'preserves the operator receiver' do
+          expect(rendered['receivers'].keys).to eq(['prometheus/scrape'])
+        end
+
+        it 'does not inject the internal receiver' do
+          expect(rendered['receivers'].keys).not_to include('otlp/cf-internal-local')
+        end
+
+        it 'does not inject nop pipelines' do
+          expect(rendered['service']['pipelines'].keys).to eq(['metrics'])
+        end
+
+        it 'still emits self-telemetry' do
+          expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['port']).to eq(14830)
+        end
+
+        it 'still raises when exporters are missing (completeness is governed by validate_configs, not inject_internal_receiver)' do
+          properties['config'] = none_config.reject { |k, _| k == 'exporters' }
+          expect { rendered }.to raise_error(/Exporter configuration must be provided/)
+        end
+      end
+
+      context 'invalid value' do
+        let(:properties) { { 'inject_internal_receiver' => 'bogus', 'config' => config } }
+
+        it 'raises a descriptive error' do
+          expect { rendered }.to raise_error(/inject_internal_receiver must be one of all\|first\|none/)
+        end
+      end
+
+      context 'validate_configs invalid value' do
+        let(:properties) { { 'validate_configs' => 'bogus', 'config' => config } }
+
+        it 'raises a descriptive error' do
+          expect { rendered }.to raise_error(/validate_configs must be one of all\|first\|none/)
         end
       end
     end

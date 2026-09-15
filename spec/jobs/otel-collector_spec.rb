@@ -64,5 +64,31 @@ describe 'otel-collector' do
         end
       end
     end
+
+    describe 'config args' do
+      context 'when configs is a non-empty list' do
+        before do
+          properties['configs'] = [
+            { 'name' => 'platform', 'config' => {} },
+            { 'name' => 'team a!', 'config' => {} }
+          ]
+        end
+
+        it 'passes one --config per entry, ordered, with the manifest filenames' do
+          expect(rendered['processes'][0]['args']).to eq([
+            '--config', '/var/vcap/jobs/otel-collector/config/config-000-platform.yml',
+            '--config', '/var/vcap/jobs/otel-collector/config/config-001-team_a_.yml'
+          ])
+        end
+      end
+
+      context 'when configs is empty (legacy single-config)' do
+        it 'passes a single --config pointing at config.yml' do
+          expect(rendered['processes'][0]['args']).to eq([
+            '--config', '/var/vcap/jobs/otel-collector/config/config.yml'
+          ])
+        end
+      end
+    end
   end
 end
