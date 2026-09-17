@@ -1,0 +1,90 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
+package healthcheckextension // import "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension"
+
+import (
+	"context"
+
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/config/confighttp"
+	"go.opentelemetry.io/collector/config/confignet"
+	"go.opentelemetry.io/collector/extension"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension/internal/metadata"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/common/testutil"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/internal/healthcheck"
+)
+
+const defaultPort = 13133
+
+// NewFactory creates a factory for HealthCheck extension.
+func NewFactory() extension.Factory {
+	return extension.NewFactory(
+		metadata.Type,
+		createDefaultConfig,
+		createExtension,
+		metadata.ExtensionStability,
+	)
+}
+
+func createDefaultConfig() component.Config {
+	serverConfig := confighttp.NewDefaultServerConfig()
+	// TODO: See https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/49316.
+	serverConfig.WriteTimeout = 0
+	serverConfig.ReadHeaderTimeout = 0
+	serverConfig.IdleTimeout = 0
+	serverConfig.KeepAlivesEnabled = false
+	serverConfig.NetAddr = confignet.AddrConfig{
+		Transport: confignet.TransportTypeTCP,
+		Endpoint:  testutil.EndpointForPort(defaultPort),
+	}
+	return &Config{
+		Config: healthcheck.Config{
+			LegacyConfig: healthcheck.HTTPLegacyConfig{
+				ServerConfig: serverConfig,
+				Path:         "/",
+				CheckCollectorPipeline: &healthcheck.CheckCollectorPipelineConfig{
+					Enabled:                  false,
+					Interval:                 "5m",
+					ExporterFailureThreshold: 5,
+				},
+			},
+		},
+	}
+}
+
+func createExtension(_ context.Context, set extension.Settings, cfg component.Config) (extension.Extension, error) {
+	config := cfg.(*Config)
+
+	if metadata.ExtensionHealthcheckUseComponentStatusFeatureGate.IsEnabled() {
+		// When feature gate is enabled, use v2 implementation directly.
+		// The feature gate controls behavior, not the presence of v2 config fields.
+		config.Config.UseV2 = true
+
+		// If no v2 config is set, create HTTP config from legacy settings for backward compatibility
+		if config.Config.HTTPConfig == nil && config.Config.GRPCConfig == nil {
+			set.Logger.Warn(
+				"Feature gate enabled but using legacy config format. " +
+					"Please migrate to v2 config format (http/grpc fields). " +
+					"See: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/healthcheckextension#backward-compatibility",
+			)
+			config.Config.HTTPConfig = &healthcheck.HTTPConfig{
+				ServerConfig: config.Config.ServerConfig,
+				Status: healthcheck.PathConfig{
+					Enabled: true,
+					Path:    config.Config.Path,
+				},
+				Config: healthcheck.PathConfig{
+					Enabled: false,
+					Path:    "/config",
+				},
+			}
+		}
+
+		return healthcheck.NewHealthCheckExtension(config.Config, set), nil
+	}
+
+	// Feature gate disabled: use legacy implementation.
+	return newServer(*config, set.TelemetrySettings), nil
+}

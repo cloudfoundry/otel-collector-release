@@ -164,6 +164,8 @@ def included_processors
 end
 
 # Hardcoded list of extensions included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+# NOTE: health_check is compiled into the distribution (for the k8s Helm chart's liveness/readiness
+# probes) but intentionally omitted here — BOSH uses monit for health, so it is not exposed to BOSH users.
 def included_extensions
   %w[opamp pprof].sort
 end
