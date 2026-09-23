@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go/middleware"
-	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Associates an application status check with instances or [tags]. Once you create an
@@ -17,16 +16,18 @@ import (
 //   - You must specify either TargetTagAssociations or InstanceIds , but not both.
 //     Specifying both results in an InvalidParameterCombination error.
 //
-//   - The application status check must already exist and belong to your account.
+//   - You must own the application status check. The check must already exist in
+//     your account.
 //
-//   - Tag keys must not be blank.
+//   - You must not leave tag keys blank.
 //
-//   - Maximum 50 tag associations per application status check.
+//   - You can create a maximum of 50 tag associations for each application status
+//     check.
 //
-//   - Use DisassociateApplicationStatusCheck to remove associations.
+//   - You can use DisassociateApplicationStatusCheck to remove associations.
 //
-//   - When you associate [tags], the application status check automatically monitors
-//     all current and future instances that have the specified tags.
+//   - You can associate [tags]so that the application status check automatically
+//     monitors all current and future instances that have the specified tags.
 //
 // [tags]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html
 func (c *Client) AssociateApplicationStatusCheck(ctx context.Context, params *AssociateApplicationStatusCheckInput, optFns ...func(*Options)) (*AssociateApplicationStatusCheckOutput, error) {
@@ -51,8 +52,10 @@ type AssociateApplicationStatusCheckInput struct {
 	// This member is required.
 	ApplicationStatusCheckId *string
 
-	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
-	// the request. For more information, see [Ensuring idempotency].
+	// A unique, case-sensitive identifier that you provide to ensure that the
+	// operation completes no more than one time. If you retry a request with the same
+	// token, the service ignores the request but does not return an error. For more
+	// information, see [Ensuring idempotency].
 	//
 	// [Ensuring idempotency]: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html
 	ClientToken *string
@@ -100,12 +103,6 @@ func (c *Client) addOperationAssociateApplicationStatusCheckMiddlewares(stack *m
 		return err
 	}
 
-	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
-		return err
-	}
-	if err = addComputeContentLength(stack); err != nil {
-		return err
-	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
@@ -115,12 +112,6 @@ func (c *Client) addOperationAssociateApplicationStatusCheckMiddlewares(stack *m
 	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
-		return err
-	}
-	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
-		return err
-	}
 	if err = addCredentialSource(stack, options); err != nil {
 		return err
 	}
@@ -128,9 +119,6 @@ func (c *Client) addOperationAssociateApplicationStatusCheckMiddlewares(stack *m
 		return err
 	}
 	if err = addOpAssociateApplicationStatusCheckValidationMiddleware(stack); err != nil {
-		return err
-	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware(options.Region, "AssociateApplicationStatusCheck"), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {

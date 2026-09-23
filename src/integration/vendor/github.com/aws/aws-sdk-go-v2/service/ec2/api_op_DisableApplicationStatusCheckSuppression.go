@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go/middleware"
-	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 // Disables suppression of application status checks for the specified instances.
 // After suppression is disabled, health check results resume affecting the
 // instance-level application status. You can specify a maximum of 100 instance IDs
-// per request.
+// for each request.
 func (c *Client) DisableApplicationStatusCheckSuppression(ctx context.Context, params *DisableApplicationStatusCheckSuppressionInput, optFns ...func(*Options)) (*DisableApplicationStatusCheckSuppressionOutput, error) {
 	if params == nil {
 		params = &DisableApplicationStatusCheckSuppressionInput{}
@@ -31,8 +30,10 @@ func (c *Client) DisableApplicationStatusCheckSuppression(ctx context.Context, p
 
 type DisableApplicationStatusCheckSuppressionInput struct {
 
-	// Unique, case-sensitive identifier that you provide to ensure the idempotency of
-	// the request. For more information, see [Ensuring idempotency].
+	// A unique, case-sensitive identifier that you provide to ensure that the
+	// operation completes no more than one time. If you retry a request with the same
+	// token, the service ignores the request but does not return an error. For more
+	// information, see [Ensuring idempotency].
 	//
 	// [Ensuring idempotency]: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/Run_Instance_Idempotency.html
 	ClientToken *string
@@ -74,12 +75,6 @@ func (c *Client) addOperationDisableApplicationStatusCheckSuppressionMiddlewares
 		return err
 	}
 
-	if err = addlegacyEndpointContextSetter(stack, options); err != nil {
-		return err
-	}
-	if err = addComputeContentLength(stack); err != nil {
-		return err
-	}
 	if err = addResolveEndpointMiddleware(stack, options); err != nil {
 		return err
 	}
@@ -89,19 +84,10 @@ func (c *Client) addOperationDisableApplicationStatusCheckSuppressionMiddlewares
 	if err = addRecordResponseTiming(stack, options); err != nil {
 		return err
 	}
-	if err = smithyhttp.AddErrorCloseResponseBodyMiddleware(stack); err != nil {
-		return err
-	}
-	if err = smithyhttp.AddCloseResponseBodyMiddleware(stack); err != nil {
-		return err
-	}
 	if err = addCredentialSource(stack, options); err != nil {
 		return err
 	}
 	if err = addIdempotencyToken_opDisableApplicationStatusCheckSuppressionMiddleware(stack, options); err != nil {
-		return err
-	}
-	if err = stack.Initialize.Add(newServiceMetadataMiddleware(options.Region, "DisableApplicationStatusCheckSuppression"), middleware.Before); err != nil {
 		return err
 	}
 	if err = addRequestIDRetrieverMiddleware(stack); err != nil {
