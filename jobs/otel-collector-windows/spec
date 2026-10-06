@@ -46,16 +46,16 @@ properties:
             processors: [batch]
             exporters: [otlp]
   allow_list.processors:
-    description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. If unset, all included processors are allowed. An empty list allows none."
     example: ['batch']
   allow_list.exporters:
-    description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. If unset, all included exporters are allowed. An empty list allows none."
     example: ['otlp', 'prometheus', 'prometheus_remote_write']
   allow_list.extensions:
-    description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. If unset, all included extensions are allowed. An empty list allows none."
     example: ['pprof']
   allow_list.connectors:
-    description: "Connectors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    description: "Connectors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. If unset, all included connectors are allowed. An empty list allows none."
     example: ['routing']
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
