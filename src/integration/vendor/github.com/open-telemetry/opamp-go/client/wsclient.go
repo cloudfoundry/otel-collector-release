@@ -14,7 +14,8 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/gorilla/websocket"
-	dialer "github.com/michel-laterman/proxy-connect-dialer-go"
+
+	dialer "github.com/elastic/proxy-connect-dialer-go"
 
 	"github.com/open-telemetry/opamp-go/client/internal"
 	"github.com/open-telemetry/opamp-go/client/types"
@@ -47,6 +48,9 @@ type wsClient struct {
 	// The sender is responsible for sending portion of the OpAMP protocol.
 	sender *internal.WSSender
 
+	// Max size of received OpAMP WebSocket messages after decompression.
+	maxMessageSize int64
+
 	// last non-nil internal error that was encountered in the conn retry loop,
 	// currently used only for testing.
 	lastInternalErr atomic.Pointer[error]
@@ -60,6 +64,10 @@ type wsClient struct {
 	// connection. responseChain should only be referred to by the goroutine that
 	// runs tryConnectOnce and its synchronous callees.
 	responseChain []*http.Response
+
+	// backoffPolicy returns a fresh policy controlling the delay between
+	// connection retry attempts for each connect sequence.
+	backoffPolicy types.BackoffPolicyFunc
 }
 
 // NewWebSocket creates a new OpAMP Client that uses WebSocket transport.
@@ -98,6 +106,8 @@ func (c *wsClient) Start(ctx context.Context, settings types.StartSettings) erro
 	}
 
 	c.dialer.EnableCompression = settings.EnableCompression
+	c.maxMessageSize = sharedinternal.ResolveMaxMessageSize(settings.MaxMessageSize)
+	c.sender.SetMaxMessageSize(settings.MaxMessageSize)
 
 	if settings.TLSConfig != nil {
 		c.url.Scheme = "wss"
@@ -119,6 +129,8 @@ func (c *wsClient) Start(ctx context.Context, settings types.StartSettings) erro
 	c.getHeader = func() http.Header {
 		return headerFunc(baseHeader.Clone())
 	}
+
+	c.backoffPolicy = settings.BackoffPolicy
 
 	c.common.StartConnectAndRun(c.runUntilStopped)
 
@@ -158,6 +170,13 @@ func (c *wsClient) UpdateEffectiveConfig(ctx context.Context) error {
 
 func (c *wsClient) SetRemoteConfigStatus(status *protobufs.RemoteConfigStatus) error {
 	return c.common.SetRemoteConfigStatus(status)
+}
+
+// SetConnectionSettingsStatus sets the current ConnectionSettingsStatus and sends
+// it to the Server. Must be called after processing connection settings offers to
+// report APPLIED or FAILED status.
+func (c *wsClient) SetConnectionSettingsStatus(status *protobufs.ConnectionSettingsStatus) error {
+	return c.common.SetConnectionSettingsStatus(status)
 }
 
 func (c *wsClient) SetPackageStatuses(statuses *protobufs.PackageStatuses) error {
@@ -278,6 +297,9 @@ func (c *wsClient) tryConnectOnce(ctx context.Context) (retryAfter sharedinterna
 	}
 
 	// Successfully connected.
+	if c.maxMessageSize >= 0 {
+		conn.SetReadLimit(c.maxMessageSize)
+	}
 	c.connMutex.Lock()
 	c.conn = conn
 	c.connMutex.Unlock()
@@ -289,16 +311,26 @@ func (c *wsClient) tryConnectOnce(ctx context.Context) (retryAfter sharedinterna
 // Continuously try until connected. Will return nil when successfully
 // connected. Will return error if it is cancelled via context.
 func (c *wsClient) ensureConnected(ctx context.Context) error {
-	infiniteBackoff := backoff.NewExponentialBackOff()
-
-	// Make ticker run forever.
-	infiniteBackoff.MaxElapsedTime = 0
+	var bpolicy types.BackoffPolicy
+	if c.backoffPolicy != nil {
+		bpolicy = c.backoffPolicy()
+	} else {
+		b := backoff.NewExponentialBackOff()
+		b.MaxElapsedTime = 0
+		bpolicy = b
+	}
 
 	interval := time.Duration(0)
 
 	for {
 		timer := time.NewTimer(interval)
-		interval = infiniteBackoff.NextBackOff()
+		next := bpolicy.NextBackOff()
+		if next < 0 {
+			err := errors.New("invalid backoff policy time")
+			c.lastInternalErr.Store(&err)
+			return err
+		}
+		interval = next
 
 		select {
 		case <-timer.C:
