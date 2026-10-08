@@ -107,8 +107,8 @@ def check_for_use_of_reserved_bbs_api_port!
   end
 end
 
-def set_internal_receiver_as_only_receiver
-  config['receivers'] = {
+def internal_receiver
+  {
     'otlp/cf-internal-local' => {
       'protocols' => {
         'grpc' => {
@@ -125,19 +125,18 @@ def set_internal_receiver_as_only_receiver
   }
 end
 
+def set_internal_receiver_as_only_receiver
+  config['receivers'] = internal_receiver
+end
+
+def add_internal_receiver
+  config['receivers'] ||= {}
+  config['receivers'].merge!(internal_receiver)
+end
+
 def set_internal_receiver_on_all_pipelines
-  connectors = (config['connectors'] || {}).keys.map { |k| k.split('/')[0] }
   config['service']['pipelines'].each_value do |pipeline|
-    receivers = pipeline['receivers'] || []
-    connector_receivers = receivers.select { |r| connectors.include?(r.split('/')[0]) }
-    # Keep connector-only pipelines intact so their connectors remain consumed.
-    # Route all other pipelines through the internal mTLS receiver.
-    pipeline['receivers'] =
-      if receivers == connector_receivers && !connector_receivers.empty?
-        connector_receivers
-      else
-        connector_receivers + ['otlp/cf-internal-local']
-      end
+    pipeline['receivers'] = ['otlp/cf-internal-local']
   end
 end
 
@@ -226,9 +225,13 @@ end
 if_p('allow_list.connectors') do |prop|
   check_for_use_of_allowed_components!('connectors', included_connectors, prop)
 end
-set_internal_receiver_as_only_receiver
-add_nop_pipelines
-set_internal_receiver_on_all_pipelines
+if p('rewrite_pipelines')
+  set_internal_receiver_as_only_receiver
+  add_nop_pipelines
+  set_internal_receiver_on_all_pipelines
+else
+  add_internal_receiver
+end
 expose_internal_telemetry
 
 YAML.dump(config)

@@ -34,6 +34,9 @@ properties:
     default: 512
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
+  rewrite_pipelines:
+    description: "Manage collector pipeline receivers and add nop pipelines for missing signals. Set to false to preserve configured pipelines and exporters while adding the otlp/cf-internal-local receiver."
+    default: true
   config:
     description: "Collector configuration"
     default: {}

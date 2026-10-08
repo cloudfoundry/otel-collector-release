@@ -255,51 +255,6 @@ shared_examples_for 'common config.yml' do
           end
         end
 
-        context 'when a pipeline is fed by a connector' do
-          before do
-            config['connectors'] = { 'routing' => nil }
-            config['service']['pipelines'] = {
-              # real ingress: exports into the connector
-              'metrics/router-inbound' => {
-                'receivers' => ['otlp/placeholder'],
-                'exporters' => ['routing']
-              },
-              # connector-fed downstream pipelines
-              'metrics/team-a' => {
-                'receivers' => ['routing'],
-                'exporters' => ['otlp_grpc']
-              },
-              'metrics/team-b' => {
-                'receivers' => ['routing/2'],
-                'exporters' => ['otlp_grpc']
-              },
-              # mixed: operator receiver alongside the connector
-              'metrics/mixed' => {
-                'receivers' => ['otlp/placeholder', 'routing'],
-                'exporters' => ['otlp_grpc']
-              }
-            }
-          end
-
-          it 'forces the internal receiver on the ingress pipeline' do
-            expect(rendered['service']['pipelines']['metrics/router-inbound']['receivers']).to eq(['otlp/cf-internal-local'])
-          end
-
-          it 'preserves connector-fed receivers so the connector stays consumed' do
-            expect(rendered['service']['pipelines']['metrics/team-a']['receivers']).to eq(['routing'])
-            expect(rendered['service']['pipelines']['metrics/team-b']['receivers']).to eq(['routing/2'])
-          end
-
-          it 'keeps the connector receiver but forces the internal receiver on a mixed pipeline' do
-            expect(rendered['service']['pipelines']['metrics/mixed']['receivers']).to eq(['routing', 'otlp/cf-internal-local'])
-          end
-
-          it 'still forces the internal receiver on injected nop pipelines' do
-            expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['logs']['receivers']).to eq(['otlp/cf-internal-local'])
-          end
-        end
-
         context 'when ingress.grpc.port is set' do
           before do
             properties['ingress'] = { 'grpc' => { 'port' => 1234 } }
@@ -319,6 +274,55 @@ shared_examples_for 'common config.yml' do
             expect(builtin_otlp_receiver['protocols']['grpc']['endpoint']).to eq('0.0.0.0:9100')
           end
         end
+      end
+    end
+
+    context 'when rewrite_pipelines is false' do
+      before do
+        properties['rewrite_pipelines'] = false
+      end
+
+      it 'preserves operator receivers, pipelines, and exporters while adding the internal receiver' do
+        config['receivers']['otlp/custom'] = {
+          'protocols' => {
+            'grpc' => {
+              'endpoint' => '0.0.0.0:2345'
+            }
+          }
+        }
+
+        expect(rendered['receivers']).to include(
+          'otlp/placeholder' => nil,
+          'otlp/custom' => config['receivers']['otlp/custom'],
+          'otlp/cf-internal-local' => rendered['receivers']['otlp/cf-internal-local']
+        )
+        expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
+        expect(rendered['exporters']).to eq(config['exporters'])
+      end
+
+      it 'does not add nop pipelines for missing signals' do
+        config['service']['pipelines'].delete('logs')
+
+        expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
+        expect(rendered['exporters']).not_to have_key('nop')
+      end
+
+      it 'preserves routing connector pipelines explicitly wired to the internal receiver' do
+        config['connectors'] = { 'routing' => nil }
+        config['service']['pipelines'] = {
+          'metrics/inbound' => {
+            'receivers' => ['otlp/cf-internal-local'],
+            'exporters' => ['routing']
+          },
+          'metrics/team-a' => {
+            'receivers' => ['routing'],
+            'exporters' => ['otlp_grpc']
+          }
+        }
+
+        expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
+        expect(rendered['exporters']).to eq(config['exporters'])
+        expect(rendered['receivers']).to include('otlp/cf-internal-local')
       end
     end
 
