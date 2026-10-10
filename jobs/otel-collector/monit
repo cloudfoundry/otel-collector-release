@@ -1,7 +1,14 @@
+# monit template
 <% if p('enabled') %>
 check process otel-collector
+<% if p('bpm.disabled') %>
+  with pidfile /var/vcap/sys/run/otel-collector/otel-collector.pid
+  start program "/var/vcap/jobs/otel-collector/bin/ctl start"
+  stop program "/var/vcap/jobs/otel-collector/bin/ctl stop"
+<% else %>
   with pidfile /var/vcap/sys/run/bpm/otel-collector/otel-collector.pid
   start program "/var/vcap/jobs/bpm/bin/bpm start otel-collector"
   stop program "/var/vcap/jobs/bpm/bin/bpm stop otel-collector"
+<% end %>
   group vcap
 <% end %>
