@@ -207,9 +207,13 @@ end
 if_p('allow_list.extensions') do |prop|
   check_for_use_of_allowed_components!('extensions', included_extensions, prop)
 end
-set_internal_receiver_as_only_receiver
-add_nop_pipelines
-set_internal_receiver_on_all_pipelines
+
+if !p('custom_receiver_enabled')
+    set_internal_receiver_as_only_receiver
+    add_nop_pipelines
+    set_internal_receiver_on_all_pipelines
+end
+
 expose_internal_telemetry
 
 YAML.dump(config)
