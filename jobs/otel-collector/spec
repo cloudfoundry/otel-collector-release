@@ -55,6 +55,9 @@ properties:
             receivers: [otlp/placeholder]
             processors: [batch]
             exporters: [otlp]
+  ingress.grpc.enabled:
+    description: "Enable gRPC ingress"
+    default: true
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1
