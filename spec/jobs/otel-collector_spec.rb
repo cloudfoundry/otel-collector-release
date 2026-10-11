@@ -64,5 +64,27 @@ describe 'otel-collector' do
         end
       end
     end
+
+    describe 'additional_volumes' do
+      context 'when not provided' do
+        it 'does not render additional_volumes' do
+          expect(rendered['processes'][0]).not_to have_key('additional_volumes')
+        end
+      end
+
+      context 'when provided' do
+        before do
+          properties['additional_volumes'] = [
+            { 'path' => '/var/vcap/sys/log/uaa', 'writable' => false }
+          ]
+        end
+
+        it 'renders the specified additional_volumes' do
+          expect(rendered['processes'][0]['additional_volumes']).to eq([
+            { 'path' => '/var/vcap/sys/log/uaa', 'writable' => false }
+          ])
+        end
+      end
+    end
   end
 end
