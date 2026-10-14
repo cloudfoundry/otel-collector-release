@@ -3,7 +3,7 @@ module code.cloudfoundry.org/otel-collector-release/src/acceptance
 go 1.26
 
 require (
-	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 )
 
