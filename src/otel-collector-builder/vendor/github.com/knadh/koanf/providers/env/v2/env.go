@@ -85,20 +85,23 @@ func (e *Env) Read() (map[string]any, error) {
 
 	mp := make(map[string]any)
 	for _, k := range keys {
-		parts := strings.SplitN(k, "=", 2)
+		// If there's no '=', skip it.
+		key, val, ok := strings.Cut(k, "=")
+		if !ok {
+			continue
+		}
 
-		// If there's a transformation callback,
-		// run it through every key/value.
+		// If there's a transformation callback, run it through every key/value.
 		if e.transform != nil {
-			key, value := e.transform(parts[0], parts[1])
+			key, val := e.transform(key, val)
 			// If the callback blanked the key, omit it.
 			if key == "" {
 				continue
 			}
 
-			mp[key] = value
+			mp[key] = val
 		} else {
-			mp[parts[0]] = parts[1]
+			mp[key] = val
 		}
 
 	}
