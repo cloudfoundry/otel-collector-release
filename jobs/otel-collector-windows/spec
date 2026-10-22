@@ -16,6 +16,18 @@ properties:
   enabled:
     description: "Enable OTel Collector"
     default: true
+  custom_receiver_enabled:
+    description: "Disable default otlp/cf-internal-local receiver"
+    default: false
+  allow_list.exporters:
+    description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    example: ['otlp', 'prometheus', 'prometheus_remote_write']
+  allow_list.processors:
+    description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    example: ['batch']
+  allow_list.extensions:
+    description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
+    example: ['pprof']
   limits.memory_mib:
     description: "Memory limit to apply to this process, in mebibytes."
     default: 512
@@ -45,15 +57,6 @@ properties:
             receivers: [otlp/placeholder]
             processors: [batch]
             exporters: [otlp]
-  allow_list.processors:
-    description: "Processors allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
-    example: ['batch']
-  allow_list.exporters:
-    description: "Exporters allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
-    example: ['otlp', 'prometheus', 'prometheus_remote_write']
-  allow_list.extensions:
-    description: "Extensions allowed for use in otel-collector config. Must be a subset of list included in otel-collector builder config. Empty list means allow all possible."
-    example: ['pprof']
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1
