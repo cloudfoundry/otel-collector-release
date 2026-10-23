@@ -177,8 +177,9 @@ shared_examples_for 'common config.yml' do
     context 'receivers' do
       let(:receivers) { rendered['receivers'] }
 
-      it 'removes any receiver that the operator provided to keep the config well-formed' do
-        expect(receivers.keys).to_not include 'otlp/placeholder'
+      it 'adds the built-in receiver while preserving any operator-provided receivers' do
+        expect(receivers.keys).to include 'otlp/cf-internal-local'
+        expect(receivers.keys).to include 'otlp/placeholder'
       end
 
       context 'when the operator provides a real receiver' do
@@ -195,8 +196,9 @@ shared_examples_for 'common config.yml' do
           }
         end
 
-        it 'is ignored' do
-          expect(rendered['receivers'].keys).to_not include 'otlp/some-receiver'
+        it 'is preserved alongside the built-in receiver' do
+          expect(rendered['receivers'].keys).to include 'otlp/some-receiver'
+          expect(rendered['receivers'].keys).to include 'otlp/cf-internal-local'
         end
       end
 
@@ -247,11 +249,11 @@ shared_examples_for 'common config.yml' do
             }
           end
 
-          it 'includes only the built-in receiver in every pipeline' do
-            expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['traces/2']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
-            expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to eq(['otlp/cf-internal-local'])
+          it 'appends the built-in receiver to every pipeline' do
+            expect(rendered['service']['pipelines']['traces']['receivers']).to include('otlp/cf-internal-local')
+            expect(rendered['service']['pipelines']['traces/2']['receivers']).to include('otlp/cf-internal-local')
+            expect(rendered['service']['pipelines']['metrics']['receivers']).to include('otlp/cf-internal-local')
+            expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to include('otlp/cf-internal-local')
           end
         end
 
@@ -277,24 +279,27 @@ shared_examples_for 'common config.yml' do
       end
     end
 
-    context 'when rewrite_pipelines is false' do
+    context 'when ingress.pipelines is []' do
       before do
-        properties['rewrite_pipelines'] = false
+        properties['ingress'] ||= {}
+        properties['ingress']['pipelines'] = []
       end
 
-      it 'preserves operator receivers, pipelines, and exporters while adding the internal receiver' do
+      it 'adds the internal receiver to config but does not inject it into any pipeline' do
+        expect(rendered['receivers']).to include('otlp/cf-internal-local')
+        rendered['service']['pipelines'].each_value do |pipeline|
+          expect(pipeline.fetch('receivers', [])).not_to include('otlp/cf-internal-local')
+        end
+      end
+
+      it 'preserves all operator receivers and pipelines' do
         config['receivers']['otlp/custom'] = {
-          'protocols' => {
-            'grpc' => {
-              'endpoint' => '0.0.0.0:2345'
-            }
-          }
+          'protocols' => { 'grpc' => { 'endpoint' => '0.0.0.0:2345' } }
         }
 
         expect(rendered['receivers']).to include(
-          'otlp/placeholder' => nil,
-          'otlp/custom' => config['receivers']['otlp/custom'],
-          'otlp/cf-internal-local' => rendered['receivers']['otlp/cf-internal-local']
+          'otlp/cf-internal-local' => rendered['receivers']['otlp/cf-internal-local'],
+          'otlp/custom' => config['receivers']['otlp/custom']
         )
         expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
         expect(rendered['exporters']).to eq(config['exporters'])
@@ -303,11 +308,11 @@ shared_examples_for 'common config.yml' do
       it 'does not add nop pipelines for missing signals' do
         config['service']['pipelines'].delete('logs')
 
-        expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
+        expect(rendered['service']['pipelines'].keys).not_to include('logs')
         expect(rendered['exporters']).not_to have_key('nop')
       end
 
-      it 'preserves routing connector pipelines explicitly wired to the internal receiver' do
+      it 'preserves explicitly wired routing pipelines and adds fallback signals' do
         config['connectors'] = { 'routing' => nil }
         config['service']['pipelines'] = {
           'metrics/inbound' => {
@@ -319,10 +324,151 @@ shared_examples_for 'common config.yml' do
             'exporters' => ['otlp_grpc']
           }
         }
+        expected_pipelines = Marshal.load(Marshal.dump(config['service']['pipelines']))
+        expected_exporters = config['exporters'].merge('nop' => nil)
+
+        expect(rendered['service']['pipelines'].slice('metrics/inbound', 'metrics/team-a')).to eq(expected_pipelines)
+        %w[traces logs].each do |signal|
+          expect(rendered['service']['pipelines'][signal]).to eq(
+            'receivers' => ['otlp/cf-internal-local'],
+            'processors' => nil,
+            'exporters' => ['nop']
+          )
+        end
+        expect(rendered['exporters']).to eq(expected_exporters)
+        expect(rendered['receivers']).to include('otlp/cf-internal-local')
+      end
+
+      it 'does not add fallbacks when the internal receiver already handles every signal' do
+        config['service']['pipelines'].each_value do |pipeline|
+          pipeline['receivers'] = ['otlp/cf-internal-local']
+        end
 
         expect(rendered['service']['pipelines']).to eq(config['service']['pipelines'])
-        expect(rendered['exporters']).to eq(config['exporters'])
-        expect(rendered['receivers']).to include('otlp/cf-internal-local')
+        expect(rendered['exporters']).not_to have_key('nop')
+      end
+    end
+
+    context 'when ingress.pipelines is ["metrics"]' do
+      before do
+        properties['ingress'] ||= {}
+        properties['ingress']['pipelines'] = ['metrics']
+      end
+
+      it 'appends the internal receiver only to the metrics pipeline' do
+        expect(rendered['service']['pipelines']['metrics']['receivers']).to include('otlp/cf-internal-local')
+        expect(rendered['service']['pipelines']['traces']['receivers']).not_to include('otlp/cf-internal-local')
+        expect(rendered['service']['pipelines']['logs']['receivers']).not_to include('otlp/cf-internal-local')
+      end
+
+      it 'errors when the selected pipeline is missing' do
+        config['service']['pipelines'].delete('metrics')
+
+        expect { rendered }.to raise_error(/pipelines specified in ingress\.pipelines are not configured: \["metrics"\]/)
+      end
+
+      it 'adds fallback pipelines for missing signals' do
+        config['service']['pipelines'].delete('traces')
+        config['service']['pipelines'].delete('logs')
+
+        expect(rendered['service']['pipelines'].keys).to contain_exactly('metrics', 'traces', 'logs')
+        expect(rendered['service']['pipelines']['metrics']['receivers']).to include('otlp/cf-internal-local')
+        %w[traces logs].each do |signal|
+          expect(rendered['service']['pipelines'][signal]).to eq(
+            'receivers' => ['otlp/cf-internal-local'],
+            'processors' => nil,
+            'exporters' => ['nop']
+          )
+        end
+        expect(rendered['exporters']).to have_key('nop')
+      end
+
+      it 'adds CF fallbacks even when custom receivers already handle those signals' do
+        expected_pipelines = Marshal.load(Marshal.dump(config['service']['pipelines']))
+
+        %w[traces logs].each do |signal|
+          expect(rendered['service']['pipelines'][signal]).to eq(expected_pipelines[signal])
+          expect(rendered['service']['pipelines']["#{signal}/cf-internal-nop-1"]).to eq(
+            'receivers' => ['otlp/cf-internal-local'],
+            'processors' => nil,
+            'exporters' => ['nop']
+          )
+        end
+      end
+
+      it 'preserves an operator pipeline occupying a fallback name' do
+        config['service']['pipelines']['traces/cf-internal-nop-1'] = {
+          'receivers' => ['otlp/placeholder'],
+          'exporters' => ['otlp_grpc']
+        }
+
+        expect(rendered['service']['pipelines']['traces/cf-internal-nop-1']).to eq(
+          'receivers' => ['otlp/placeholder'],
+          'exporters' => ['otlp_grpc']
+        )
+        expect(rendered['service']['pipelines']['traces/cf-internal-nop-2']).to eq(
+          'receivers' => ['otlp/cf-internal-local'],
+          'processors' => nil,
+          'exporters' => ['nop']
+        )
+      end
+
+      it 'preserves receivers on other metrics pipelines such as metrics/foo' do
+        config['service']['pipelines']['metrics/foo'] = {
+          'receivers' => ['otlp/placeholder'],
+          'processors' => ['batch'],
+          'exporters' => ['otlp_grpc']
+        }
+
+        expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to eq(['otlp/placeholder'])
+        expect(rendered['service']['pipelines']['traces']['receivers']).not_to include('otlp/cf-internal-local')
+      end
+    end
+
+    context 'when ingress.pipelines selects a named pipeline' do
+      let(:config) do
+        {
+          'exporters' => { 'debug' => nil },
+          'connectors' => {
+            'routing' => {
+              'table' => [{
+                'context' => 'resource',
+                'condition' => 'attributes["tenant"] == "a"',
+                'pipelines' => ['metrics/inbound-copy']
+              }]
+            }
+          },
+          'service' => {
+            'pipelines' => {
+              'metrics/inbound' => {
+                'exporters' => ['routing']
+              },
+              'metrics/inbound-copy' => {
+                'receivers' => ['routing'],
+                'exporters' => ['debug']
+              }
+            }
+          }
+        }
+      end
+      let(:properties) { { 'config' => config, 'ingress' => { 'pipelines' => ['metrics/inbound'] } } }
+
+      it 'wires only the exact ingress pipeline, preserving the connector-fed pipeline' do
+        expect(rendered['service']['pipelines']['metrics/inbound']['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(rendered['service']['pipelines']['metrics/inbound-copy']['receivers']).to eq(['routing'])
+        expect(rendered['service']['pipelines'].keys).to contain_exactly('metrics/inbound', 'metrics/inbound-copy', 'traces', 'logs')
+        expect(rendered['exporters'].keys).to contain_exactly('debug', 'nop')
+      end
+
+      %w[metrics metrics/inboun metrics/ metrics/missing logs].each do |name|
+        it "rejects #{name} because it is not an existing pipeline name" do
+          properties['ingress']['pipelines'] = ['metrics/inbound', name]
+
+          expect { rendered }.to raise_error do |error|
+            expect(error.message).to include("pipelines specified in ingress.pipelines are not configured: [\"#{name}\"]")
+            expect(error.message).to include('Available: ["metrics/inbound", "metrics/inbound-copy"]')
+          end
+        end
       end
     end
 
@@ -676,8 +822,8 @@ shared_examples_for 'common config.yml' do
         end
 
         it 'parses it as YAML' do
-          expect(rendered['service']['pipelines']['traces']).to eq({ 'exporters' => ['otlp_grpc/traces'],
-                                                                     'receivers' => ['otlp/cf-internal-local'] })
+          expect(rendered['service']['pipelines']['traces']['exporters']).to eq(['otlp_grpc/traces'])
+          expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
         end
       end
 

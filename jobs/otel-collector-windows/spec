@@ -21,9 +21,9 @@ properties:
     default: 512
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
-  rewrite_pipelines:
-    description: "Manage collector pipeline receivers and add nop pipelines for missing signals. Set to false to preserve configured pipelines and exporters while adding the otlp/cf-internal-local receiver."
-    default: true
+  ingress.pipelines:
+    description: "List of exact pipeline names from config.service.pipelines that the internal CF receiver (otlp/cf-internal-local) will be added to. Use full names such as metrics/inbound. Set to [] to disable automatic injection into configured pipelines. When unset (default), the receiver is added to all pipelines. Whenever any pipeline uses the internal receiver, fallback nop pipelines accept its otherwise unhandled traces, metrics, and logs."
+    example: ['metrics/inbound']
   config:
     description: "Collector configuration"
     default: {}
