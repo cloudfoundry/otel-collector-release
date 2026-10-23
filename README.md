@@ -6,6 +6,46 @@ If you have any questions, or want to get attention for a PR or issue please rea
 
 See [Configuring the OpenTelemetry Collector](https://docs.cloudfoundry.org/loggregator/opentelemetry.html) in the Cloud Foundry documentation for more information.
 
+## Migration: receiver preservation
+
+The introduction of `ingress.pipelines` is a **breaking change** for configurations
+that relied on receiver replacement. The release now preserves operator-provided
+receiver definitions and pipeline receiver lists while adding its managed
+`otlp/cf-internal-local` receiver.
+
+Before upgrading a configuration that uses placeholder receivers:
+
+1. Remove receiver definitions used only as placeholders, such as
+   `config.receivers.otlp/placeholder`. Omit `config.receivers` entirely if there
+   are no custom receivers.
+2. Replace those placeholders in CF ingress pipelines' `receivers` lists with
+   `otlp/cf-internal-local`. The release supplies its configuration from the
+   `ingress.grpc.*` properties.
+
+For example, a CF metrics configuration becomes:
+
+```yaml
+config:
+  exporters:
+    otlp_grpc:
+      endpoint: otelcol:4317
+  service:
+    pipelines:
+      metrics:
+        receivers: [otlp/cf-internal-local]
+        exporters: [otlp_grpc]
+```
+
+An empty `otlp/placeholder` definition now fails collector validation with
+`must specify at least one protocol when using the OTLP receiver`. Adding the
+internal receiver to a pipeline alone does not fix this; remove the placeholder
+definition and its references as well.
+
+For routing or custom-receiver configurations, set `ingress.pipelines` to the
+exact CF ingress pipeline names, or use `[]` with explicit receiver wiring.
+Leaving it unset adds the internal receiver to every pipeline, including
+connector-fed pipelines.
+
 ## FAQ
 
 ### How do I configure mTLS per exporter?

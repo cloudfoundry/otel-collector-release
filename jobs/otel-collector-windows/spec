@@ -25,12 +25,10 @@ properties:
     description: "List of exact pipeline names from config.service.pipelines that the internal CF receiver (otlp/cf-internal-local) will be added to. Use full names such as metrics/inbound. Set to [] to disable automatic injection into configured pipelines. When unset (default), the receiver is added to all pipelines. Whenever any pipeline uses the internal receiver, fallback nop pipelines accept its otherwise unhandled traces, metrics, and logs."
     example: ['metrics/inbound']
   config:
-    description: "Collector configuration"
+    description: "Collector configuration. Receiver definitions and pipeline receiver lists are preserved. Remove legacy placeholder receivers and use otlp/cf-internal-local for CF telemetry; the release configures this receiver automatically."
     default: {}
     example: |
-      receivers:
-        otlp/placeholder:
-
+      # The release configures the otlp/cf-internal-local receiver.
       processors:
         batch:
 
@@ -41,11 +39,11 @@ properties:
       service:
         pipelines:
           traces:
-            receivers: [otlp/placeholder]
+            receivers: [otlp/cf-internal-local]
             processors: [batch]
             exporters: [otlp]
           metrics:
-            receivers: [otlp/placeholder]
+            receivers: [otlp/cf-internal-local]
             processors: [batch]
             exporters: [otlp]
   allow_list.processors:

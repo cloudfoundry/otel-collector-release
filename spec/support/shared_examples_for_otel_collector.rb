@@ -10,7 +10,11 @@ shared_examples_for 'common config.yml' do
     let(:config) do
       {
         'receivers' => {
-          'otlp/placeholder' => nil
+          'otlp/operator' => {
+            'protocols' => {
+              'grpc' => { 'endpoint' => '127.0.0.1:2345' }
+            }
+          }
         },
         'processors' => {
           'batch' => nil
@@ -27,17 +31,17 @@ shared_examples_for 'common config.yml' do
           'extensions' => %w[pprof],
           'pipelines' => {
             'traces' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             },
             'metrics' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             },
             'logs' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             }
@@ -76,6 +80,11 @@ shared_examples_for 'common config.yml' do
         config.delete('receivers')
         config.delete('processors')
         config.delete('extensions')
+        config['service'].delete('extensions')
+        config['service']['pipelines'].each_value do |pipeline|
+          pipeline.delete('receivers')
+          pipeline.delete('processors')
+        end
       end
 
       it 'renders successfully' do
@@ -105,7 +114,7 @@ shared_examples_for 'common config.yml' do
             config['service']['pipelines'].delete('traces')
             config['service']['pipelines']['traces/foo'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -141,7 +150,7 @@ shared_examples_for 'common config.yml' do
             config['service']['pipelines'].delete('logs')
             config['service']['pipelines']['logs/bar'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -179,7 +188,7 @@ shared_examples_for 'common config.yml' do
 
       it 'adds the built-in receiver while preserving any operator-provided receivers' do
         expect(receivers.keys).to include 'otlp/cf-internal-local'
-        expect(receivers.keys).to include 'otlp/placeholder'
+        expect(receivers.keys).to include 'otlp/operator'
       end
 
       context 'when the operator provides a real receiver' do
@@ -227,22 +236,22 @@ shared_examples_for 'common config.yml' do
           before do
             config['service']['pipelines'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               },
               'traces/2' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch/test'],
                 'exporters' => ['otlp_grpc/2']
               },
               'metrics' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               },
               'metrics/foo' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -398,12 +407,12 @@ shared_examples_for 'common config.yml' do
 
       it 'preserves an operator pipeline occupying a fallback name' do
         config['service']['pipelines']['traces/cf-internal-nop-1'] = {
-          'receivers' => ['otlp/placeholder'],
+          'receivers' => ['otlp/operator'],
           'exporters' => ['otlp_grpc']
         }
 
         expect(rendered['service']['pipelines']['traces/cf-internal-nop-1']).to eq(
-          'receivers' => ['otlp/placeholder'],
+          'receivers' => ['otlp/operator'],
           'exporters' => ['otlp_grpc']
         )
         expect(rendered['service']['pipelines']['traces/cf-internal-nop-2']).to eq(
@@ -415,12 +424,12 @@ shared_examples_for 'common config.yml' do
 
       it 'preserves receivers on other metrics pipelines such as metrics/foo' do
         config['service']['pipelines']['metrics/foo'] = {
-          'receivers' => ['otlp/placeholder'],
+          'receivers' => ['otlp/operator'],
           'processors' => ['batch'],
           'exporters' => ['otlp_grpc']
         }
 
-        expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to eq(['otlp/placeholder'])
+        expect(rendered['service']['pipelines']['metrics/foo']['receivers']).to eq(['otlp/operator'])
         expect(rendered['service']['pipelines']['traces']['receivers']).not_to include('otlp/cf-internal-local')
       end
     end
