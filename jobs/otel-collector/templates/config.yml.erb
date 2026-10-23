@@ -68,14 +68,14 @@ def handle_old_properties(cfg)
 
   if metric_exporters.any?
     cfg['service']['pipelines']['metrics'] = {
-        'receivers' => ['otlp/cf-local'],
+        'receivers' => ['otlp/cf-internal-local'],
         'exporters' => metric_exporters.keys
       }
   end
 
   if trace_exporters.any?
     cfg['service']['pipelines']['traces'] = {
-        'receivers' => ['otlp/cf-local'],
+        'receivers' => ['otlp/cf-internal-local'],
         'exporters' => trace_exporters.keys
       }
   end
