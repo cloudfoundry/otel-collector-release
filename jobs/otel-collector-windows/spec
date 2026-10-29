@@ -21,13 +21,14 @@ properties:
     default: 512
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
+  ingress.pipelines:
+    description: "Unset/null: replace all receiver definitions and pipeline receiver lists with the managed receiver; add nop pipelines for missing signals for backward compatibility. Nonempty list: preserve definitions and replace only selected lists; names must match config.service.pipelines exactly. []: preserve definitions and lists for manual/mixed wiring."
+    example: ['metrics/inbound']
   config:
-    description: "Collector configuration"
+    description: "Collector configuration. Use otlp/cf-internal-local to reference the release-managed receiver, defined by ingress.grpc.*."
     default: {}
     example: |
-      receivers:
-        otlp/placeholder:
-
+      # The release configures the otlp/cf-internal-local receiver.
       processors:
         batch:
 
@@ -38,11 +39,11 @@ properties:
       service:
         pipelines:
           traces:
-            receivers: [otlp/placeholder]
+            receivers: [otlp/cf-internal-local]
             processors: [batch]
             exporters: [otlp]
           metrics:
-            receivers: [otlp/placeholder]
+            receivers: [otlp/cf-internal-local]
             processors: [batch]
             exporters: [otlp]
   allow_list.processors:
