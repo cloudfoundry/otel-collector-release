@@ -68,14 +68,14 @@ def handle_old_properties(cfg)
 
   if metric_exporters.any?
     cfg['service']['pipelines']['metrics'] = {
-        'receivers' => ['otlp/cf-local'],
+        'receivers' => ['otlp/cf-internal-local'],
         'exporters' => metric_exporters.keys
       }
   end
 
   if trace_exporters.any?
     cfg['service']['pipelines']['traces'] = {
-        'receivers' => ['otlp/cf-local'],
+        'receivers' => ['otlp/cf-internal-local'],
         'exporters' => trace_exporters.keys
       }
   end
@@ -107,8 +107,8 @@ def check_for_use_of_reserved_bbs_api_port!
   end
 end
 
-def set_internal_receiver_as_only_receiver
-  config['receivers'] = {
+def internal_receiver
+  {
     'otlp/cf-internal-local' => {
       'protocols' => {
         'grpc' => {
@@ -125,8 +125,18 @@ def set_internal_receiver_as_only_receiver
   }
 end
 
-def set_internal_receiver_on_all_pipelines
-  config['service']['pipelines'].each_value do |pipeline|
+def add_internal_receiver
+  config['receivers'] ||= {}
+  config['receivers'].merge!(internal_receiver)
+end
+
+def set_internal_receiver_on_pipelines(names)
+  pipelines = config['service']['pipelines']
+  unknown_pipelines = names - pipelines.keys
+  raise "The following pipelines specified in ingress.pipelines are not configured: #{unknown_pipelines}. Available: #{pipelines.keys}." unless unknown_pipelines.empty?
+
+  names.each do |name|
+    pipeline = pipelines[name]
     pipeline['receivers'] = ['otlp/cf-internal-local']
   end
 end
@@ -216,9 +226,15 @@ end
 if_p('allow_list.connectors') do |prop|
   check_for_use_of_allowed_components!('connectors', included_connectors, prop)
 end
-set_internal_receiver_as_only_receiver
-add_nop_pipelines
-set_internal_receiver_on_all_pipelines
+ingress_pipelines = p('ingress.pipelines', nil)
+if ingress_pipelines.nil?
+  config['receivers'] = internal_receiver
+  add_nop_pipelines # Backward compatibility for default ingress wiring only.
+  set_internal_receiver_on_pipelines(config['service']['pipelines'].keys)
+else
+  add_internal_receiver
+  set_internal_receiver_on_pipelines(ingress_pipelines)
+end
 expose_internal_telemetry
 
 YAML.dump(config)
