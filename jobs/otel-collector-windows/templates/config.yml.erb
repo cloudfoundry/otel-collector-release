@@ -168,6 +168,11 @@ def included_extensions
   %w[opamp pprof].sort
 end
 
+# Hardcoded list of connectors included in this otelcol distribution at `src/otel-collector-builder/config.yaml`
+def included_connectors
+  %w[routing].sort
+end
+
 def check_for_use_of_valid_components!(component_kind, included_components)
   user_components = config.fetch(component_kind, {}).map {|key, _| key.split('/')[0]}
 
@@ -198,6 +203,7 @@ check_for_use_of_reserved_bbs_api_port!
 check_for_use_of_valid_components!('processors', included_processors)
 check_for_use_of_valid_components!('exporters', included_exporters)
 check_for_use_of_valid_components!('extensions', included_extensions)
+check_for_use_of_valid_components!('connectors', included_connectors)
 if_p('allow_list.processors') do |prop|
   check_for_use_of_allowed_components!('processors', included_processors, prop)
 end
@@ -206,6 +212,9 @@ if_p('allow_list.exporters') do |prop|
 end
 if_p('allow_list.extensions') do |prop|
   check_for_use_of_allowed_components!('extensions', included_extensions, prop)
+end
+if_p('allow_list.connectors') do |prop|
+  check_for_use_of_allowed_components!('connectors', included_connectors, prop)
 end
 set_internal_receiver_as_only_receiver
 add_nop_pipelines
