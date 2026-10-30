@@ -31,9 +31,6 @@ properties:
     default: 512
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
-  ingress.pipelines:
-    description: "Selects pipelines that receive Cloud Foundry telemetry through the managed otlp/cf-internal-local receiver. When unset, replaces all receiver definitions and pipeline receiver lists and adds missing-signal nop pipelines. A nonempty list preserves receiver definitions and replaces only selected pipelines’ receiver lists, using exact names. [] preserves receiver definitions and pipeline wiring for manual configuration."
-    example: ['metrics/inbound']
   config:
     description: "Collector configuration. Use otlp/cf-internal-local to reference the release-managed receiver, defined by ingress.grpc.*."
     default: {}
@@ -56,6 +53,9 @@ properties:
             receivers: [otlp/cf-internal-local]
             processors: [batch]
             exporters: [otlp]
+  ingress.pipelines:
+    description: "Selects pipelines that receive Cloud Foundry telemetry through the managed otlp/cf-internal-local receiver. When unset, replaces all receiver definitions and pipeline receiver lists and adds missing-signal nop pipelines. A nonempty list preserves receiver definitions and replaces only selected pipelines’ receiver lists, using exact names. [] preserves receiver definitions and pipeline wiring for manual configuration."
+    example: ['metrics/inbound']
   ingress.grpc.address:
     description: "Address to listen on to receive OTLP over gRPC"
     default: 127.0.0.1
