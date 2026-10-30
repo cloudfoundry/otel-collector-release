@@ -10,6 +10,7 @@ See [Configuring the OpenTelemetry Collector](https://docs.cloudfoundry.org/logg
 
 `otlp/cf-internal-local` is the stable, release-managed receiver reference. Its
 definition comes from `ingress.grpc.*` and overrides any operator definition.
+`otlp/cf-internal-local` will always be inserted by this BOSH release.
 
 | `ingress.pipelines` | Other receiver definitions | Pipeline receiver lists |
 |---|---|---|
