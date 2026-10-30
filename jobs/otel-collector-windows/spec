@@ -22,7 +22,7 @@ properties:
   limits.cpu:
     description: "Controls how many CPU cores this process can use simultaneously."
   ingress.pipelines:
-    description: "Unset/null: replace all receiver definitions and pipeline receiver lists with the managed receiver; add nop pipelines for missing signals for backward compatibility. Nonempty list: preserve definitions and replace only selected lists; names must match config.service.pipelines exactly. []: preserve definitions and lists for manual/mixed wiring."
+    description: "Selects pipelines that receive Cloud Foundry telemetry through the managed otlp/cf-internal-local receiver. When unset, replaces all receiver definitions and pipeline receiver lists and adds missing-signal nop pipelines. A nonempty list preserves receiver definitions and replaces only selected pipelines’ receiver lists, using exact names. [] preserves receiver definitions and pipeline wiring for manual configuration."
     example: ['metrics/inbound']
   config:
     description: "Collector configuration. Use otlp/cf-internal-local to reference the release-managed receiver, defined by ingress.grpc.*."
