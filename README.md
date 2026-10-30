@@ -6,6 +6,30 @@ If you have any questions, or want to get attention for a PR or issue please rea
 
 See [Configuring the OpenTelemetry Collector](https://docs.cloudfoundry.org/loggregator/opentelemetry.html) in the Cloud Foundry documentation for more information.
 
+## CF ingress receivers
+
+`otlp/cf-internal-local` is the stable, release-managed receiver reference. Its
+definition comes from `ingress.grpc.*` and overrides any operator definition.
+`otlp/cf-internal-local` will always be inserted by this BOSH release.
+
+| `ingress.pipelines` | Other receiver definitions | Pipeline receiver lists |
+|---|---|---|
+| Unset (default) | Discarded | All replaced with `[otlp/cf-internal-local]` |
+| `[]` | Preserved | Unchanged (manual wiring) |
+| Nonempty list | Preserved | Only selected lists replaced |
+
+For manual or mixed receivers, use `[]` and wire lists such as
+`[otlp/cf-internal-local, otlp/custom]` yourself.
+
+Define custom receivers under `config.receivers` in the otel configuration supplied to
+this release and reference them in the relevant pipeline's `receivers` list.
+Configure `ingress.pipelines` to contain only those pipelines in which
+`otlp/cf-internal-local` shall be the only receiver (can also be `[]`).
+This way custom receiver references are preserved.
+
+Only unset/null selection adds `nop` pipelines for missing CF signals, for backward
+compatibility. Explicit lists and `[]` add no fallbacks; operators own signal handling.
+
 ## FAQ
 
 ### How do I configure mTLS per exporter?

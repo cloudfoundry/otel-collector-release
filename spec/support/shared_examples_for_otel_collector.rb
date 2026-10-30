@@ -10,7 +10,11 @@ shared_examples_for 'common config.yml' do
     let(:config) do
       {
         'receivers' => {
-          'otlp/placeholder' => nil
+          'otlp/operator' => {
+            'protocols' => {
+              'grpc' => { 'endpoint' => '127.0.0.1:2345' }
+            }
+          }
         },
         'processors' => {
           'batch' => nil
@@ -27,17 +31,17 @@ shared_examples_for 'common config.yml' do
           'extensions' => %w[pprof],
           'pipelines' => {
             'traces' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             },
             'metrics' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             },
             'logs' => {
-              'receivers' => ['otlp/placeholder'],
+              'receivers' => ['otlp/operator'],
               'processors' => ['batch'],
               'exporters' => ['otlp_grpc']
             }
@@ -76,6 +80,11 @@ shared_examples_for 'common config.yml' do
         config.delete('receivers')
         config.delete('processors')
         config.delete('extensions')
+        config['service'].delete('extensions')
+        config['service']['pipelines'].each_value do |pipeline|
+          pipeline.delete('receivers')
+          pipeline.delete('processors')
+        end
       end
 
       it 'renders successfully' do
@@ -84,6 +93,21 @@ shared_examples_for 'common config.yml' do
     end
 
     describe 'adding nop pipelines so forwarder agent doesnt log errors for unaccepted signals' do
+      context 'when ingress.pipelines is explicitly null' do
+        before do
+          properties['ingress'] = { 'pipelines' => nil }
+          config['service']['pipelines'].delete('logs')
+        end
+
+        it 'retains default-mode fallbacks' do
+          expect(rendered['service']['pipelines']['logs']).to eq(
+            'receivers' => ['otlp/cf-internal-local'],
+            'processors' => nil,
+            'exporters' => ['nop']
+          )
+        end
+      end
+
       describe "traces" do
         context "when there is no traces pipeline" do
           before do
@@ -105,7 +129,7 @@ shared_examples_for 'common config.yml' do
             config['service']['pipelines'].delete('traces')
             config['service']['pipelines']['traces/foo'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -141,7 +165,7 @@ shared_examples_for 'common config.yml' do
             config['service']['pipelines'].delete('logs')
             config['service']['pipelines']['logs/bar'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -177,8 +201,8 @@ shared_examples_for 'common config.yml' do
     context 'receivers' do
       let(:receivers) { rendered['receivers'] }
 
-      it 'removes any receiver that the operator provided to keep the config well-formed' do
-        expect(receivers.keys).to_not include 'otlp/placeholder'
+      it 'replaces operator-provided receiver definitions when ingress.pipelines is unset' do
+        expect(receivers.keys).to eq(['otlp/cf-internal-local'])
       end
 
       context 'when the operator provides a real receiver' do
@@ -203,6 +227,19 @@ shared_examples_for 'common config.yml' do
       context 'built-in otlp receiver' do
         let(:builtin_otlp_receiver) { rendered['receivers']['otlp/cf-internal-local'] }
 
+        it 'overrides an operator definition under the managed receiver ID' do
+          properties['ingress'] = { 'pipelines' => [] }
+          config['receivers']['otlp/cf-internal-local'] = {
+            'protocols' => { 'http' => { 'endpoint' => '0.0.0.0:3456' } }
+          }
+          expected_operator_receiver = Marshal.load(Marshal.dump(config['receivers']['otlp/operator']))
+
+          expect(builtin_otlp_receiver['protocols'].keys).to eq(['grpc'])
+          expect(builtin_otlp_receiver['protocols']['grpc']['endpoint']).to eq('127.0.0.1:9100')
+          expect(builtin_otlp_receiver['protocols']['grpc']['tls']['cert_file']).to eq("#{config_path}/certs/otel-collector.crt")
+          expect(rendered['receivers']['otlp/operator']).to eq(expected_operator_receiver)
+        end
+
         it 'is configured by default' do
           expect(builtin_otlp_receiver).to eq(
             {
@@ -225,22 +262,22 @@ shared_examples_for 'common config.yml' do
           before do
             config['service']['pipelines'] = {
               'traces' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               },
               'traces/2' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch/test'],
                 'exporters' => ['otlp_grpc/2']
               },
               'metrics' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               },
               'metrics/foo' => {
-                'receivers' => ['otlp/placeholder'],
+                'receivers' => ['otlp/operator'],
                 'processors' => ['batch'],
                 'exporters' => ['otlp_grpc']
               }
@@ -272,6 +309,175 @@ shared_examples_for 'common config.yml' do
 
           it 'has an endpoint with that address' do
             expect(builtin_otlp_receiver['protocols']['grpc']['endpoint']).to eq('0.0.0.0:9100')
+          end
+        end
+      end
+    end
+
+    context 'when ingress.pipelines is []' do
+      before do
+        properties['ingress'] ||= {}
+        properties['ingress']['pipelines'] = []
+      end
+
+      it 'adds the internal receiver definition without replacing configured receiver lists' do
+        expect(rendered['receivers']).to include('otlp/cf-internal-local')
+        rendered['service']['pipelines'].each_value do |pipeline|
+          expect(pipeline.fetch('receivers', [])).not_to include('otlp/cf-internal-local')
+        end
+      end
+
+      it 'preserves all operator receivers and pipelines' do
+        config['receivers']['otlp/custom'] = {
+          'protocols' => { 'grpc' => { 'endpoint' => '0.0.0.0:2345' } }
+        }
+        config['service']['pipelines']['metrics']['receivers'] = ['otlp/cf-internal-local', 'otlp/operator']
+        config['service']['pipelines'].delete('logs')
+
+        expected_config = Marshal.load(Marshal.dump(config))
+
+        expect(rendered['receivers'].reject { |name, _| name == 'otlp/cf-internal-local' }).to eq(expected_config['receivers'])
+        expect(rendered['service']['pipelines']).to eq(expected_config['service']['pipelines'])
+        expect(rendered['exporters']).to eq(expected_config['exporters'])
+      end
+
+      it 'does not add nop pipelines for missing signals' do
+        config['service']['pipelines'].delete('logs')
+
+        expect(rendered['service']['pipelines'].keys).not_to include('logs')
+        expect(rendered['exporters']).not_to have_key('nop')
+      end
+
+      it 'preserves manually wired routing pipelines without adding fallbacks' do
+        config['connectors'] = { 'routing' => nil }
+        config['service']['pipelines'] = {
+          'metrics/inbound' => {
+            'receivers' => ['otlp/cf-internal-local'],
+            'exporters' => ['routing']
+          },
+          'metrics/team-a' => {
+            'receivers' => ['routing'],
+            'exporters' => ['otlp_grpc']
+          }
+        }
+        expected_pipelines = Marshal.load(Marshal.dump(config['service']['pipelines']))
+        expected_exporters = Marshal.load(Marshal.dump(config['exporters']))
+
+        expect(rendered['service']['pipelines']).to eq(expected_pipelines)
+        expect(rendered['exporters']).to eq(expected_exporters)
+        expect(rendered['receivers']).to include('otlp/cf-internal-local')
+      end
+
+      it 'does not add fallbacks when the internal receiver already handles every signal' do
+        config['service']['pipelines'].each_value do |pipeline|
+          pipeline['receivers'] = ['otlp/cf-internal-local']
+        end
+
+        expected_pipelines = Marshal.load(Marshal.dump(config['service']['pipelines']))
+
+        expect(rendered['service']['pipelines']).to eq(expected_pipelines)
+        expect(rendered['exporters']).not_to have_key('nop')
+      end
+    end
+
+    context 'when ingress.pipelines is ["metrics"]' do
+      before do
+        properties['ingress'] ||= {}
+        properties['ingress']['pipelines'] = ['metrics']
+      end
+
+      it 'replaces receivers only on the metrics pipeline' do
+        config['service']['pipelines']['metrics']['receivers'] = ['otlp/operator', 'otlp/cf-internal-local']
+        config['service']['pipelines']['traces']['receivers'] = ['otlp/operator', 'otlp/cf-internal-local']
+        expected_config = Marshal.load(Marshal.dump(config))
+        expected_pipelines = expected_config['service']['pipelines']
+
+        expect(rendered['receivers']).to include(expected_config['receivers'])
+        expect(rendered['service']['pipelines']['metrics']).to eq(expected_pipelines['metrics'].merge('receivers' => ['otlp/cf-internal-local']))
+        %w[traces logs].each do |signal|
+          expect(rendered['service']['pipelines'][signal]).to eq(expected_pipelines[signal])
+        end
+      end
+
+      it 'errors when the selected pipeline is missing' do
+        config['service']['pipelines'].delete('metrics')
+
+        expect { rendered }.to raise_error(/pipelines specified in ingress\.pipelines are not configured: \["metrics"\]/)
+      end
+
+      it 'does not add fallback pipelines for missing signals' do
+        config['service']['pipelines'].delete('traces')
+        config['service']['pipelines'].delete('logs')
+
+        expect(rendered['service']['pipelines'].keys).to contain_exactly('metrics')
+        expect(rendered['service']['pipelines']['metrics']['receivers']).to eq(['otlp/cf-internal-local'])
+        expect(rendered['exporters']).not_to have_key('nop')
+      end
+
+      it 'preserves receivers on other metrics pipelines such as metrics/foo' do
+        config['service']['pipelines']['metrics/foo'] = {
+          'receivers' => ['otlp/operator'],
+          'processors' => ['batch'],
+          'exporters' => ['otlp_grpc']
+        }
+
+        expected_pipelines = Marshal.load(Marshal.dump(config['service']['pipelines']))
+
+        expect(rendered['service']['pipelines']['metrics/foo']).to eq(expected_pipelines['metrics/foo'])
+        expect(rendered['service']['pipelines']['traces']).to eq(expected_pipelines['traces'])
+      end
+    end
+
+    context 'when ingress.pipelines selects a named pipeline' do
+      let(:config) do
+        {
+          'receivers' => {
+            'otlp/operator' => { 'protocols' => { 'grpc' => { 'endpoint' => '127.0.0.1:2345' } } }
+          },
+          'exporters' => { 'debug' => nil },
+          'connectors' => {
+            'routing' => {
+              'table' => [{
+                'context' => 'resource',
+                'condition' => 'attributes["tenant"] == "a"',
+                'pipelines' => ['metrics/inbound-copy']
+              }]
+            }
+          },
+          'service' => {
+            'pipelines' => {
+              'metrics/inbound' => {
+                'receivers' => ['otlp/operator', 'otlp/cf-internal-local'],
+                'exporters' => ['routing']
+              },
+              'metrics/inbound-copy' => {
+                'receivers' => ['routing'],
+                'exporters' => ['debug']
+              }
+            }
+          }
+        }
+      end
+      let(:properties) { { 'config' => config, 'ingress' => { 'pipelines' => ['metrics/inbound'] } } }
+
+      it 'wires only the exact ingress pipeline, preserving the connector-fed pipeline' do
+        expected_config = Marshal.load(Marshal.dump(config))
+
+        expect(rendered['service']['pipelines']['metrics/inbound']).to eq(expected_config['service']['pipelines']['metrics/inbound'].merge('receivers' => ['otlp/cf-internal-local']))
+        expect(rendered['service']['pipelines']['metrics/inbound-copy']).to eq(expected_config['service']['pipelines']['metrics/inbound-copy'])
+        expect(rendered['receivers']).to include(expected_config['receivers'])
+        expect(rendered['connectors']).to eq(expected_config['connectors'])
+        expect(rendered['service']['pipelines'].keys).to contain_exactly('metrics/inbound', 'metrics/inbound-copy')
+        expect(rendered['exporters'].keys).to contain_exactly('debug')
+      end
+
+      %w[metrics metrics/inboun metrics/ metrics/missing logs].each do |name|
+        it "rejects #{name} because it is not an existing pipeline name" do
+          properties['ingress']['pipelines'] = ['metrics/inbound', name]
+
+          expect { rendered }.to raise_error do |error|
+            expect(error.message).to include("pipelines specified in ingress.pipelines are not configured: [\"#{name}\"]")
+            expect(error.message).to include('Available: ["metrics/inbound", "metrics/inbound-copy"]')
           end
         end
       end
@@ -452,6 +658,47 @@ shared_examples_for 'common config.yml' do
       end
     end
 
+    describe 'connectors' do
+      before do
+        config['connectors'] = { 'routing' => nil }
+      end
+
+      it 'list of available connectors matches builder source of truth' do
+        config['connectors']['unavailable'] = nil
+
+        builder_config = YAML.load_file(File.join(release_dir, "src/otel-collector-builder/config.yaml"))
+        connector_gomods = builder_config.fetch('connectors').map {|entry| entry.fetch('gomod').split(" ")[0]}
+        connector_names = connector_gomods.map do |gomod|
+          YAML.load_file(File.join(release_dir, "src/otel-collector/vendor", gomod, "metadata.yaml")).fetch('type')
+        end
+        formatted_names = connector_names.sort.map {|name| "\"#{name}\"" }.join(", ")
+
+        expect { rendered }.to raise_error do |error|
+          expect(error.message).to include("Available: [#{formatted_names}]")
+        end
+      end
+
+      it 'includes the configured connectors in the config' do
+        expect(rendered.keys).to include 'connectors'
+        expect(rendered['connectors']).to eq(config['connectors'])
+      end
+
+      it 'allows no connectors with empty allow list' do
+        properties['allow_list'] = {'connectors' => []}
+        expect { rendered }.to raise_error(/The following configured connectors are not allowed: \["routing"\]/)
+      end
+
+      it 'errors when an unrecognized connector is in allow list' do
+        properties['allow_list'] = {'connectors' => ['routing', 'unrecognized-connector']}
+        expect { rendered }.to raise_error(/The following connectors specified in the allow list are not included in this OpenTelemetry Collector distribution: \["unrecognized-connector"\]/)
+      end
+
+      it 'errors when an unavailable connector is configured' do
+        config['connectors']['unavailable'] = nil
+        expect { rendered }.to raise_error(/The following configured connectors are not included in this OpenTelemetry Collector distribution: \["unavailable"\]/)
+      end
+    end
+
     describe 'internal telemetry' do
       it 'exposes telemetry at the default port' do
         expect(rendered['service']['telemetry']['metrics']['readers'][0]['pull']['exporter']['prometheus']['host']).to eq('127.0.0.1')
@@ -586,8 +833,8 @@ shared_examples_for 'common config.yml' do
         end
 
         it 'parses it as YAML' do
-          expect(rendered['service']['pipelines']['traces']).to eq({ 'exporters' => ['otlp_grpc/traces'],
-                                                                     'receivers' => ['otlp/cf-internal-local'] })
+          expect(rendered['service']['pipelines']['traces']['exporters']).to eq(['otlp_grpc/traces'])
+          expect(rendered['service']['pipelines']['traces']['receivers']).to eq(['otlp/cf-internal-local'])
         end
       end
 
