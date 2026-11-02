@@ -1,10 +1,10 @@
 module code.cloudfoundry.org/otel-collector-release/src/integration
 
-go 1.26.0
+go 1.27.3
 
 require (
 	code.cloudfoundry.org/otel-collector-release/src/otel-collector v0.0.0
-	code.cloudfoundry.org/tlsconfig v0.69.0
+	code.cloudfoundry.org/tlsconfig v0.70.0
 	github.com/google/go-cmp v0.7.0
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
@@ -325,7 +325,7 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/square/certstrap v1.4.0 // indirect
+	github.com/square/certstrap v1.4.1 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
