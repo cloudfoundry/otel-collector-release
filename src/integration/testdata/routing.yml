@@ -1,0 +1,70 @@
+---
+
+receivers:
+  otlp/test:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:{{.IngressOTLPPort}}
+        tls:
+          key_pem: "{{.KeyPem}}"
+          cert_pem: "{{.CertPem}}"
+
+connectors:
+  routing/logs:
+    default_pipelines: [logs/default]
+    table:
+      - condition: resource.attributes["tenant"] == "a"
+        pipelines: [logs/matched]
+  routing/metrics:
+    default_pipelines: [metrics/default]
+    table:
+      - condition: resource.attributes["tenant"] == "a"
+        pipelines: [metrics/matched]
+  routing/traces:
+    default_pipelines: [traces/default]
+    table:
+      - condition: resource.attributes["tenant"] == "a"
+        pipelines: [traces/matched]
+
+exporters:
+  otlp/matched:
+    endpoint: 127.0.0.1:{{.EgressOTLPPort}}
+    tls:
+      ca_pem: "{{.CaPem}}"
+  otlp/default:
+    endpoint: 127.0.0.1:{{.DefaultOTLPPort}}
+    tls:
+      ca_pem: "{{.CaPem}}"
+
+service:
+  pipelines:
+    logs/inbound:
+      receivers: [otlp/test]
+      exporters: [routing/logs]
+    logs/matched:
+      receivers: [routing/logs]
+      exporters: [otlp/matched]
+    logs/default:
+      receivers: [routing/logs]
+      exporters: [otlp/default]
+    metrics/inbound:
+      receivers: [otlp/test]
+      exporters: [routing/metrics]
+    metrics/matched:
+      receivers: [routing/metrics]
+      exporters: [otlp/matched]
+    metrics/default:
+      receivers: [routing/metrics]
+      exporters: [otlp/default]
+    traces/inbound:
+      receivers: [otlp/test]
+      exporters: [routing/traces]
+    traces/matched:
+      receivers: [routing/traces]
+      exporters: [otlp/matched]
+    traces/default:
+      receivers: [routing/traces]
+      exporters: [otlp/default]
+  telemetry:
+    metrics:
+      level: none
