@@ -22,6 +22,7 @@ import (
 	collogspb "go.opentelemetry.io/proto/otlp/collector/logs/v1"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
+	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
 	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -102,6 +103,109 @@ var _ = Describe("OTel Collector", func() {
 	AfterEach(func() {
 		otelCollectorSession.Kill()
 		testOtelReceiver.Stop()
+	})
+
+	Describe("routing connector", func() {
+		var defaultMetricsServer FakeMetricsServiceServer
+		var defaultLogsServer FakeLogsServiceServer
+		var defaultTracesServer FakeTracesServiceServer
+
+		tenantAttributes := func(tenant string) []*commonpb.KeyValue {
+			return []*commonpb.KeyValue{{
+				Key: "tenant",
+				Value: &commonpb.AnyValue{
+					Value: &commonpb.AnyValue_StringValue{StringValue: tenant},
+				},
+			}}
+		}
+
+		assertNoExtraExports := func() {
+			Consistently(func() int {
+				return len(fakeMetricsServiceServer.ExportMetricsServiceRequests) +
+					len(fakeLogsServiceServer.ExportLogsServiceRequest) +
+					len(fakeTracesServiceServer.ExportTracesServiceRequest) +
+					len(defaultMetricsServer.ExportMetricsServiceRequests) +
+					len(defaultLogsServer.ExportLogsServiceRequest) +
+					len(defaultTracesServer.ExportTracesServiceRequest)
+			}, 200*time.Millisecond).Should(BeZero())
+		}
+
+		BeforeEach(func() {
+			otelConfigPath = "routing.yml"
+			lis, err := net.Listen("tcp", fmt.Sprintf(":%d", otelConfigVars.DefaultOTLPPort))
+			Expect(err).NotTo(HaveOccurred())
+			tlsCert, err := otelConfigVars.TLSCert()
+			Expect(err).NotTo(HaveOccurred())
+			server := grpc.NewServer(grpc.Creds(credentials.NewServerTLSFromCert(&tlsCert)))
+			DeferCleanup(server.Stop)
+			defaultMetricsServer = NewFakeMetricsServiceServer()
+			defaultLogsServer = NewFakeLogsServiceServer()
+			defaultTracesServer = NewFakeTracesServiceServer()
+			colmetricspb.RegisterMetricsServiceServer(server, defaultMetricsServer)
+			collogspb.RegisterLogsServiceServer(server, defaultLogsServer)
+			coltracepb.RegisterTraceServiceServer(server, defaultTracesServer)
+			go server.Serve(lis)
+		})
+
+		It("splits metrics between matched and default pipelines without changing payloads", func() {
+			matched, unmatched := NewSimpleResourceMetrics(), NewSimpleResourceMetrics()
+			matched.Resource.Attributes = tenantAttributes("a")
+			unmatched.Resource.Attributes = tenantAttributes("b")
+			_, err := msc.Export(context.Background(), &colmetricspb.ExportMetricsServiceRequest{
+				ResourceMetrics: []*metricspb.ResourceMetrics{&matched, &unmatched},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			var matchedRequest, defaultRequest *colmetricspb.ExportMetricsServiceRequest
+			Eventually(fakeMetricsServiceServer.ExportMetricsServiceRequests, 5).Should(Receive(&matchedRequest))
+			Eventually(defaultMetricsServer.ExportMetricsServiceRequests, 5).Should(Receive(&defaultRequest))
+			Expect(cmp.Diff(matchedRequest, &colmetricspb.ExportMetricsServiceRequest{
+				ResourceMetrics: []*metricspb.ResourceMetrics{&matched},
+			}, protocmp.Transform())).To(BeEmpty())
+			Expect(cmp.Diff(defaultRequest, &colmetricspb.ExportMetricsServiceRequest{
+				ResourceMetrics: []*metricspb.ResourceMetrics{&unmatched},
+			}, protocmp.Transform())).To(BeEmpty())
+			assertNoExtraExports()
+		})
+
+		It("splits logs between matched and default pipelines without changing payloads", func() {
+			matched, unmatched := NewSimpleLog(), NewSimpleLog()
+			matched.Resource.Attributes = tenantAttributes("a")
+			unmatched.Resource.Attributes = tenantAttributes("b")
+			_, err := lsc.Export(context.Background(), &collogspb.ExportLogsServiceRequest{
+				ResourceLogs: []*logspb.ResourceLogs{&matched, &unmatched},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			var matchedRequest, defaultRequest *collogspb.ExportLogsServiceRequest
+			Eventually(fakeLogsServiceServer.ExportLogsServiceRequest, 5).Should(Receive(&matchedRequest))
+			Eventually(defaultLogsServer.ExportLogsServiceRequest, 5).Should(Receive(&defaultRequest))
+			Expect(cmp.Diff(matchedRequest, &collogspb.ExportLogsServiceRequest{
+				ResourceLogs: []*logspb.ResourceLogs{&matched},
+			}, protocmp.Transform())).To(BeEmpty())
+			Expect(cmp.Diff(defaultRequest, &collogspb.ExportLogsServiceRequest{
+				ResourceLogs: []*logspb.ResourceLogs{&unmatched},
+			}, protocmp.Transform())).To(BeEmpty())
+			assertNoExtraExports()
+		})
+
+		It("splits traces between matched and default pipelines without changing payloads", func() {
+			matched, unmatched := NewSimpleTrace(), NewSimpleTrace()
+			matched.Resource.Attributes = tenantAttributes("a")
+			unmatched.Resource.Attributes = tenantAttributes("b")
+			_, err := tsc.Export(context.Background(), &coltracepb.ExportTraceServiceRequest{
+				ResourceSpans: []*tracepb.ResourceSpans{&matched, &unmatched},
+			})
+			Expect(err).NotTo(HaveOccurred())
+			var matchedRequest, defaultRequest *coltracepb.ExportTraceServiceRequest
+			Eventually(fakeTracesServiceServer.ExportTracesServiceRequest, 5).Should(Receive(&matchedRequest))
+			Eventually(defaultTracesServer.ExportTracesServiceRequest, 5).Should(Receive(&defaultRequest))
+			Expect(cmp.Diff(matchedRequest, &coltracepb.ExportTraceServiceRequest{
+				ResourceSpans: []*tracepb.ResourceSpans{&matched},
+			}, protocmp.Transform())).To(BeEmpty())
+			Expect(cmp.Diff(defaultRequest, &coltracepb.ExportTraceServiceRequest{
+				ResourceSpans: []*tracepb.ResourceSpans{&unmatched},
+			}, protocmp.Transform())).To(BeEmpty())
+			assertNoExtraExports()
+		})
 	})
 
 	Describe("metrics", func() {
