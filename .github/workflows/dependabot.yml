@@ -1,0 +1,151 @@
+name: Update OTEL Builder Dependencies
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - 'src/otel-collector-builder/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: otel-builder-bump-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  bump-otel-versions:
+    name: Sync OTEL collector versions
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          # Check out the PR head branch (not the merge commit) so we can
+          # commit and push updates back to it.
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: src/otel-collector/go.mod
+
+      - name: Extract Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Decide whether this PR is in scope
+        id: check
+        run: |
+          if [[ "${{ steps.meta.outputs.dependency-names }}" == "go.opentelemetry.io/collector/cmd/builder" ]]; then
+            echo "relevant=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "Dependency is '${{ steps.meta.outputs.dependency-names }}' — nothing to do."
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure git identity
+        if: steps.check.outputs.relevant == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump OTEL versions (config.yaml + builder go.mod)
+        if: steps.check.outputs.relevant == 'true'
+        env:
+          NEW_VERSION: ${{ steps.meta.outputs.new-version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          [[ -n "${NEW_VERSION}" ]] || { echo "::error::No new-version from dependabot"; exit 1; }
+          echo "New OTEL (v0.x) version: v${NEW_VERSION}"
+
+          # Resolve the matching stable (v1.x) version from the collector's
+          # release notes: the monorepo publishes both tracks together and
+          # mentions both tag names in the release body.
+          stable_version="$(
+            gh api "repos/open-telemetry/opentelemetry-collector/releases/tags/v${NEW_VERSION}" \
+              --jq '.body' \
+            | grep -oE 'v1\.[0-9]+\.[0-9]+' \
+            | sort -u \
+            | head -n1
+          )"
+
+          [[ -n "${stable_version}" ]] || { echo "::error::Could not resolve matching v1.x for v${NEW_VERSION}"; exit 1; }
+          echo "Matching stable version: ${stable_version}"
+
+          cfg=src/otel-collector-builder/config.yaml
+          gomod=src/otel-collector-builder/go.mod
+
+          # otelcol_version key (no v-prefix)
+          sed -E -i "s/^(\s*otelcol_version:\s*)[0-9]+\.[0-9]+\.[0-9]+/\1${NEW_VERSION}/" "$cfg"
+          # Beta track (v0.x) gomod entries
+          sed -E -i "s|(gomod:[[:space:]]+[^[:space:]]+[[:space:]]+)v0\.[0-9]+\.[0-9]+|\1v${NEW_VERSION}|g" "$cfg"
+          # Stable track (v1.x) gomod entries
+          sed -E -i "s|(gomod:[[:space:]]+[^[:space:]]+[[:space:]]+)v1\.[0-9]+\.[0-9]+|\1${stable_version}|g" "$cfg"
+          # Builder version in the builder module's go.mod
+          sed -E -i "s|(go\.opentelemetry\.io/collector/cmd/builder[[:space:]]+)v[0-9]+\.[0-9]+\.[0-9]+|\1v${NEW_VERSION}|" "$gomod"
+
+          # Sanity check: no stale version references must remain.
+          if grep -nE 'v0\.[0-9]+\.[0-9]+' "$cfg" | grep -v "v${NEW_VERSION}"; then
+            echo "::error::Stale v0.x versions remain in $cfg"; exit 1
+          fi
+          if grep -nE 'v1\.[0-9]+\.[0-9]+' "$cfg" | grep -v "${stable_version}"; then
+            echo "::error::Stale v1.x versions remain in $cfg"; exit 1
+          fi
+
+          echo "---- Diff ----"
+          git --no-pager diff -- "$cfg" "$gomod"
+
+      - name: Commit version bump
+        if: steps.check.outputs.relevant == 'true'
+        env:
+          NEW_VERSION: ${{ steps.meta.outputs.new-version }}
+        run: |
+          set -euo pipefail
+          # Stage only the files touched by the bump step so this commit
+          # remains easy to review in isolation.
+          git add src/otel-collector-builder/config.yaml \
+                  src/otel-collector-builder/go.mod
+          if git diff --cached --quiet; then
+            echo "No version changes to commit."
+            exit 0
+          fi
+          git commit -m "Bump OTEL collector versions to v${NEW_VERSION}"
+
+      - name: Regenerate the OTEL collector distribution
+        if: steps.check.outputs.relevant == 'true'
+        run: scripts/regenerate-otel-collector-distribution
+
+      - name: Run integration tests
+        if: steps.check.outputs.relevant == 'true'
+        run: scripts/subtests/integration-test
+
+      - name: Commit regenerated distribution and push
+        if: steps.check.outputs.relevant == 'true'
+        env:
+          NEW_VERSION: ${{ steps.meta.outputs.new-version }}
+        run: |
+          set -euo pipefail
+          # Pick up everything produced by the regenerate + integration-test
+          # steps (generated collector sources, vendored deps, go.sum, etc.)
+          # as a separate commit for easier review.
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Regenerate OTEL collector distribution for v${NEW_VERSION}"
+          else
+            echo "No regenerated changes to commit."
+          fi
+
+          # Push both commits (bump + regenerate).
+          if [[ -n "$(git log origin/${{ github.head_ref }}..HEAD --oneline)" ]]; then
+            git push origin "HEAD:${{ github.head_ref }}"
+          else
+            echo "Nothing to push."
+          fi
