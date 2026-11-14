@@ -1,0 +1,17 @@
+---
+
+ingress:
+  pipelines: {{.IngressPipelines}}
+
+config:
+  receivers:
+    otlp/test: {{.ReceiverConfig}}
+
+  exporters:
+    nop: {}
+
+  service:
+    pipelines:
+      logs:
+        receivers: [otlp/test]
+        exporters: [nop]
