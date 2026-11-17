@@ -342,6 +342,7 @@ func (s FakeMetricsServiceServer) Export(ctx context.Context, emsr *colmetricspb
 type OTelConfigVars struct {
 	IngressOTLPPort int
 	EgressOTLPPort  int
+	DefaultOTLPPort int
 	MetricsPort     int
 	Port            int
 	CA              *certtest.Authority
@@ -362,6 +363,7 @@ func NewOTELConfigVars() OTelConfigVars {
 	return OTelConfigVars{
 		IngressOTLPPort: ingressOTLPPort,
 		EgressOTLPPort:  egressOTLPPort,
+		DefaultOTLPPort: 5000 + GinkgoParallelProcess()*100 + 4,
 		MetricsPort:     metricsPort,
 		Port:            port,
 		Cert:            cert,
