@@ -65,13 +65,13 @@ jobs:
 
           [[ -n "${NEW_VERSION}" ]] || { echo "::error::No new-version from dependabot"; exit 1; }
           echo "New OTEL (v0.x) version: v${NEW_VERSION}"
-
+               
           # Resolve the matching stable (v1.x) version from the collector's
-          # release notes: the monorepo publishes both tracks together and
-          # mentions both tag names in the release body.
+          # release title (.name), which lists both version tracks
+          # (e.g. v1.70.0/v0.164.0).
           stable_version="$(
             gh api "repos/open-telemetry/opentelemetry-collector/releases/tags/v${NEW_VERSION}" \
-              --jq '.body' \
+              --jq '.name' \
             | grep -oE 'v1\.[0-9]+\.[0-9]+' \
             | sort -u \
             | head -n1
